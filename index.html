@@ -91,6 +91,26 @@ h1{font-size:22px;margin:2px 0 8px}
   .actions button{padding:9px;font-size:14px}
   .note{font-size:10px;margin-top:7px}
 }
+
+.settings-panel{background:#fff;border-radius:16px;padding:11px 12px;margin-top:9px}
+body.dark .settings-panel{background:#1f2937}
+.settings-panel summary{cursor:pointer;font-weight:800;list-style:none}
+.settings-panel summary::-webkit-details-marker{display:none}
+.rate-row{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr auto;gap:6px;align-items:end;margin-top:10px}
+.rate-row label{font-size:10px;color:#666}
+body.dark .rate-row label{color:#d1d5db}
+.rate-row input{width:100%;padding:8px 7px;border:1px solid #d7dbe0;border-radius:9px;font-size:13px;background:#fff;color:#111}
+body.dark .rate-row input{background:#111827;color:#f9fafb;border-color:#4b5563}
+.rate-add{margin-top:10px;border:0;border-radius:10px;padding:9px 12px;background:#111;color:#fff;font-weight:700}
+body.dark .rate-add{background:#f9fafb;color:#111827}
+.rate-delete{border:0;border-radius:9px;padding:8px 9px;background:#eee;color:#111}
+body.dark .rate-delete{background:#374151;color:#fff}
+.rate-note{font-size:10px;color:#666;margin-top:8px;line-height:1.4}
+body.dark .rate-note{color:#d1d5db}
+@media (max-width:480px){
+  .rate-row{grid-template-columns:1fr 1fr;gap:6px}
+  .rate-row .delete-wrap{grid-column:1/-1}
+}
 </style>
 </head>
 <body>
@@ -141,17 +161,29 @@ h1{font-size:22px;margin:2px 0 8px}
 <button class="clear" onclick="clearDay()">勤務なし</button>
 </div>
 
-<div class="note">1コマ 2,026円 ＋ 出勤日ごとに日次手当513円＋交通費420円</div>
+<div class="note" id="rateSummary"></div>
 </div>
+
+<details class="settings-panel">
+<summary>給与単価の設定</summary>
+<div id="rateList"></div>
+<button class="rate-add" onclick="addRate()">＋ 単価を追加</button>
+<div class="rate-note">
+適用開始日以降の勤務にその単価を使います。過去の勤務は、それ以前の単価のまま計算されます。
+</div>
+</details>
 </div>
 
 <script>
-const PAY = 2026;
-const FIX = 513 + 420;
 const KEY = "juku_salary_slots_v1";
+const RATE_KEY = "juku_salary_rates_v1";
+const DEFAULT_RATES = [
+  { start:"2000-01-01", lesson:2026, daily:513, transport:420 }
+];
 const SLOTS = ["X","Y","Z","A","B","C","D"];
 
 let data = JSON.parse(localStorage.getItem(KEY) || "{}");
+let rates = JSON.parse(localStorage.getItem(RATE_KEY) || "null") || DEFAULT_RATES;
 let view = new Date();
 view = new Date(view.getFullYear(), view.getMonth(), 1);
 
@@ -161,7 +193,19 @@ let tempSlots = [];
 function money(n){ return n.toLocaleString("ja-JP") + "円"; }
 function pad(n){ return String(n).padStart(2,"0"); }
 function keyOf(y,m,d){ return `${y}-${pad(m+1)}-${pad(d)}`; }
-function dayPay(c){ return c > 0 ? PAY * c + FIX : 0; }
+function getRate(date){
+  const sorted = [...rates].sort((a,b)=>a.start.localeCompare(b.start));
+  let current = sorted[0] || DEFAULT_RATES[0];
+  for(const r of sorted){
+    if(r.start <= date) current = r;
+  }
+  return current;
+}
+function dayPay(c, date){
+  if(c <= 0) return 0;
+  const r = getRate(date);
+  return r.lesson * c + r.daily + r.transport;
+}
 
 function getSlots(date){
   const v = data[date];
@@ -203,7 +247,7 @@ function renderCalendar(){
 
     const payday = d === 15 ? `<span class="payday">給料日</span>` : "";
     const shift = c > 0
-      ? `<span class="entry">${slots.join("・")}<br>${money(dayPay(c))}</span>`
+      ? `<span class="entry">${slots.join("・")}<br>${money(dayPay(c,key))}</span>`
       : "";
 
     btn.innerHTML = `<span class="daynum">${d}</span>${payday}${shift}`;
@@ -235,7 +279,7 @@ function renderSummary(){
     if(!date.startsWith(prefix) || !Array.isArray(slots) || slots.length===0) continue;
     days++;
     lessons += slots.length;
-    total += dayPay(slots.length);
+    total += dayPay(slots.length,date);
   }
 
   document.getElementById("total").textContent = money(total);
@@ -279,7 +323,7 @@ function renderDayPreview(){
   const c = tempSlots.length;
   document.getElementById("selectedSlots").textContent =
     c === 0 ? "0コマ選択" : `${tempSlots.join("・")}　${c}コマ`;
-  document.getElementById("dayPay").textContent = money(dayPay(c));
+  document.getElementById("dayPay").textContent = money(dayPay(c,key));
 }
 
 function save(){
@@ -319,6 +363,85 @@ function moveMonth(diff){
 }
 
 
+
+function saveRates(){
+  rates = rates
+    .map(r=>({
+      start:r.start,
+      lesson:Number(r.lesson)||0,
+      daily:Number(r.daily)||0,
+      transport:Number(r.transport)||0
+    }))
+    .sort((a,b)=>a.start.localeCompare(b.start));
+  localStorage.setItem(RATE_KEY, JSON.stringify(rates));
+  renderRates();
+  renderCalendar();
+  renderDayPreview();
+}
+
+function renderRates(){
+  const list = document.getElementById("rateList");
+  if(!list) return;
+
+  const sorted = [...rates].sort((a,b)=>a.start.localeCompare(b.start));
+  list.innerHTML = sorted.map((r,i)=>`
+    <div class="rate-row">
+      <label>適用開始日
+        <input type="date" value="${r.start}" onchange="updateRate(${i},'start',this.value)">
+      </label>
+      <label>コマ給
+        <input type="number" inputmode="numeric" value="${r.lesson}" onchange="updateRate(${i},'lesson',this.value)">
+      </label>
+      <label>日次手当
+        <input type="number" inputmode="numeric" value="${r.daily}" onchange="updateRate(${i},'daily',this.value)">
+      </label>
+      <label>交通費
+        <input type="number" inputmode="numeric" value="${r.transport}" onchange="updateRate(${i},'transport',this.value)">
+      </label>
+      <div class="delete-wrap">
+        <button class="rate-delete" onclick="deleteRate(${i})">削除</button>
+      </div>
+    </div>
+  `).join("");
+
+  const today = new Date();
+  const k = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
+  const r = getRate(k);
+  const summary = document.getElementById("rateSummary");
+  if(summary){
+    summary.textContent = `現在の単価：1コマ ${money(r.lesson)} ＋ 日次手当 ${money(r.daily)} ＋ 交通費 ${money(r.transport)}`;
+  }
+}
+
+function updateRate(index, field, value){
+  const sorted = [...rates].sort((a,b)=>a.start.localeCompare(b.start));
+  if(!sorted[index]) return;
+  sorted[index][field] = field === "start" ? value : Number(value);
+  rates = sorted;
+  saveRates();
+}
+
+function addRate(){
+  const today = new Date();
+  const start = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
+  const current = getRate(start);
+  rates.push({
+    start,
+    lesson:current.lesson,
+    daily:current.daily,
+    transport:current.transport
+  });
+  saveRates();
+}
+
+function deleteRate(index){
+  const sorted = [...rates].sort((a,b)=>a.start.localeCompare(b.start));
+  if(sorted.length <= 1) return;
+  sorted.splice(index,1);
+  rates = sorted;
+  saveRates();
+}
+
 function applyTheme(){
   const saved = localStorage.getItem("juku_theme");
   if(saved === "dark"){
@@ -336,6 +459,7 @@ function toggleTheme(){
 }
 
 applyTheme();
+renderRates();
 renderCalendar();
 renderSlotButtons();
 renderDayPreview();
