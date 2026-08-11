@@ -2,48 +2,58 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111827">
 <title>塾バイト給料カレンダー</title>
 <style>
 *{box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;background:#f4f6f8;color:#111}
-.wrap{max-width:720px;margin:auto;padding:16px}
+.wrap{max-width:760px;margin:auto;padding:16px 14px 40px}
 h1{font-size:24px;margin:6px 0 14px}
 .summary{background:#fff;border-radius:16px;padding:16px;margin-bottom:14px}
 .big{font-size:30px;font-weight:800}
 .sub{font-size:13px;color:#666}
 .calendar{background:#fff;border-radius:16px;overflow:hidden}
-.head{display:flex;justify-content:center;align-items:center;padding:14px;font-size:18px;font-weight:800}
+.head{display:flex;justify-content:space-between;align-items:center;padding:14px}
+.head button{border:0;background:#eef0f4;width:42px;height:42px;border-radius:12px;font-size:22px;font-weight:700}
+.month{font-size:18px;font-weight:800}
 .week,.grid{display:grid;grid-template-columns:repeat(7,1fr)}
 .week div{text-align:center;padding:8px 0;font-size:12px;color:#666;border-top:1px solid #eee}
-.day{min-height:78px;border:0;border-top:1px solid #eee;border-right:1px solid #eee;background:#fff;text-align:left;padding:7px;vertical-align:top}
-.day:nth-child(7n){border-right:0}
-.blank{background:#fafafa;min-height:78px;border-top:1px solid #eee;border-right:1px solid #eee}
+.day,.blank{min-height:82px;border:0;border-top:1px solid #eee;border-right:1px solid #eee;background:#fff;text-align:left;padding:7px}
+.day:nth-child(7n),.blank:nth-child(7n){border-right:0}
+.blank{background:#fafafa}
 .daynum{font-weight:700}
-.entry{display:block;font-size:11px;margin-top:8px;font-weight:700}
+.entry{display:block;font-size:11px;margin-top:8px;font-weight:700;line-height:1.4}
 .controls{background:#fff;border-radius:16px;padding:16px;margin-top:14px}
-.controls button{font-size:20px;padding:10px 16px;border:0;border-radius:12px;margin-right:8px}
+.controls button{font-size:18px;padding:10px 15px;border:0;border-radius:12px;margin-right:8px}
 .save{background:#111;color:#fff}
 .clear{background:#eee}
 #selected{font-weight:700;margin-bottom:10px}
-.note{font-size:12px;color:#666;margin-top:10px}
+.note{font-size:12px;color:#666;margin-top:10px;line-height:1.5}
+.today .daynum{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#111;color:#fff}
 </style>
 </head>
 <body>
 <div class="wrap">
 <h1>塾バイト給料カレンダー</h1>
+
 <div class="summary">
-<div class="sub">2026年8月の給料見込み</div>
+<div class="sub" id="summaryLabel">今月の給料見込み</div>
 <div class="big" id="total">0円</div>
 <div class="sub"><span id="daysCount">0</span>日勤務・<span id="lessonCount">0</span>コマ</div>
+<div class="sub" style="margin-top:8px;font-weight:700">給料日：毎月15日</div>
 </div>
 
 <div class="calendar">
-<div class="head">2026年8月</div>
-<div class="week"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>
-<div class="grid">
-<div class="day blank"></div><div class="day blank"></div><div class="day blank"></div><div class="day blank"></div><div class="day blank"></div><div class="day blank"></div><button class="day" data-date="2026-08-01" onclick="selectDay(this)"><span class="daynum">1</span><span class="entry" id="e-2026-08-01"></span></button><button class="day" data-date="2026-08-02" onclick="selectDay(this)"><span class="daynum">2</span><span class="entry" id="e-2026-08-02"></span></button><button class="day" data-date="2026-08-03" onclick="selectDay(this)"><span class="daynum">3</span><span class="entry" id="e-2026-08-03"></span></button><button class="day" data-date="2026-08-04" onclick="selectDay(this)"><span class="daynum">4</span><span class="entry" id="e-2026-08-04"></span></button><button class="day" data-date="2026-08-05" onclick="selectDay(this)"><span class="daynum">5</span><span class="entry" id="e-2026-08-05"></span></button><button class="day" data-date="2026-08-06" onclick="selectDay(this)"><span class="daynum">6</span><span class="entry" id="e-2026-08-06"></span></button><button class="day" data-date="2026-08-07" onclick="selectDay(this)"><span class="daynum">7</span><span class="entry" id="e-2026-08-07"></span></button><button class="day" data-date="2026-08-08" onclick="selectDay(this)"><span class="daynum">8</span><span class="entry" id="e-2026-08-08"></span></button><button class="day" data-date="2026-08-09" onclick="selectDay(this)"><span class="daynum">9</span><span class="entry" id="e-2026-08-09"></span></button><button class="day" data-date="2026-08-10" onclick="selectDay(this)"><span class="daynum">10</span><span class="entry" id="e-2026-08-10"></span></button><button class="day" data-date="2026-08-11" onclick="selectDay(this)"><span class="daynum">11</span><span class="entry" id="e-2026-08-11"></span></button><button class="day" data-date="2026-08-12" onclick="selectDay(this)"><span class="daynum">12</span><span class="entry" id="e-2026-08-12"></span></button><button class="day" data-date="2026-08-13" onclick="selectDay(this)"><span class="daynum">13</span><span class="entry" id="e-2026-08-13"></span></button><button class="day" data-date="2026-08-14" onclick="selectDay(this)"><span class="daynum">14</span><span class="entry" id="e-2026-08-14"></span></button><button class="day" data-date="2026-08-15" onclick="selectDay(this)"><span class="daynum">15</span><span class="entry" id="e-2026-08-15"></span></button><button class="day" data-date="2026-08-16" onclick="selectDay(this)"><span class="daynum">16</span><span class="entry" id="e-2026-08-16"></span></button><button class="day" data-date="2026-08-17" onclick="selectDay(this)"><span class="daynum">17</span><span class="entry" id="e-2026-08-17"></span></button><button class="day" data-date="2026-08-18" onclick="selectDay(this)"><span class="daynum">18</span><span class="entry" id="e-2026-08-18"></span></button><button class="day" data-date="2026-08-19" onclick="selectDay(this)"><span class="daynum">19</span><span class="entry" id="e-2026-08-19"></span></button><button class="day" data-date="2026-08-20" onclick="selectDay(this)"><span class="daynum">20</span><span class="entry" id="e-2026-08-20"></span></button><button class="day" data-date="2026-08-21" onclick="selectDay(this)"><span class="daynum">21</span><span class="entry" id="e-2026-08-21"></span></button><button class="day" data-date="2026-08-22" onclick="selectDay(this)"><span class="daynum">22</span><span class="entry" id="e-2026-08-22"></span></button><button class="day" data-date="2026-08-23" onclick="selectDay(this)"><span class="daynum">23</span><span class="entry" id="e-2026-08-23"></span></button><button class="day" data-date="2026-08-24" onclick="selectDay(this)"><span class="daynum">24</span><span class="entry" id="e-2026-08-24"></span></button><button class="day" data-date="2026-08-25" onclick="selectDay(this)"><span class="daynum">25</span><span class="entry" id="e-2026-08-25"></span></button><button class="day" data-date="2026-08-26" onclick="selectDay(this)"><span class="daynum">26</span><span class="entry" id="e-2026-08-26"></span></button><button class="day" data-date="2026-08-27" onclick="selectDay(this)"><span class="daynum">27</span><span class="entry" id="e-2026-08-27"></span></button><button class="day" data-date="2026-08-28" onclick="selectDay(this)"><span class="daynum">28</span><span class="entry" id="e-2026-08-28"></span></button><button class="day" data-date="2026-08-29" onclick="selectDay(this)"><span class="daynum">29</span><span class="entry" id="e-2026-08-29"></span></button><button class="day" data-date="2026-08-30" onclick="selectDay(this)"><span class="daynum">30</span><span class="entry" id="e-2026-08-30"></span></button><button class="day" data-date="2026-08-31" onclick="selectDay(this)"><span class="daynum">31</span><span class="entry" id="e-2026-08-31"></span></button><div class="day blank"></div><div class="day blank"></div><div class="day blank"></div><div class="day blank"></div><div class="day blank"></div>
+<div class="head">
+<button onclick="moveMonth(-1)">‹</button>
+<div class="month" id="monthTitle"></div>
+<button onclick="moveMonth(1)">›</button>
 </div>
+<div class="week">
+<div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div>
+</div>
+<div class="grid" id="grid"></div>
 </div>
 
 <div class="controls">
@@ -57,43 +67,134 @@ h1{font-size:24px;margin:6px 0 14px}
 <button class="save" onclick="save()">保存</button>
 <button class="clear" onclick="clearDay()">勤務なし</button>
 </div>
-<div class="note">1コマ 2,026円 ＋ 出勤日ごとに日次手当513円＋交通費420円</div>
+<div class="note">1コマ 2,026円 ＋ 出勤日ごとに日次手当513円＋交通費420円<br>登録内容はブラウザ内に保存されます</div>
 </div>
 </div>
 
 <script>
-const PAY=2026,FIX=513+420,KEY="juku_salary_aug_2026";
-let data=JSON.parse(localStorage.getItem(KEY)||"{}"), selected=null, count=0;
-function money(n){return n.toLocaleString("ja-JP")+"円"}
-function dayPay(c){return c>0?PAY*c+FIX:0}
-function selectDay(el){
- selected=el.dataset.date; count=Number(data[selected]||0);
- document.getElementById("selected").textContent=selected.replaceAll("-","/")+" を編集中";
- document.getElementById("count").textContent=count+"コマ";
+const PAY = 2026;
+const FIX = 513 + 420;
+const KEY = "juku_salary_all_months_v1";
+
+let data = JSON.parse(localStorage.getItem(KEY) || "{}");
+let view = new Date();
+view = new Date(view.getFullYear(), view.getMonth(), 1);
+
+let selected = null;
+let count = 0;
+
+function money(n){ return n.toLocaleString("ja-JP") + "円"; }
+function pad(n){ return String(n).padStart(2,"0"); }
+function keyOf(y,m,d){ return `${y}-${pad(m+1)}-${pad(d)}`; }
+function dayPay(c){ return c > 0 ? PAY * c + FIX : 0; }
+
+function renderCalendar(){
+  const y = view.getFullYear();
+  const m = view.getMonth();
+  document.getElementById("monthTitle").textContent = `${y}年${m+1}月`;
+  document.getElementById("summaryLabel").textContent = `${y}年${m+1}月の給料見込み`;
+
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+
+  const firstDay = new Date(y,m,1).getDay();
+  const lastDate = new Date(y,m+1,0).getDate();
+
+  for(let i=0;i<firstDay;i++){
+    const b = document.createElement("div");
+    b.className = "blank";
+    grid.appendChild(b);
+  }
+
+  const today = new Date();
+
+  for(let d=1; d<=lastDate; d++){
+    const key = keyOf(y,m,d);
+    const c = Number(data[key] || 0);
+    const btn = document.createElement("button");
+    btn.className = "day";
+    if(today.getFullYear()===y && today.getMonth()===m && today.getDate()===d){
+      btn.classList.add("today");
+    }
+    btn.dataset.date = key;
+    btn.innerHTML = `<span class="daynum">${d}</span><span class="entry">${d===15 ? `給料日${c>0 ? "<br>" : ""}` : ""}${c>0 ? `${c}コマ<br>${money(dayPay(c))}` : ""}</span>`;
+    btn.onclick = () => selectDay(key);
+    grid.appendChild(btn);
+  }
+
+  const used = firstDay + lastDate;
+  const trailing = (7 - (used % 7)) % 7;
+  for(let i=0;i<trailing;i++){
+    const b = document.createElement("div");
+    b.className = "blank";
+    grid.appendChild(b);
+  }
+
+  renderSummary();
 }
-function change(n){if(!selected)return; count=Math.max(0,count+n); document.getElementById("count").textContent=count+"コマ"}
+
+function renderSummary(){
+  const y = view.getFullYear();
+  const m = view.getMonth();
+  const prefix = `${y}-${pad(m+1)}-`;
+
+  let total=0, days=0, lessons=0;
+
+  for(const [date,cRaw] of Object.entries(data)){
+    if(!date.startsWith(prefix)) continue;
+    const c = Number(cRaw);
+    if(c > 0){
+      days++;
+      lessons += c;
+      total += dayPay(c);
+    }
+  }
+
+  document.getElementById("total").textContent = money(total);
+  document.getElementById("daysCount").textContent = days;
+  document.getElementById("lessonCount").textContent = lessons;
+}
+
+function selectDay(key){
+  selected = key;
+  count = Number(data[selected] || 0);
+  document.getElementById("selected").textContent = selected.replaceAll("-","/") + " を編集中";
+  document.getElementById("count").textContent = count + "コマ";
+}
+
+function change(n){
+  if(!selected) return;
+  count = Math.max(0, count+n);
+  document.getElementById("count").textContent = count + "コマ";
+}
+
 function save(){
- if(!selected)return;
- if(count>0)data[selected]=count;else delete data[selected];
- localStorage.setItem(KEY,JSON.stringify(data)); render();
+  if(!selected) return;
+  if(count > 0) data[selected] = count;
+  else delete data[selected];
+  localStorage.setItem(KEY, JSON.stringify(data));
+  renderCalendar();
 }
+
 function clearDay(){
- if(!selected)return;
- delete data[selected];count=0;localStorage.setItem(KEY,JSON.stringify(data));render();
- document.getElementById("count").textContent="0コマ";
+  if(!selected) return;
+  delete data[selected];
+  count = 0;
+  localStorage.setItem(KEY, JSON.stringify(data));
+  document.getElementById("count").textContent = "0コマ";
+  renderCalendar();
 }
-function render(){
- let total=0,days=0,lessons=0;
- document.querySelectorAll(".entry").forEach(x=>x.textContent="");
- for(const [date,c] of Object.entries(data)){
-   const p=dayPay(Number(c)); total+=p;days++;lessons+=Number(c);
-   const el=document.getElementById("e-"+date); if(el)el.textContent=c+"コマ / "+money(p);
- }
- document.getElementById("total").textContent=money(total);
- document.getElementById("daysCount").textContent=days;
- document.getElementById("lessonCount").textContent=lessons;
+
+function moveMonth(diff){
+  view = new Date(view.getFullYear(), view.getMonth()+diff, 1);
+  selected = null;
+  count = 0;
+  document.getElementById("selected").textContent = "日付をタップ";
+  document.getElementById("count").textContent = "0コマ";
+  renderCalendar();
 }
-render();
+
+renderCalendar();
 </script>
 </body>
 </html>
