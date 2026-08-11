@@ -8,7 +8,23 @@
 <style>
 *{box-sizing:border-box}
 button,.day,.slot{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;background:#f4f6f8;color:#111}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;background:#f4f6f8;color:#111;transition:background .2s,color .2s}
+body.dark{background:#111827;color:#f9fafb}
+body.dark .summary,
+body.dark .calendar,
+body.dark .controls{background:#1f2937}
+body.dark .day{background:#1f2937;color:#f9fafb;border-color:#374151}
+body.dark .blank{background:#111827;border-color:#374151}
+body.dark .week div{color:#d1d5db;border-color:#374151}
+body.dark .entry{color:#d1d5db}
+body.dark .preview{background:#111827}
+body.dark .slot{background:#111827;color:#f9fafb;border-color:#4b5563}
+body.dark .slot.active{background:#f9fafb;color:#111827;border-color:#f9fafb}
+body.dark .head button,
+body.dark .clear{background:#374151;color:#f9fafb}
+body.dark .day.selected-day{background:#26324a}
+.theme-btn{border:0;background:#eef0f4;color:#111;width:38px;height:32px;border-radius:10px;font-size:16px;font-weight:700}
+body.dark .theme-btn{background:#374151;color:#f9fafb}
 .wrap{max-width:760px;margin:auto;padding:10px 10px 24px}
 h1{font-size:22px;margin:2px 0 8px}
 .summary{background:#fff;border-radius:16px;padding:11px 14px;margin-bottom:9px}
@@ -79,13 +95,15 @@ h1{font-size:22px;margin:2px 0 8px}
 </head>
 <body>
 <div class="wrap">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
 <h1>塾バイト給料カレンダー</h1>
+<button class="theme-btn" id="themeToggle" onclick="toggleTheme()" aria-label="ダークモード切替">◐</button>
+</div>
 
 <div class="summary">
 <div class="sub" id="summaryLabel">今月の給料見込み</div>
 <div class="big" id="total">0円</div>
 <div class="sub"><span id="daysCount">0</span>日勤務・<span id="lessonCount">0</span>コマ</div>
-<div class="sub" style="margin-top:8px;font-weight:700">給料日：毎月15日</div>
 </div>
 
 <div class="calendar">
@@ -104,13 +122,13 @@ h1{font-size:22px;margin:2px 0 8px}
 <div id="selected">日付をタップ</div>
 
 <div class="slot-grid" id="slotGrid">
+<button class="slot" data-slot="X" onclick="toggleSlot('X')">X</button>
+<button class="slot" data-slot="Y" onclick="toggleSlot('Y')">Y</button>
+<button class="slot" data-slot="Z" onclick="toggleSlot('Z')">Z</button>
 <button class="slot" data-slot="A" onclick="toggleSlot('A')">A</button>
 <button class="slot" data-slot="B" onclick="toggleSlot('B')">B</button>
 <button class="slot" data-slot="C" onclick="toggleSlot('C')">C</button>
 <button class="slot" data-slot="D" onclick="toggleSlot('D')">D</button>
-<button class="slot" data-slot="X" onclick="toggleSlot('X')">X</button>
-<button class="slot" data-slot="Y" onclick="toggleSlot('Y')">Y</button>
-<button class="slot" data-slot="Z" onclick="toggleSlot('Z')">Z</button>
 </div>
 
 <div class="preview">
@@ -123,10 +141,7 @@ h1{font-size:22px;margin:2px 0 8px}
 <button class="clear" onclick="clearDay()">勤務なし</button>
 </div>
 
-<div class="note">
-1コマ 2,026円 ＋ 出勤日ごとに日次手当513円＋交通費420円<br>
-A・B・C・D・X・Y・Zから、その日に入ったコマを選択
-</div>
+<div class="note">1コマ 2,026円 ＋ 出勤日ごとに日次手当513円＋交通費420円</div>
 </div>
 </div>
 
@@ -134,7 +149,7 @@ A・B・C・D・X・Y・Zから、その日に入ったコマを選択
 const PAY = 2026;
 const FIX = 513 + 420;
 const KEY = "juku_salary_slots_v1";
-const SLOTS = ["A","B","C","D","X","Y","Z"];
+const SLOTS = ["X","Y","Z","A","B","C","D"];
 
 let data = JSON.parse(localStorage.getItem(KEY) || "{}");
 let view = new Date();
@@ -188,7 +203,7 @@ function renderCalendar(){
 
     const payday = d === 15 ? `<span class="payday">給料日</span>` : "";
     const shift = c > 0
-      ? `<span class="entry">${slots.join("・")}<br>${c}コマ<br>${money(dayPay(c))}</span>`
+      ? `<span class="entry">${slots.join("・")}<br>${money(dayPay(c))}</span>`
       : "";
 
     btn.innerHTML = `<span class="daynum">${d}</span>${payday}${shift}`;
@@ -303,6 +318,24 @@ function moveMonth(diff){
   renderCalendar();
 }
 
+
+function applyTheme(){
+  const saved = localStorage.getItem("juku_theme");
+  if(saved === "dark"){
+    document.body.classList.add("dark");
+  }else if(saved === "light"){
+    document.body.classList.remove("dark");
+  }else if(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches){
+    document.body.classList.add("dark");
+  }
+}
+
+function toggleTheme(){
+  document.body.classList.toggle("dark");
+  localStorage.setItem("juku_theme", document.body.classList.contains("dark") ? "dark" : "light");
+}
+
+applyTheme();
 renderCalendar();
 renderSlotButtons();
 renderDayPreview();
