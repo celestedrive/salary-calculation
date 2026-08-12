@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#111827">
-<title>塾バイト給料カレンダー</title>
+<title>給与カレンダー</title>
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" type="image/png" href="icon.png">
 <style>
@@ -12,14 +12,25 @@
 button,.day,.slot{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;background:#111827;color:#f9fafb}
 .wrap{max-width:760px;margin:auto;padding:10px 10px 24px}
-h1{font-size:22px;margin:2px 0 8px}
-.summary{background:#1f2937;border-radius:16px;padding:11px 14px;margin-bottom:9px}
+h1{font-size:22px;margin:2px 0 8px;text-align:center}
+.summary{background:#1f2937;border-radius:16px;padding:11px 14px;margin-bottom:9px;text-align:center}
 .big{font-size:27px;font-weight:800;white-space:nowrap}
 .sub{font-size:13px;color:#666}
 .calendar{background:#1f2937;border-radius:16px;overflow:hidden}
 .head{display:flex;justify-content:space-between;align-items:center;padding:7px 10px}
 .head button{border:0;background:#374151;color:#f9fafb;width:36px;height:32px;border-radius:10px;font-size:20px;font-weight:700}
 .month{font-size:18px;font-weight:800}
+.month-picker-btn{
+  border:0;
+  background:transparent;
+  color:#f9fafb;
+  padding:4px 10px;
+  border-radius:9px;
+  width:auto;
+  height:auto;
+  cursor:pointer;
+}
+.month-picker-btn:active{background:#374151}
 .week,.grid{display:grid;grid-template-columns:repeat(7,1fr)}
 .week div{text-align:center;padding:4px 0;font-size:11px;color:#d1d5db;border-top:1px solid #374151}
 .day,.blank{min-height:58px;border:0;border-top:1px solid #374151;border-right:1px solid #374151;background:#1f2937;color:#f9fafb;text-align:left;padding:4px}
@@ -107,11 +118,71 @@ h1{font-size:22px;margin:2px 0 8px}
   background:#111827 !important;color:#fff !important;
   box-shadow:0 0 0 2px #1d4ed8,0 0 0 4px #7dd3fc !important;
 }
+
+.month-picker-backdrop{
+  position:fixed;
+  inset:0;
+  z-index:50;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  background:rgba(0,0,0,.58);
+}
+.month-picker-backdrop.open{display:flex}
+.month-picker{
+  width:min(360px,100%);
+  background:#1f2937;
+  border:1px solid #374151;
+  border-radius:18px;
+  padding:14px;
+}
+.month-picker-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:10px;
+}
+.month-picker-year{
+  font-size:18px;
+  font-weight:800;
+  text-align:center;
+  flex:1;
+}
+.month-picker-head button{
+  border:0;
+  background:#374151;
+  color:#f9fafb;
+  width:36px;
+  height:34px;
+  border-radius:10px;
+  font-size:18px;
+}
+.month-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:7px;
+}
+.month-choice{
+  border:1px solid #4b5563;
+  background:#111827;
+  color:#f9fafb;
+  min-height:45px;
+  border-radius:11px;
+  font-size:15px;
+  font-weight:700;
+}
+.month-choice.current{
+  background:#1d4ed8;
+  border-color:#7dd3fc;
+  box-shadow:inset 0 0 0 1px #7dd3fc;
+}
 </style>
 </head>
 <body>
 <div class="wrap">
-<h1>塾バイト給料カレンダー</h1>
+<h1>給与カレンダー</h1>
 
 <div class="summary">
 <div class="sub" id="summaryLabel">今月の給料見込み</div>
@@ -122,7 +193,7 @@ h1{font-size:22px;margin:2px 0 8px}
 <div class="calendar">
 <div class="head">
 <button onclick="moveMonth(-1)">‹</button>
-<div class="month" id="monthTitle"></div>
+<button class="month month-picker-btn" id="monthTitle" type="button" onclick="openMonthPicker()"></button>
 <button onclick="moveMonth(1)">›</button>
 </div>
 <div class="week">
@@ -167,6 +238,18 @@ h1{font-size:22px;margin:2px 0 8px}
 </details>
 </div>
 
+
+<div class="month-picker-backdrop" id="monthPickerBackdrop" onclick="closeMonthPickerFromBackdrop(event)">
+  <div class="month-picker">
+    <div class="month-picker-head">
+      <button type="button" onclick="changePickerYear(-1)">‹</button>
+      <div class="month-picker-year" id="pickerYear"></div>
+      <button type="button" onclick="changePickerYear(1)">›</button>
+    </div>
+    <div class="month-grid" id="monthGrid"></div>
+  </div>
+</div>
+
 <script>
 const KEY = "juku_salary_slots_v1";
 const RATE_KEY = "juku_salary_rates_v1";
@@ -182,6 +265,7 @@ view = new Date(view.getFullYear(), view.getMonth(), 1);
 
 let selected = null;
 let tempSlots = [];
+let pickerYear = view.getFullYear();
 
 function money(n){ return n.toLocaleString("ja-JP") + "円"; }
 function pad(n){ return String(n).padStart(2,"0"); }
@@ -320,7 +404,7 @@ function renderDayPreview(){
   const c = tempSlots.length;
   document.getElementById("selectedSlots").textContent =
     c === 0 ? "0コマ選択" : `${tempSlots.join("・")}　${c}コマ`;
-  document.getElementById("dayPay").textContent = money(dayPay(c,key));
+  document.getElementById("dayPay").textContent = money(dayPay(c, selected || "9999-12-31"));
 }
 
 function save(){
@@ -348,15 +432,68 @@ function clearDay(){
   renderCalendar();
 }
 
+
+function openMonthPicker(){
+  pickerYear = view.getFullYear();
+  renderMonthPicker();
+  document.getElementById("monthPickerBackdrop").classList.add("open");
+}
+
+function closeMonthPicker(){
+  document.getElementById("monthPickerBackdrop").classList.remove("open");
+}
+
+function closeMonthPickerFromBackdrop(e){
+  if(e.target && e.target.id === "monthPickerBackdrop"){
+    closeMonthPicker();
+  }
+}
+
+function changePickerYear(diff){
+  pickerYear += diff;
+  renderMonthPicker();
+}
+
+function renderMonthPicker(){
+  document.getElementById("pickerYear").textContent = pickerYear + "年";
+  const grid = document.getElementById("monthGrid");
+  grid.innerHTML = "";
+
+  for(let m=0; m<12; m++){
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "month-choice";
+    btn.textContent = (m+1) + "月";
+
+    if(pickerYear === view.getFullYear() && m === view.getMonth()){
+      btn.classList.add("current");
+    }
+
+    btn.addEventListener("click", () => {
+      view = new Date(pickerYear, m, 1);
+      selected = null;
+      tempSlots = [];
+      document.getElementById("selected").textContent = "日付をタップ";
+      renderCalendar();
+      renderSlotButtons();
+      renderDayPreview();
+      closeMonthPicker();
+    });
+
+    grid.appendChild(btn);
+  }
+}
+
+
 function moveMonth(diff){
   view = new Date(view.getFullYear(), view.getMonth()+diff, 1);
   selected = null;
   tempSlots = [];
 
   document.getElementById("selected").textContent = "日付をタップ";
+  renderCalendar();
   renderSlotButtons();
   renderDayPreview();
-  renderCalendar();
 }
 
 
