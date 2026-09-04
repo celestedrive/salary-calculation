@@ -52,6 +52,12 @@ h1{font-size:22px;margin:2px 0 8px;text-align:center}
   font-size:17px;font-weight:800;cursor:pointer
 }
 .slot.active{background:#f9fafb;color:#111827;border-color:#f9fafb}
+.study-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.study-toggle{border:1px solid #4b5563;background:#111827;color:#f9fafb;border-radius:10px;padding:10px 8px;font-size:15px;font-weight:800}
+.study-toggle.active{background:#f9fafb;color:#111827;border-color:#f9fafb}
+.study-hours{display:none;align-items:center;gap:7px;border:1px solid #4b5563;background:#111827;border-radius:10px;padding:5px 8px;font-size:12px;color:#d1d5db}
+.study-hours.active{display:flex}
+.study-hours input{width:100%;min-width:0;padding:5px 7px;border:0;border-radius:7px;background:#1f2937;color:#f9fafb;font-size:15px;font-weight:700}
 .preview{background:#111827;border-radius:12px;padding:8px 10px;margin:7px 0 8px}
 .preview .p1{font-size:13px;color:#666}
 .preview .p2{font-size:22px;font-weight:800;margin-top:3px;white-space:nowrap}
@@ -203,7 +209,7 @@ h1{font-size:22px;margin:2px 0 8px;text-align:center}
 <div class="summary">
 <div class="sub" id="summaryLabel">今月の給料見込み</div>
 <div class="big" id="total">0円</div>
-<div class="sub"><span id="daysCount">0</span>日勤務・<span id="lessonCount">0</span>コマ</div>
+<div class="sub"><span id="daysCount">0</span>日勤務・<span id="lessonCount">0</span>コマ・勉強会<span id="studyHoursCount">0</span>時間</div>
 </div>
 
 <div class="calendar">
@@ -229,6 +235,14 @@ h1{font-size:22px;margin:2px 0 8px;text-align:center}
 <button class="slot" data-slot="B" onclick="toggleSlot('B')">B</button>
 <button class="slot" data-slot="C" onclick="toggleSlot('C')">C</button>
 <button class="slot" data-slot="D" onclick="toggleSlot('D')">D</button>
+</div>
+
+<div class="study-row">
+  <button type="button" class="study-toggle" id="studyToggle" onclick="toggleStudy()">勉強会</button>
+  <label class="study-hours" id="studyHoursWrap">
+    <span>時間</span>
+    <input id="studyHours" type="number" inputmode="decimal" min="0.5" step="0.5" value="2" oninput="updateStudyHours(this.value)">
+  </label>
 </div>
 
 <div class="preview">
@@ -276,6 +290,9 @@ h1{font-size:22px;margin:2px 0 8px;text-align:center}
 <script>
 const KEY = "juku_salary_slots_v1";
 const RATE_KEY = "juku_salary_rates_v1";
+const STUDY_KEY = "salary_calendar_study_v1";
+const STUDY_HOURLY = 1500;
+const STUDY_TRANSPORT = 420;
 const DEFAULT_RATES = [
   { start:"2000-01-01", lesson:2026, daily:513, transport:420 }
 ];
@@ -283,11 +300,14 @@ const SLOTS = ["X","Y","Z","A","B","C","D"];
 
 let data = JSON.parse(localStorage.getItem(KEY) || "{}");
 let rates = JSON.parse(localStorage.getItem(RATE_KEY) || "null") || DEFAULT_RATES;
+let studyData = JSON.parse(localStorage.getItem(STUDY_KEY) || "{}");
 let view = new Date();
 view = new Date(view.getFullYear(), view.getMonth(), 1);
 
 let selected = null;
 let tempSlots = [];
+let tempStudy = false;
+let tempStudyHours = 2;
 let pickerYear = view.getFullYear();
 
 function money(n){ return n.toLocaleString("ja-JP") + "円"; }
@@ -305,6 +325,13 @@ function dayPay(c, date){
   if(c <= 0) return 0;
   const r = getRate(date);
   return r.lesson * c + r.daily + r.transport;
+}
+function getStudyHours(date){
+  const h = Number(studyData[date]);
+  return Number.isFinite(h) && h > 0 ? h : 0;
+}
+function studyPay(hours){
+  return hours > 0 ? STUDY_HOURLY * hours + STUDY_TRANSPORT : 0;
 }
 
 function getSlots(date){
@@ -337,6 +364,7 @@ function renderCalendar(){
     const key = keyOf(y,m,d);
     const slots = getSlots(key);
     const c = slots.length;
+    const studyHours = getStudyHours(key);
 
     const btn = document.createElement("button");
     btn.className = "day";
@@ -349,8 +377,11 @@ function renderCalendar(){
     const shift = c > 0
       ? `<span class="entry">${slots.join("・")}<br>${money(dayPay(c,key))}</span>`
       : "";
+    const study = studyHours > 0
+      ? `<span class="entry">勉強会 ${studyHours}h<br>${money(studyPay(studyHours))}</span>`
+      : "";
 
-    btn.innerHTML = `<span class="daynum">${d}</span>${payday}${shift}`;
+    btn.innerHTML = `<span class="daynum">${d}</span>${payday}${shift}${study}`;
     if(selected === key){
       btn.classList.add("selected-day");
       btn.dataset.selected = "true";
@@ -377,29 +408,44 @@ function renderSummary(){
   const m = view.getMonth();
   const prefix = `${y}-${pad(m+1)}-`;
 
-  let total=0, days=0, lessons=0;
+  let total=0, days=0, lessons=0, studyHoursTotal=0;
+  const workedDates = new Set();
 
   for(const [date,slots] of Object.entries(data)){
     if(!date.startsWith(prefix) || !Array.isArray(slots) || slots.length===0) continue;
-    days++;
+    workedDates.add(date);
     lessons += slots.length;
     total += dayPay(slots.length,date);
   }
 
+  for(const [date,value] of Object.entries(studyData)){
+    if(!date.startsWith(prefix)) continue;
+    const hours = Number(value);
+    if(!Number.isFinite(hours) || hours <= 0) continue;
+    workedDates.add(date);
+    studyHoursTotal += hours;
+    total += studyPay(hours);
+  }
+
+  days = workedDates.size;
   document.getElementById("total").textContent = money(total);
   document.getElementById("daysCount").textContent = days;
   document.getElementById("lessonCount").textContent = lessons;
+  document.getElementById("studyHoursCount").textContent = studyHoursTotal.toLocaleString("ja-JP");
 }
 
 function selectDay(key){
   selected = key;
   tempSlots = [...getSlots(key)];
+  tempStudyHours = getStudyHours(key) || 2;
+  tempStudy = getStudyHours(key) > 0;
 
   document.getElementById("selected").textContent =
     selected.replaceAll("-","/") + " のコマを選択";
 
   renderCalendar();
   renderSlotButtons();
+  renderStudyControls();
   renderDayPreview();
 }
 
@@ -423,11 +469,39 @@ function renderSlotButtons(){
   });
 }
 
+function toggleStudy(){
+  if(!selected) return;
+  tempStudy = !tempStudy;
+  if(tempStudy && (!Number.isFinite(tempStudyHours) || tempStudyHours <= 0)) tempStudyHours = 2;
+  renderStudyControls();
+  renderDayPreview();
+}
+
+function updateStudyHours(value){
+  const h = Number(value);
+  tempStudyHours = Number.isFinite(h) && h > 0 ? h : 0;
+  if(tempStudyHours > 0) tempStudy = true;
+  renderStudyControls();
+  renderDayPreview();
+}
+
+function renderStudyControls(){
+  const btn = document.getElementById("studyToggle");
+  const wrap = document.getElementById("studyHoursWrap");
+  const input = document.getElementById("studyHours");
+  if(btn) btn.classList.toggle("active", tempStudy);
+  if(wrap) wrap.classList.toggle("active", tempStudy);
+  if(input && document.activeElement !== input) input.value = tempStudyHours || 2;
+}
+
 function renderDayPreview(){
   const c = tempSlots.length;
-  document.getElementById("selectedSlots").textContent =
-    c === 0 ? "0コマ選択" : `${tempSlots.join("・")}　${c}コマ`;
-  document.getElementById("dayPay").textContent = money(dayPay(c, selected || "9999-12-31"));
+  const hours = tempStudy ? tempStudyHours : 0;
+  const parts = [];
+  if(c > 0) parts.push(`${tempSlots.join("・")}　${c}コマ`);
+  if(hours > 0) parts.push(`勉強会 ${hours}時間`);
+  document.getElementById("selectedSlots").textContent = parts.length ? parts.join(" ＋ ") : "勤務なし";
+  document.getElementById("dayPay").textContent = money(dayPay(c, selected || "9999-12-31") + studyPay(hours));
 }
 
 function save(){
@@ -439,7 +513,14 @@ function save(){
     delete data[selected];
   }
 
+  if(tempStudy && tempStudyHours > 0){
+    studyData[selected] = tempStudyHours;
+  }else{
+    delete studyData[selected];
+  }
+
   localStorage.setItem(KEY, JSON.stringify(data));
+  localStorage.setItem(STUDY_KEY, JSON.stringify(studyData));
   renderCalendar();
 }
 
@@ -447,10 +528,15 @@ function clearDay(){
   if(!selected) return;
 
   delete data[selected];
+  delete studyData[selected];
   tempSlots = [];
+  tempStudy = false;
+  tempStudyHours = 2;
   localStorage.setItem(KEY, JSON.stringify(data));
+  localStorage.setItem(STUDY_KEY, JSON.stringify(studyData));
 
   renderSlotButtons();
+  renderStudyControls();
   renderDayPreview();
   renderCalendar();
 }
@@ -496,9 +582,11 @@ function renderMonthPicker(){
       view = new Date(pickerYear, m, 1);
       selected = null;
       tempSlots = [];
+      tempStudy = false; tempStudyHours = 2;
       document.getElementById("selected").textContent = "日付をタップ";
       renderCalendar();
       renderSlotButtons();
+      renderStudyControls();
       renderDayPreview();
       closeMonthPicker();
     });
@@ -512,10 +600,12 @@ function moveMonth(diff){
   view = new Date(view.getFullYear(), view.getMonth()+diff, 1);
   selected = null;
   tempSlots = [];
+  tempStudy = false; tempStudyHours = 2;
 
   document.getElementById("selected").textContent = "日付をタップ";
   renderCalendar();
   renderSlotButtons();
+  renderStudyControls();
   renderDayPreview();
 }
 
@@ -523,7 +613,7 @@ function moveMonth(diff){
 
 
 function exportBackup(){
-  const backup={app:"salary-calendar",version:1,exportedAt:new Date().toISOString(),shifts:data,rates:rates};
+  const backup={app:"salary-calendar",version:2,exportedAt:new Date().toISOString(),shifts:data,rates:rates,study:studyData};
   const blob=new Blob([JSON.stringify(backup,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");
@@ -547,11 +637,13 @@ function importBackup(event){
       if(!backup||backup.app!=="salary-calendar"||typeof backup.shifts!=="object"||!Array.isArray(backup.rates)) throw new Error();
       data=backup.shifts||{};
       rates=backup.rates.length?backup.rates:DEFAULT_RATES;
+      studyData=(backup.study && typeof backup.study==="object") ? backup.study : {};
       localStorage.setItem(KEY,JSON.stringify(data));
       localStorage.setItem(RATE_KEY,JSON.stringify(rates));
-      selected=null; tempSlots=[];
+      localStorage.setItem(STUDY_KEY,JSON.stringify(studyData));
+      selected=null; tempSlots=[]; tempStudy=false; tempStudyHours=2;
       document.getElementById("selected").textContent="日付をタップ";
-      renderRates(); renderCalendar(); renderSlotButtons(); renderDayPreview();
+      renderRates(); renderCalendar(); renderSlotButtons(); renderStudyControls(); renderDayPreview();
       alert("バックアップを復元しました");
     }catch(e){
       alert("このバックアップファイルは読み込めません");
@@ -607,7 +699,7 @@ function renderRates(){
   const r = getRate(k);
   const summary = document.getElementById("rateSummary");
   if(summary){
-    summary.textContent = `現在の単価：1コマ ${money(r.lesson)} ＋ 日次手当 ${money(r.daily)} ＋ 交通費 ${money(r.transport)}`;
+    summary.textContent = `塾：1コマ ${money(r.lesson)} ＋ 日次手当 ${money(r.daily)} ＋ 交通費 ${money(r.transport)} ／ 勉強会：時給 ${money(STUDY_HOURLY)} ＋ 交通費 ${money(STUDY_TRANSPORT)}`;
   }
 }
 
@@ -643,6 +735,7 @@ function deleteRate(index){
 renderRates();
 renderCalendar();
 renderSlotButtons();
+renderStudyControls();
 renderDayPreview();
 </script>
 </body>
