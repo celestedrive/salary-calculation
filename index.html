@@ -2249,21 +2249,35 @@ function renderDayTimeline(key){
   if(!items.length) return `<span class="day-timeline"></span>`;
 
   const sorted=[...items].sort((a,b)=>a.startMin-b.startMin || a.endMin-b.endMin);
+  const placed=[];
   const bands=[];
 
   for(const item of sorted){
-    // 0:00〜24:00 をそのままセル内の縦位置へ対応させる。
-    // 帯が上下にはみ出さないよう、使用範囲は 2%〜78% に圧縮。
-    const baseTop=2+(item.startMin/1440)*76;
+    let top=2+(item.startMin/1440)*76;
+    let left=0;
 
-    // _col は「実際に時間が重なっている予定」にだけ付く。
-    // 重なる場合のみ少し右・下へずらす。
-    const overlapIndex=item._col || 0;
-    const left=Math.min(overlapIndex*6,18);
-    const top=Math.min(80,baseTop+overlapIndex*3);
+    // 表示帯そのものが重ならないように調整。
+    // 時刻位置は基準として維持しつつ、直前の帯と近すぎる場合だけ下へ逃がす。
+    // 24px帯 + 余白を、day-timeline内のおよそ18%として確保。
+    const minGapPct=18;
+    for(const prev of placed){
+      if(Math.abs(top-prev.top) < minGapPct){
+        top=prev.top+minGapPct;
+      }
+    }
 
+    // 下端を超える場合は、既存帯と重ならない位置を上方向から探す。
+    if(top>78){
+      top=78;
+      for(let candidate=78;candidate>=2;candidate-=minGapPct){
+        const collision=placed.some(prev=>Math.abs(candidate-prev.top)<minGapPct);
+        if(!collision){ top=candidate; break; }
+      }
+    }
+
+    placed.push({top});
     bands.push(
-      `<span class="time-band" style="top:${top.toFixed(2)}%;bottom:auto;left:${left}px;right:1px;width:auto;z-index:${20+overlapIndex}">`+
+      `<span class="time-band" style="top:${top.toFixed(2)}%;bottom:auto;left:${left}px;right:1px;width:auto;z-index:20">`+
       `<span class="time-band-name">${escapeHtml(item.name)}</span>`+
       `<span class="time-band-time">${escapeHtml(item.time)}</span></span>`
     );
