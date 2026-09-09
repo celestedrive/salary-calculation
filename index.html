@@ -771,6 +771,100 @@ html,body{
   color:#f9fafb;
 }
 
+
+/* FINAL: 予定カレンダーは左ページ。これまでの予定側レイアウトを優先 */
+#planPanel{
+  padding:0 4px 18px !important;
+  width:100% !important;
+  max-width:100% !important;
+  min-width:100% !important;
+  box-sizing:border-box !important;
+}
+#planPanel .calendar{
+  width:100% !important;
+  max-width:none !important;
+  min-width:0 !important;
+  border-radius:0 !important;
+  overflow:hidden !important;
+}
+#planPanel .week,
+#planPanel .grid{
+  display:grid !important;
+  grid-template-columns:repeat(7,minmax(0,1fr)) !important;
+  width:100% !important;
+  min-width:0 !important;
+}
+#planPanel .day,
+#planPanel .blank{
+  min-width:0 !important;
+  width:auto !important;
+  height:clamp(92px,15.2vh,145px) !important;
+  min-height:92px !important;
+  box-sizing:border-box !important;
+}
+#planPanel .day{
+  position:relative !important;
+  display:block !important;
+  text-align:left !important;
+  padding:22px 3px 3px !important;
+  overflow:hidden !important;
+}
+#planPanel .daynum{
+  position:absolute !important;
+  top:5px !important;
+  left:5px !important;
+  right:auto !important;
+  bottom:auto !important;
+  transform:none !important;
+  margin:0 !important;
+  padding:0 !important;
+  width:auto !important;
+  height:auto !important;
+  font-size:12px !important;
+  line-height:1 !important;
+  z-index:2 !important;
+}
+#planPanel .plan-entry{
+  display:block !important;
+  width:100% !important;
+  max-width:100% !important;
+  margin:0 0 5px 0 !important;
+  padding:0 !important;
+  white-space:normal !important;
+  overflow:hidden !important;
+}
+#planPanel .plan-name{
+  display:block !important;
+  width:100% !important;
+  font-size:9px !important;
+  line-height:1.12 !important;
+  font-weight:700 !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+#planPanel .plan-time{
+  display:block !important;
+  width:100% !important;
+  padding-left:.45em !important;
+  box-sizing:border-box !important;
+  font-size:6.5px !important;
+  line-height:1.08 !important;
+  letter-spacing:-.55px !important;
+  white-space:nowrap !important;
+  overflow:visible !important;
+}
+@media(max-width:480px){
+  #planPanel .day,#planPanel .blank{
+    height:clamp(90px,14.5vh,125px) !important;
+    min-height:90px !important;
+  }
+  #planPanel .day{padding:20px 2px 3px !important}
+  #planPanel .daynum{top:4px !important;left:4px !important;font-size:11px !important}
+  #planPanel .plan-name{font-size:9px !important}
+  #planPanel .plan-time{font-size:6.5px !important}
+}
+
 </style>
 </head>
 <body>
@@ -1702,7 +1796,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   const syncPagerMode=()=>{
     cancelAnimationFrame(raf);
     raf=requestAnimationFrame(()=>{
-      const onPlan=pager.scrollLeft > pager.clientWidth/2;
+      const onPlan=pager.scrollLeft < pager.clientWidth/2;
       document.body.classList.toggle("plan-mode",onPlan);
       if(onPlan) renderPlanCalendar();
     });
@@ -1749,6 +1843,15 @@ function closePlanMonthPicker(){
 function closePlanMonthPickerFromBackdrop(event){
   if(event.target===event.currentTarget)closePlanMonthPicker();
 }
+
+
+document.addEventListener("DOMContentLoaded",()=>{
+  planView=new Date(view.getFullYear(),view.getMonth(),1);
+  renderPlanCalendar();
+  document.body.classList.add("plan-mode");
+  const pager=document.getElementById("calendarPager");
+  if(pager) pager.scrollLeft=0;
+});
 
 </script>
 </body>
