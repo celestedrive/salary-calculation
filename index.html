@@ -260,6 +260,38 @@ body.plan-mode #planPanel .controls{display:none}
   body.plan-mode #planPanel .plan-entry{font-size:9px;letter-spacing:-.2px}
 }
 
+
+/* 予定カレンダー：長い予定文字列で7列幅が崩れないよう固定 */
+body.plan-mode #planPanel .week,
+body.plan-mode #planPanel .grid{
+  grid-template-columns:repeat(7,minmax(0,1fr));
+  width:100%;
+  min-width:0;
+}
+body.plan-mode #planPanel .day,
+body.plan-mode #planPanel .blank{
+  min-width:0;
+  width:auto;
+  overflow:hidden;
+  box-sizing:border-box;
+}
+body.plan-mode #planPanel .plan-entry{
+  display:block;
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+body.plan-mode #planPanel .calendar,
+body.plan-mode #planPanel{
+  min-width:0;
+  max-width:100%;
+  overflow:hidden;
+  box-sizing:border-box;
+}
+
 </style>
 </head>
 <body>
