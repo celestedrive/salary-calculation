@@ -229,8 +229,20 @@ body.plan-mode #planPanel .day,
 body.plan-mode #planPanel .blank{min-height:72px;padding:5px}
 body.plan-mode #planPanel .daynum{font-size:13px}
 body.plan-mode #planPanel .plan-entry{font-size:10px;margin-top:3px}
-body.plan-mode #planPanel .controls{border-radius:0;margin-top:8px;padding:12px}
+body.plan-mode #planPanel .controls{display:none}
+.plan-modal-backdrop{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.64)}
+.plan-modal-backdrop.open{display:flex}
+.plan-modal{width:min(520px,100%);max-height:calc(100% - 20px);overflow:auto;background:#1f2937;border:1px solid #374151;border-radius:18px;padding:14px;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+.plan-modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.plan-modal-date{font-size:18px;font-weight:900}
+.plan-modal-close{width:40px;height:40px;border:0;border-radius:10px;background:#374151;color:#f9fafb;font-size:24px;line-height:1}
+.plan-modal .plan-info{margin:8px 0 10px}
+.plan-modal .plan-form{margin-top:0}
+.plan-modal .plan-form textarea{min-height:110px}
 @media (max-width:480px){
+  .plan-modal-backdrop{padding:10px}
+  .plan-modal{padding:12px;border-radius:16px}
+
   body.plan-mode #planPanel .day,
   body.plan-mode #planPanel .blank{min-height:68px;padding:4px}
   body.plan-mode #planPanel .daynum{font-size:12px}
@@ -328,23 +340,29 @@ body.plan-mode #planPanel .controls{border-radius:0;margin-top:8px;padding:12px}
   <div class="week"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>
   <div class="grid" id="planGrid"></div>
 </div>
-<div class="controls">
-  <div id="planSelected">日付をタップ</div>
-  <div class="plan-info" id="planWorkInfo">
-    <div class="plan-info-row"><span class="plan-info-label">塾</span><span id="planShiftInfo">なし</span></div>
-    <div class="plan-info-row"><span class="plan-info-label">勉強会</span><span id="planStudyInfo">なし</span></div>
-  </div>
-  <div class="plan-form">
-    <label>予定名<input id="planTitle" type="text" maxlength="60" placeholder="例：友達とご飯"></label>
-    <label>時間<input id="planTime" type="time"></label>
-    <label>メモ<textarea id="planMemo" maxlength="1000" placeholder="その日のメモ"></textarea></label>
-    <div class="plan-actions">
-      <button type="button" class="plan-save" onclick="savePlan()">保存</button>
-      <button type="button" class="plan-clear" onclick="clearPlan()">予定・メモを削除</button>
+</section>
+</div>
+
+<div class="plan-modal-backdrop" id="planModalBackdrop" onclick="closePlanModalFromBackdrop(event)">
+  <div class="plan-modal" role="dialog" aria-modal="true" aria-labelledby="planSelected">
+    <div class="plan-modal-head">
+      <div class="plan-modal-date" id="planSelected">日付</div>
+      <button type="button" class="plan-modal-close" onclick="closePlanModal()" aria-label="閉じる">×</button>
+    </div>
+    <div class="plan-info" id="planWorkInfo">
+      <div class="plan-info-row"><span class="plan-info-label">塾</span><span id="planShiftInfo">なし</span></div>
+      <div class="plan-info-row"><span class="plan-info-label">勉強会</span><span id="planStudyInfo">なし</span></div>
+    </div>
+    <div class="plan-form">
+      <label>予定名<input id="planTitle" type="text" maxlength="60" placeholder="例：友達とご飯"></label>
+      <label>時間<input id="planTime" type="time"></label>
+      <label>メモ<textarea id="planMemo" maxlength="1000" placeholder="その日のメモ"></textarea></label>
+      <div class="plan-actions">
+        <button type="button" class="plan-save" onclick="savePlan()">保存</button>
+        <button type="button" class="plan-clear" onclick="clearPlan()">予定・メモを削除</button>
+      </div>
     </div>
   </div>
-</div>
-</section>
 </div>
 
 
@@ -812,6 +830,7 @@ function deleteRate(index){
 
 function switchTab(tab){
   const salary = tab === "salary";
+  if(salary) closePlanModal();
   document.getElementById("salaryPanel").hidden = !salary;
   document.getElementById("planPanel").hidden = salary;
   document.getElementById("salaryTab").classList.toggle("active", salary);
@@ -868,6 +887,8 @@ function selectPlanDay(key){
   document.getElementById("planTime").value=plan.time||"";
   document.getElementById("planMemo").value=plan.memo||"";
   renderPlanCalendar();
+  document.getElementById("planModalBackdrop").classList.add("open");
+  document.body.style.overflow="hidden";
 }
 
 function savePlan(){
@@ -878,6 +899,7 @@ function savePlan(){
   if(title||time||memo)planData[planSelected]={title,time,memo}; else delete planData[planSelected];
   localStorage.setItem(PLAN_KEY,JSON.stringify(planData));
   renderPlanCalendar();
+  closePlanModal();
 }
 
 function clearPlan(){
@@ -888,6 +910,17 @@ function clearPlan(){
   document.getElementById("planTime").value="";
   document.getElementById("planMemo").value="";
   renderPlanCalendar();
+  closePlanModal();
+}
+
+function closePlanModal(){
+  const modal=document.getElementById("planModalBackdrop");
+  if(modal)modal.classList.remove("open");
+  document.body.style.overflow="";
+}
+
+function closePlanModalFromBackdrop(event){
+  if(event.target===event.currentTarget)closePlanModal();
 }
 
 function movePlanMonth(diff){
