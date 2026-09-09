@@ -433,6 +433,80 @@ body.plan-mode #planPanel .plan-entry{
   }
 }
 
+
+/* 予定カレンダー：スマホで月表示を画面いっぱい使う */
+body.plan-mode .wrap{
+  width:100% !important;
+  max-width:none !important;
+  padding-left:4px !important;
+  padding-right:4px !important;
+}
+body.plan-mode #planPanel{
+  width:100% !important;
+  max-width:none !important;
+}
+body.plan-mode #planPanel .calendar{
+  width:100% !important;
+  max-width:none !important;
+  border-radius:0 !important;
+}
+body.plan-mode #planPanel .grid{
+  grid-template-columns:repeat(7,minmax(0,1fr)) !important;
+}
+body.plan-mode #planPanel .day,
+body.plan-mode #planPanel .blank{
+  min-width:0 !important;
+  height:clamp(92px,15.2vh,145px) !important;
+  min-height:92px !important;
+  padding:5px 4px !important;
+  align-content:start !important;
+}
+body.plan-mode #planPanel .daynum{
+  font-size:13px !important;
+  line-height:1 !important;
+  margin-bottom:4px !important;
+}
+body.plan-mode #planPanel .plan-entry{
+  font-size:8px !important;
+  line-height:1.18 !important;
+  margin-top:2px !important;
+  -webkit-line-clamp:4 !important;
+}
+body.plan-mode #planPanel .week div{
+  font-size:11px !important;
+  padding:7px 0 !important;
+}
+@media (max-width:480px){
+  body.plan-mode #planPanel .day,
+  body.plan-mode #planPanel .blank{
+    height:clamp(90px,14.5vh,125px) !important;
+    min-height:90px !important;
+    padding:4px 3px !important;
+  }
+  body.plan-mode #planPanel .daynum{font-size:12px !important}
+  body.plan-mode #planPanel .plan-entry{font-size:7.5px !important}
+}
+
+
+/* 予定表示：予定名 → 改行 → 1文字分インデントした時間 */
+body.plan-mode #planPanel .plan-entry{
+  display:block !important;
+  white-space:normal !important;
+  -webkit-line-clamp:unset !important;
+}
+body.plan-mode #planPanel .plan-name{
+  display:block;
+  font-weight:700;
+  line-height:1.15;
+}
+body.plan-mode #planPanel .plan-time{
+  display:block;
+  padding-left:1em;
+  line-height:1.15;
+  white-space:nowrap;
+  font-weight:500;
+}
+
 </style>
 </head>
 <body>
@@ -478,8 +552,8 @@ body.plan-mode #planPanel .plan-entry{
 <div class="study-row">
   <button type="button" class="study-toggle" id="studyToggle" onclick="toggleStudy()">勉強会</button>
   <div class="study-settings" id="studySettings">
-    <label class="study-time"><span>開始</span><input id="studyStart" type="time" oninput="updateStudyTime()"></label>
-    <label class="study-time"><span>終了</span><input id="studyEnd" type="time" oninput="updateStudyTime()"></label>
+    <label class="study-time"><span>開始</span><input id="studyStart" type="time" oninput="updateStudyTime()" step="300"></label>
+    <label class="study-time"><span>終了</span><input id="studyEnd" type="time" oninput="updateStudyTime()" step="300" readonly></label>
     <label class="study-hours active" id="studyHoursWrap">
       <span>時間</span>
       <input id="studyHours" type="number" inputmode="decimal" min="0.5" step="0.5" value="2" oninput="updateStudyHours(this.value)">
@@ -545,8 +619,8 @@ body.plan-mode #planPanel .plan-entry{
     <div class="plan-form">
       <label>予定名<input id="planTitle" type="text" maxlength="60" placeholder="例：ご飯"></label>
       <div class="plan-time-row">
-        <label>開始時間<input id="planStart" type="time"></label>
-        <label>終了時間（任意）<input id="planEnd" type="time"></label>
+        <label>開始時間<input id="planStart" type="time" step="300"></label>
+        <label>終了時間（任意）<input id="planEnd" type="time" step="300"></label>
       </div>
       <button type="button" class="plan-add" id="planEventSaveButton" onclick="savePlanEvent()">＋ 予定を追加</button>
       <label>メモ<textarea id="planMemo" maxlength="1000" placeholder="その日のメモ"></textarea></label>
@@ -1313,6 +1387,41 @@ renderCalendar();
 renderSlotButtons();
 renderStudyControls();
 renderDayPreview();
+
+function updateStudyEndFromStart(){
+  const startEl=document.getElementById("studyStart");
+  const endEl=document.getElementById("studyEnd");
+  const hoursEl=document.getElementById("studyHours");
+  if(!startEl||!endEl||!hoursEl)return;
+  const start=startEl.value;
+  const hours=parseFloat(hoursEl.value||"0");
+  if(!start||!(hours>0)){endEl.value="";return;}
+  const parts=start.split(":").map(Number);
+  if(parts.length!==2||parts.some(Number.isNaN)){endEl.value="";return;}
+  let mins=parts[0]*60+parts[1]+Math.round(hours*60);
+  mins=((mins%1440)+1440)%1440;
+  endEl.value=String(Math.floor(mins/60)).padStart(2,"0")+":"+String(mins%60).padStart(2,"0");
+}
+document.addEventListener("DOMContentLoaded",()=>{
+  const startEl=document.getElementById("studyStart");
+  const hoursEl=document.getElementById("studyHours");
+  const endEl=document.getElementById("studyEnd");
+  if(startEl){
+    startEl.setAttribute("step","300");
+    startEl.addEventListener("input",updateStudyEndFromStart);
+    startEl.addEventListener("change",updateStudyEndFromStart);
+  }
+  if(hoursEl){
+    hoursEl.addEventListener("input",updateStudyEndFromStart);
+    hoursEl.addEventListener("change",updateStudyEndFromStart);
+  }
+  if(endEl){
+    endEl.readOnly=true;
+    endEl.tabIndex=-1;
+  }
+  updateStudyEndFromStart();
+});
+
 </script>
 </body>
 </html>
