@@ -217,6 +217,26 @@ h1{font-size:22px;margin:2px 0 8px;text-align:center}
 .plan-save{background:#f9fafb;color:#111827}.plan-clear{background:#374151;color:#f9fafb}
 .plan-entry{display:block;font-size:9px;margin-top:2px;font-weight:700;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#d1d5db}
 .memo-dot{display:inline-block;margin-left:3px;font-size:9px;color:#d1d5db}
+
+/* 予定カレンダー：画面いっぱい表示 */
+body.plan-mode .wrap{max-width:none;width:100%;padding:0 0 18px}
+body.plan-mode .tabs{margin:6px 7px 8px}
+body.plan-mode #planPanel>h1{margin:4px 0 8px}
+body.plan-mode #planPanel .calendar{border-radius:0;width:100%}
+body.plan-mode #planPanel .head{padding:9px 10px}
+body.plan-mode #planPanel .week div{padding:6px 0;font-size:12px}
+body.plan-mode #planPanel .day,
+body.plan-mode #planPanel .blank{min-height:72px;padding:5px}
+body.plan-mode #planPanel .daynum{font-size:13px}
+body.plan-mode #planPanel .plan-entry{font-size:10px;margin-top:3px}
+body.plan-mode #planPanel .controls{border-radius:0;margin-top:8px;padding:12px}
+@media (max-width:480px){
+  body.plan-mode #planPanel .day,
+  body.plan-mode #planPanel .blank{min-height:68px;padding:4px}
+  body.plan-mode #planPanel .daynum{font-size:12px}
+  body.plan-mode #planPanel .plan-entry{font-size:9px;letter-spacing:-.2px}
+}
+
 </style>
 </head>
 <body>
@@ -796,6 +816,7 @@ function switchTab(tab){
   document.getElementById("planPanel").hidden = salary;
   document.getElementById("salaryTab").classList.toggle("active", salary);
   document.getElementById("planTab").classList.toggle("active", !salary);
+  document.body.classList.toggle("plan-mode", !salary);
   if(!salary){
     planView = new Date(view.getFullYear(), view.getMonth(), 1);
     renderPlanCalendar();
