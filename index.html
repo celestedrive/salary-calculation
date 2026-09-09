@@ -1324,6 +1324,15 @@ html,body,.wrap,.calendar-pager{
   text-overflow:clip !important;
 }
 
+
+/* 曜日・祝日の色分け：日曜/祝日=赤、土曜=青 */
+.day.holiday-date .daynum{
+  color:#ff5f67 !important;
+}
+.day.saturday-date .daynum{
+  color:#5aa7ff !important;
+}
+
 </style>
 </head>
 <body>
@@ -1525,6 +1534,64 @@ let planView = new Date(view.getFullYear(), view.getMonth(), 1);
 let planSelected = null;
 let editingPlanEventId = null;
 
+
+function nthWeekday(year,month,weekday,n){
+  const first=new Date(year,month-1,1);
+  return 1+((7+weekday-first.getDay())%7)+(n-1)*7;
+}
+function vernalEquinoxDay(y){ return Math.floor(20.8431+0.242194*(y-1980)-Math.floor((y-1980)/4)); }
+function autumnEquinoxDay(y){ return Math.floor(23.2488+0.242194*(y-1980)-Math.floor((y-1980)/4)); }
+function baseJapaneseHolidays(y){
+  const s=new Set();
+  const add=(m,d)=>s.add(`${y}-${pad(m)}-${pad(d)}`);
+  add(1,1);
+  if(y>=2000)add(1,nthWeekday(y,1,1,2));
+  if(y>=1967)add(2,11);
+  if(y>=2020)add(2,23);
+  add(3,vernalEquinoxDay(y));
+  add(4,29);
+  add(5,3); add(5,4); add(5,5);
+  if(y>=2003)add(7,nthWeekday(y,7,1,3));
+  if(y>=2016)add(8,11);
+  if(y>=2003)add(9,nthWeekday(y,9,1,3));
+  add(9,autumnEquinoxDay(y));
+  if(y>=2000)add(10,nthWeekday(y,10,1,2));
+  add(11,3); add(11,23);
+  return s;
+}
+function japaneseHolidaySet(y){
+  const s=baseJapaneseHolidays(y);
+  // 国民の休日：祝日に挟まれた平日
+  for(let d=new Date(y,0,2);d.getFullYear()===y;d.setDate(d.getDate()+1)){
+    const key=keyOf(y,d.getMonth(),d.getDate());
+    if(s.has(key))continue;
+    const prev=new Date(d);prev.setDate(prev.getDate()-1);
+    const next=new Date(d);next.setDate(next.getDate()+1);
+    const pk=keyOf(prev.getFullYear(),prev.getMonth(),prev.getDate());
+    const nk=keyOf(next.getFullYear(),next.getMonth(),next.getDate());
+    if(s.has(pk)&&s.has(nk))s.add(key);
+  }
+  // 振替休日：日曜の祝日の次の非祝日
+  const originals=[...s];
+  for(const key of originals){
+    const [yy,mm,dd]=key.split("-").map(Number);
+    const d=new Date(yy,mm-1,dd);
+    if(d.getDay()!==0)continue;
+    const sub=new Date(d);
+    do{sub.setDate(sub.getDate()+1);}
+    while(s.has(keyOf(sub.getFullYear(),sub.getMonth(),sub.getDate())));
+    if(sub.getFullYear()===y)s.add(keyOf(y,sub.getMonth(),sub.getDate()));
+  }
+  return s;
+}
+function dayColorClass(y,m,d){
+  const dt=new Date(y,m,d);
+  const key=keyOf(y,m,d);
+  if(dt.getDay()===0 || japaneseHolidaySet(y).has(key)) return "holiday-date";
+  if(dt.getDay()===6) return "saturday-date";
+  return "";
+}
+
 function money(n){ return n.toLocaleString("ja-JP") + "円"; }
 function pad(n){ return String(n).padStart(2,"0"); }
 function keyOf(y,m,d){ return `${y}-${pad(m+1)}-${pad(d)}`; }
@@ -1601,6 +1668,8 @@ function renderCalendar(){
 
     const btn = document.createElement("button");
     btn.className = "day";
+    const dateColorClass=dayColorClass(y,m,d);
+    if(dateColorClass) btn.classList.add(dateColorClass);
 
     if(today.getFullYear()===y && today.getMonth()===m && today.getDate()===d){
       btn.classList.add("today");
@@ -2125,17 +2194,26 @@ function renderDayTimeline(key){
   const items=layoutTimedItems(getTimedCalendarItems(key));
   const bands=items.map(item=>{
     const hour=item.startMin/60;
-    const stagger=item._col;
+    const stagger=item._col; // _col > 0 only when the actual times overlap
     const left=Math.min(stagger*5,15);
-    const topOffset=stagger*3;
-    // 正確な24時間比率ではなく、朝・昼・夕方・夜が直感的に分かる4ゾーン表示。
-    let zoneTop;
-    if(hour < 11) zoneTop=4;          // 朝
-    else if(hour < 16) zoneTop=29;    // 昼
-    else if(hour < 20) zoneTop=54;    // 夕方
-    else zoneTop=76;                  // 夜
-    const top=`calc(${zoneTop}% + ${topOffset}px)`;
-    return `<span class="time-band" style="top:${top};bottom:auto;left:${left}px;right:1px;width:auto;z-index:${10+stagger}"><span class="time-band-name">${escapeHtml(item.name)}</span><span class="time-band-time">${escapeHtml(item.time)}</span></span>`;
+    const overlapOffset=stagger*3;
+
+    let zoneStart, zoneEnd, zoneTop, zoneSpan;
+    if(hour < 11){
+      zoneStart=0; zoneEnd=11; zoneTop=2; zoneSpan=20;
+    }else if(hour < 16){
+      zoneStart=11; zoneEnd=16; zoneTop=27; zoneSpan=20;
+    }else if(hour < 20){
+      zoneStart=16; zoneEnd=20; zoneTop=52; zoneSpan=18;
+    }else{
+      zoneStart=20; zoneEnd=24; zoneTop=74; zoneSpan=16;
+    }
+
+    // 同じ朝/昼/夕方/夜ゾーンでも、実際の開始時刻に応じて少し縦位置を変える。
+    // 本当に時間が重なる予定だけ overlapOffset で重ね表示する。
+    const progress=Math.max(0,Math.min(1,(hour-zoneStart)/(zoneEnd-zoneStart)));
+    const topPct=zoneTop+(progress*zoneSpan);
+    return `<span class="time-band" style="top:calc(${topPct.toFixed(2)}% + ${overlapOffset}px);bottom:auto;left:${left}px;right:1px;width:auto;z-index:${10+stagger}"><span class="time-band-name">${escapeHtml(item.name)}</span><span class="time-band-time">${escapeHtml(item.time)}</span></span>`;
   }).join("");
   return `<span class="day-timeline">${bands}</span>`;
 }
