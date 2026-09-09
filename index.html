@@ -1235,6 +1235,24 @@ html,body,.wrap,.calendar-pager{
   overflow:visible;
 }
 
+
+/* 24時の位置を固定高さの帯1個分だけ上に補正。
+   これで18時以降も時間差を保ったまま、最終帯が下にはみ出さない。 */
+#planPanel .day-timeline{
+  --timeline-band-height:24px;
+}
+@media (min-width:481px){
+  #planPanel .day-timeline{
+    --timeline-band-height:26px;
+  }
+}
+
+
+/* 月表示は正確な時間軸ではなく、朝・昼・夕方・夜の大まかな位置を優先 */
+#planPanel .day-timeline{
+  --timeline-band-height:24px;
+}
+
 </style>
 </head>
 <body>
@@ -2035,13 +2053,18 @@ function layoutTimedItems(items){
 function renderDayTimeline(key){
   const items=layoutTimedItems(getTimedCalendarItems(key));
   const bands=items.map(item=>{
-    const rawTop=(item.startMin/1440)*100;
+    const hour=item.startMin/60;
     const stagger=item._col;
     const left=Math.min(stagger*5,15);
     const topOffset=stagger*3;
-    // 重複しても横幅を分割せず、少し右・下へずらして重ねる。
-    const vertical = rawTop >= 76 ? `bottom:${topOffset}px;top:auto;` : `top:calc(${rawTop}% + ${topOffset}px);bottom:auto;`;
-    return `<span class="time-band" style="${vertical}left:${left}px;right:1px;width:auto;z-index:${10+stagger}"><span class="time-band-name">${escapeHtml(item.name)}</span><span class="time-band-time">${escapeHtml(item.time)}</span></span>`;
+    // 正確な24時間比率ではなく、朝・昼・夕方・夜が直感的に分かる4ゾーン表示。
+    let zoneTop;
+    if(hour < 11) zoneTop=4;          // 朝
+    else if(hour < 16) zoneTop=29;    // 昼
+    else if(hour < 20) zoneTop=54;    // 夕方
+    else zoneTop=76;                  // 夜
+    const top=`calc(${zoneTop}% + ${topOffset}px)`;
+    return `<span class="time-band" style="top:${top};bottom:auto;left:${left}px;right:1px;width:auto;z-index:${10+stagger}"><span class="time-band-name">${escapeHtml(item.name)}</span><span class="time-band-time">${escapeHtml(item.time)}</span></span>`;
   }).join("");
   return `<span class="day-timeline">${bands}</span>`;
 }
