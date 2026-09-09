@@ -1013,6 +1013,28 @@ html,body{
   box-sizing:border-box;
 }
 
+
+/* iPhoneの入力欄フォーカス時の自動ズーム防止 */
+input,
+select,
+textarea{
+  font-size:16px !important;
+}
+.plan-modal input,
+.plan-modal select,
+.plan-modal textarea,
+.rate-modal input,
+.rate-modal select,
+.rate-modal textarea,
+.study-settings input{
+  font-size:16px !important;
+}
+/* 横スワイプ画面自体の拡大縮小によるレイアウト残留を防ぐ */
+html,body,.wrap,.calendar-pager{
+  width:100% !important;
+  max-width:100% !important;
+}
+
 </style>
 </head>
 <body>
@@ -1332,7 +1354,8 @@ function renderSummary(){
 
   for(const [date,value] of Object.entries(studyData)){
     if(!date.startsWith(prefix)) continue;
-    const hours = Number(value);
+    const entry=getStudyEntry(date);
+    const hours=entry.hours;
     if(!Number.isFinite(hours) || hours <= 0) continue;
     workedDates.add(date);
     studyHoursTotal += hours;
@@ -1454,6 +1477,7 @@ function save(){
   localStorage.setItem(KEY, JSON.stringify(data));
   localStorage.setItem(STUDY_KEY, JSON.stringify(studyData));
   renderCalendar();
+  syncPlanCalendarFromSalary();
 }
 
 function clearDay(){
@@ -1473,6 +1497,7 @@ function clearDay(){
   renderStudyControls();
   renderDayPreview();
   renderCalendar();
+  syncPlanCalendarFromSalary();
 }
 
 
@@ -2014,6 +2039,28 @@ function closeRateModal(){
 function closeRateModalFromBackdrop(event){
   if(event.target===event.currentTarget)closeRateModal();
 }
+
+
+function syncPlanCalendarFromSalary(){
+  try{
+    data=JSON.parse(localStorage.getItem(KEY)||"{}");
+    studyData=JSON.parse(localStorage.getItem(STUDY_KEY)||"{}");
+  }catch(e){}
+  renderPlanCalendar();
+}
+
+
+document.addEventListener("DOMContentLoaded",()=>{
+  const pager=document.getElementById("calendarPager");
+  if(!pager)return;
+  let syncTimer=0;
+  pager.addEventListener("scroll",()=>{
+    clearTimeout(syncTimer);
+    syncTimer=setTimeout(()=>{
+      if(pager.scrollLeft < pager.clientWidth/2) syncPlanCalendarFromSalary();
+    },80);
+  },{passive:true});
+});
 
 </script>
 </body>
