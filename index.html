@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#111827">
-<title>給与カレンダー</title>
+<title>カレンダー</title>
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" type="image/png" href="icon.png">
 <style>
@@ -1035,6 +1035,47 @@ html,body,.wrap,.calendar-pager{
   max-width:100% !important;
 }
 
+
+/* 月表示の各日を内部的に0:00〜24:00として使うタイムライン */
+#planPanel .day{
+  isolation:isolate;
+}
+#planPanel .day-timeline{
+  position:absolute;
+  z-index:0;
+  top:20px;
+  left:1px;
+  right:1px;
+  bottom:1px;
+  overflow:hidden;
+  pointer-events:none;
+  border-radius:2px;
+}
+/* 24時間の計算位置にだけ予定帯を表示。時間ごとの罫線は出さない */
+#planPanel .time-band{
+  position:absolute;
+  min-height:2px;
+  border-radius:2px;
+  background:rgba(96,165,250,.30);
+  border-left:2px solid rgba(147,197,253,.9);
+  box-sizing:border-box;
+  overflow:hidden;
+}
+#planPanel .time-band-name{
+  display:none;
+}
+#planPanel .day-content{
+  position:relative;
+  z-index:1;
+  display:block;
+  pointer-events:none;
+}
+#planPanel .daynum,
+#planPanel .memo-dot{
+  z-index:2 !important;
+}
+/* 重なった予定はJSで同時間帯を横分割 */
+
 </style>
 </head>
 <body>
@@ -1774,6 +1815,65 @@ function getCalendarItems(key){
   return items.sort((a,b)=>sortStart(a.start).localeCompare(sortStart(b.start)));
 }
 
+
+function timeToMinutes(t){
+  if(!t || !/^\d{1,2}:\d{2}$/.test(t)) return null;
+  const [h,m]=t.split(":").map(Number);
+  if(!Number.isFinite(h)||!Number.isFinite(m)) return null;
+  return h*60+m;
+}
+function getTimedCalendarItems(key){
+  return getCalendarItems(key).map((item,idx)=>{
+    const start=timeToMinutes(item.start);
+    let end=null;
+    if(item.time && item.time.includes("-")){
+      const endText=item.time.split("-")[1];
+      end=timeToMinutes(endText);
+    }
+    // 終了未定は最低1時間の表示帯にする
+    if(start!==null && end===null) end=Math.min(start+60,1440);
+    if(start===null || end===null) return null;
+    if(end<=start) end=Math.min(start+60,1440);
+    return {...item,startMin:start,endMin:end,_idx:idx};
+  }).filter(Boolean);
+}
+function layoutTimedItems(items){
+  // Overlap groups, then assign columns within each group.
+  const sorted=[...items].sort((a,b)=>a.startMin-b.startMin || a.endMin-b.endMin);
+  let group=[], groupEnd=-1, result=[];
+  const flush=()=>{
+    if(!group.length)return;
+    const colEnds=[];
+    for(const it of group){
+      let col=colEnds.findIndex(e=>e<=it.startMin);
+      if(col<0){col=colEnds.length;colEnds.push(it.endMin);}
+      else colEnds[col]=it.endMin;
+      it._col=col;
+    }
+    const cols=Math.max(1,colEnds.length);
+    for(const it of group){it._cols=cols;result.push(it);}
+    group=[];
+  };
+  for(const it of sorted){
+    if(group.length && it.startMin>=groupEnd){flush();groupEnd=-1;}
+    group.push(it);
+    groupEnd=Math.max(groupEnd,it.endMin);
+  }
+  flush();
+  return result;
+}
+function renderDayTimeline(key){
+  const items=layoutTimedItems(getTimedCalendarItems(key));
+  const bands=items.map(item=>{
+    const top=(item.startMin/1440)*100;
+    const height=Math.max(((item.endMin-item.startMin)/1440)*100,2.6);
+    const width=100/item._cols;
+    const left=item._col*width;
+    return `<span class="time-band" style="top:${top}%;height:${height}%;left:${left}%;width:${width}%"><span class="time-band-name">${escapeHtml(item.name)}</span></span>`;
+  }).join("");
+  return `<span class="day-timeline">${bands}</span>`;
+}
+
 function renderPlanCalendar(){
   const y=planView.getFullYear(), m=planView.getMonth();
   document.getElementById("planMonthTitle").textContent=`${y}年${m+1}月`;
@@ -1790,7 +1890,7 @@ function renderPlanCalendar(){
     if(planSelected===key)btn.classList.add("selected-day");
     const entries=getCalendarItems(key).map(item=>`<span class="plan-entry"><span class="plan-name">${escapeHtml(item.name)}</span><span class="plan-time">${escapeHtml(item.time)}</span></span>`).join("");
     const memo=plan.memo?`<span class="memo-dot">●</span>`:"";
-    btn.innerHTML=`<span class="daynum">${d}</span>${memo}${entries}`;
+    btn.innerHTML=`${renderDayTimeline(key)}<span class="daynum">${d}</span>${memo}<span class="day-content">${entries}</span>`;
     btn.addEventListener("click",()=>selectPlanDay(key));
     grid.appendChild(btn);
   }
