@@ -599,6 +599,58 @@ body.plan-mode #planPanel .blank{
   }
 }
 
+
+/* 日付を各マスの左上へ物理的に固定 */
+body.plan-mode #planPanel .day{
+  position:relative !important;
+  display:block !important;
+  padding:22px 3px 3px !important;
+}
+body.plan-mode #planPanel .daynum{
+  position:absolute !important;
+  top:5px !important;
+  left:5px !important;
+  right:auto !important;
+  bottom:auto !important;
+  transform:none !important;
+  margin:0 !important;
+  padding:0 !important;
+  width:auto !important;
+  height:auto !important;
+  line-height:1 !important;
+  z-index:2;
+}
+body.plan-mode #planPanel .day.today .daynum{
+  top:3px !important;
+  left:3px !important;
+  margin:0 !important;
+}
+/* 予定は日付直下から開始 */
+body.plan-mode #planPanel .plan-entry:first-of-type{
+  margin-top:0 !important;
+}
+@media (max-width:480px){
+  body.plan-mode #planPanel .day{
+    padding:20px 2px 3px !important;
+  }
+  body.plan-mode #planPanel .daynum{
+    top:4px !important;
+    left:4px !important;
+  }
+}
+
+
+/* 予定名だけ少し大きく */
+body.plan-mode #planPanel .plan-name{
+  font-size:9.5px !important;
+  line-height:1.12 !important;
+}
+@media (max-width:480px){
+  body.plan-mode #planPanel .plan-name{
+    font-size:9px !important;
+  }
+}
+
 </style>
 </head>
 <body>
