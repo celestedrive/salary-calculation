@@ -1076,13 +1076,47 @@ html,body,.wrap,.calendar-pager{
 }
 /* 重なった予定はJSで同時間帯を横分割 */
 
+
+/* 予定帯の中に予定名・時間を表示 */
+#planPanel .time-band{
+  padding:1px 2px !important;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:flex-start;
+  line-height:1.05;
+}
+#planPanel .time-band-name{
+  display:block !important;
+  width:100%;
+  font-size:6.5px;
+  font-weight:800;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+#planPanel .time-band-time{
+  display:block;
+  width:100%;
+  margin-top:1px;
+  font-size:5.5px;
+  font-weight:600;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:clip;
+}
+/* 同じ情報の二重表示を避け、通常の予定一覧は非表示 */
+#planPanel .day-content{
+  display:none !important;
+}
+
 </style>
 </head>
 <body>
 <div class="wrap">
 <div class="calendar-pager" id="calendarPager">
 <section class="app-panel" id="planPanel">
-<h1>予定カレンダー</h1>
+<h1>カレンダー</h1>
 <div class="calendar">
   <div class="head">
     <button type="button" onclick="movePlanMonth(-1)">‹</button>
@@ -1869,7 +1903,7 @@ function renderDayTimeline(key){
     const height=Math.max(((item.endMin-item.startMin)/1440)*100,2.6);
     const width=100/item._cols;
     const left=item._col*width;
-    return `<span class="time-band" style="top:${top}%;height:${height}%;left:${left}%;width:${width}%"><span class="time-band-name">${escapeHtml(item.name)}</span></span>`;
+    return `<span class="time-band" style="top:${top}%;height:${height}%;left:${left}%;width:${width}%"><span class="time-band-name">${escapeHtml(item.name)}</span><span class="time-band-time">${escapeHtml(item.time)}</span></span>`;
   }).join("");
   return `<span class="day-timeline">${bands}</span>`;
 }
