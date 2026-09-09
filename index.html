@@ -651,14 +651,144 @@ body.plan-mode #planPanel .plan-name{
   }
 }
 
+
+/* 給与=左、予定=右。画面全体を横スワイプして切替 */
+html,body{
+  max-width:100%;
+  overflow-x:hidden;
+}
+.wrap{
+  width:100% !important;
+  max-width:none !important;
+  padding-left:0 !important;
+  padding-right:0 !important;
+}
+.calendar-pager{
+  display:flex;
+  width:100%;
+  max-width:100vw;
+  overflow-x:auto;
+  overflow-y:visible;
+  scroll-snap-type:x mandatory;
+  scroll-behavior:smooth;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  overscroll-behavior-x:contain;
+}
+.calendar-pager::-webkit-scrollbar{display:none}
+.calendar-pager > .app-panel{
+  display:block !important;
+  flex:0 0 100%;
+  width:100%;
+  min-width:100%;
+  max-width:100%;
+  box-sizing:border-box;
+  scroll-snap-align:start;
+  scroll-snap-stop:always;
+  overflow-x:hidden;
+}
+/* 左の給与画面は従来の読みやすい余白を維持 */
+#salaryPanel{
+  padding:0 12px 18px;
+}
+/* 右の予定画面は大画面月表示を維持 */
+#planPanel{
+  padding:0 4px 18px;
+}
+/* hidden属性が残っていてもページを消さない */
+.calendar-pager > .app-panel[hidden]{display:block !important}
+
+
+#planMonthTitle{
+  border:0;
+  background:transparent;
+  color:inherit;
+  cursor:pointer;
+}
+#planMonthPickerBackdrop{
+  position:fixed;
+  inset:0;
+  z-index:90;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  background:rgba(0,0,0,.64);
+}
+#planMonthPickerBackdrop.open{display:flex}
+#planMonthPickerBackdrop .month-modal{
+  width:min(360px,100%);
+  background:#1f2937;
+  border:1px solid #374151;
+  border-radius:18px;
+  padding:14px;
+  box-sizing:border-box;
+}
+#planMonthPickerBackdrop .month-modal-head{
+  display:grid;
+  grid-template-columns:44px 1fr 44px;
+  align-items:center;
+  gap:8px;
+  margin-bottom:12px;
+}
+#planMonthPickerBackdrop .month-modal-head button{
+  min-height:40px;
+  border:0;
+  border-radius:10px;
+  background:#374151;
+  color:#f9fafb;
+  font-size:22px;
+}
+#planMonthPickerBackdrop .month-modal-year{
+  text-align:center;
+  font-weight:800;
+  font-size:18px;
+}
+#planMonthPickerBackdrop .month-modal-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+}
+#planMonthPickerBackdrop .month-modal-grid button{
+  min-width:0;
+  padding:12px 4px;
+  border:1px solid #4b5563;
+  border-radius:10px;
+  background:#111827;
+  color:#f9fafb;
+}
+#planMonthPickerBackdrop .month-modal-grid button.active{
+  outline:2px solid #f9fafb;
+  font-weight:800;
+}
+#planMonthPickerBackdrop .month-modal-close-bottom{
+  width:100%;
+  margin-top:12px;
+  padding:11px;
+  border:0;
+  border-radius:10px;
+  background:#374151;
+  color:#f9fafb;
+}
+
 </style>
 </head>
 <body>
 <div class="wrap">
-<div class="tabs" role="tablist" aria-label="カレンダー切替">
-  <button type="button" class="tab-btn active" id="salaryTab" onclick="switchTab('salary')">給与カレンダー</button>
-  <button type="button" class="tab-btn" id="planTab" onclick="switchTab('plan')">予定カレンダー</button>
+<div class="calendar-pager" id="calendarPager">
+<section class="app-panel" id="planPanel">
+<h1>予定カレンダー</h1>
+<div class="calendar">
+  <div class="head">
+    <button type="button" onclick="movePlanMonth(-1)">‹</button>
+    <button class="month month-picker-btn" id="planMonthTitle" type="button" onclick="openPlanMonthPicker()"></button>
+    <button type="button" onclick="movePlanMonth(1)">›</button>
+  </div>
+  <div class="week"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>
+  <div class="grid" id="planGrid"></div>
 </div>
+</section>
+
 <section class="app-panel" id="salaryPanel">
 <h1>給与カレンダー</h1>
 
@@ -734,19 +864,20 @@ body.plan-mode #planPanel .plan-name{
 <div class="rate-note">勤務データと給与単価設定をJSONファイルに保存・復元できます。</div>
 </details>
 </section>
-
-<section class="app-panel" id="planPanel" hidden>
-<h1>予定カレンダー</h1>
-<div class="calendar">
-  <div class="head">
-    <button type="button" onclick="movePlanMonth(-1)">‹</button>
-    <div class="month" id="planMonthTitle"></div>
-    <button type="button" onclick="movePlanMonth(1)">›</button>
-  </div>
-  <div class="week"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>
-  <div class="grid" id="planGrid"></div>
 </div>
-</section>
+</div>
+
+
+<div class="month-modal-backdrop" id="planMonthPickerBackdrop" onclick="closePlanMonthPickerFromBackdrop(event)">
+  <div class="month-modal" role="dialog" aria-modal="true">
+    <div class="month-modal-head">
+      <button type="button" onclick="changePlanPickerYear(-1)">‹</button>
+      <div class="month-modal-year" id="planPickerYear"></div>
+      <button type="button" onclick="changePlanPickerYear(1)">›</button>
+    </div>
+    <div class="month-modal-grid" id="planMonthPickerGrid"></div>
+    <button type="button" class="month-modal-close-bottom" onclick="closePlanMonthPicker()">閉じる</button>
+  </div>
 </div>
 
 <div class="plan-modal-backdrop" id="planModalBackdrop" onclick="closePlanModalFromBackdrop(event)">
@@ -1284,17 +1415,14 @@ function deleteRate(index){
 }
 
 function switchTab(tab){
-  const salary = tab === "salary";
-  if(salary) closePlanModal();
-  document.getElementById("salaryPanel").hidden = !salary;
-  document.getElementById("planPanel").hidden = salary;
-  document.getElementById("salaryTab").classList.toggle("active", salary);
-  document.getElementById("planTab").classList.toggle("active", !salary);
-  document.body.classList.toggle("plan-mode", !salary);
-  if(!salary){
-    planView = new Date(view.getFullYear(), view.getMonth(), 1);
+  const pager=document.getElementById("calendarPager");
+  const target=tab==="plan" ? document.getElementById("planPanel") : document.getElementById("salaryPanel");
+  if(tab==="salary") closePlanModal();
+  if(tab==="plan"){
+    planView=new Date(view.getFullYear(),view.getMonth(),1);
     renderPlanCalendar();
   }
+  if(pager&&target)pager.scrollTo({left:target.offsetLeft,behavior:"smooth"});
 }
 
 const SLOT_TIMES = {
@@ -1565,6 +1693,62 @@ document.addEventListener("DOMContentLoaded",()=>{
   }
   updateStudyEndFromStart();
 });
+
+
+document.addEventListener("DOMContentLoaded",()=>{
+  const pager=document.getElementById("calendarPager");
+  if(!pager)return;
+  let raf=0;
+  const syncPagerMode=()=>{
+    cancelAnimationFrame(raf);
+    raf=requestAnimationFrame(()=>{
+      const onPlan=pager.scrollLeft > pager.clientWidth/2;
+      document.body.classList.toggle("plan-mode",onPlan);
+      if(onPlan) renderPlanCalendar();
+    });
+  };
+  pager.addEventListener("scroll",syncPagerMode,{passive:true});
+  document.body.classList.add("plan-mode");
+});
+
+
+let planPickerYear = planView.getFullYear();
+
+function openPlanMonthPicker(){
+  planPickerYear=planView.getFullYear();
+  renderPlanMonthPicker();
+  document.getElementById("planMonthPickerBackdrop").classList.add("open");
+  document.body.style.overflow="hidden";
+}
+function renderPlanMonthPicker(){
+  document.getElementById("planPickerYear").textContent=`${planPickerYear}年`;
+  const grid=document.getElementById("planMonthPickerGrid");
+  grid.innerHTML="";
+  for(let m=0;m<12;m++){
+    const b=document.createElement("button");
+    b.type="button";
+    b.textContent=`${m+1}月`;
+    if(planPickerYear===planView.getFullYear() && m===planView.getMonth()) b.classList.add("active");
+    b.onclick=()=>{
+      planView=new Date(planPickerYear,m,1);
+      renderPlanCalendar();
+      closePlanMonthPicker();
+    };
+    grid.appendChild(b);
+  }
+}
+function changePlanPickerYear(delta){
+  planPickerYear+=delta;
+  renderPlanMonthPicker();
+}
+function closePlanMonthPicker(){
+  const el=document.getElementById("planMonthPickerBackdrop");
+  if(el)el.classList.remove("open");
+  document.body.style.overflow="";
+}
+function closePlanMonthPickerFromBackdrop(event){
+  if(event.target===event.currentTarget)closePlanMonthPicker();
+}
 
 </script>
 </body>
