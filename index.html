@@ -375,6 +375,13 @@ body.plan-mode #planPanel .plan-entry{
   }
 }
 
+
+/* 予定編集ポップアップ：開始・終了時間入力が横にはみ出さない */
+.plan-modal,.plan-modal *{box-sizing:border-box}
+.plan-modal .plan-form,.plan-modal .plan-form label{min-width:0;max-width:100%}
+.plan-modal input,.plan-modal textarea,.plan-modal select{display:block;width:100%;min-width:0;max-width:100%;box-sizing:border-box}
+.plan-modal input[type="time"]{min-width:0;max-width:100%}
+
 </style>
 </head>
 <body>
