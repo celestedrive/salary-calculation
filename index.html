@@ -488,21 +488,26 @@ body.plan-mode #planPanel .week div{
 }
 
 
-/* 予定表示：予定名 → 改行 → 1文字分インデントした時間 */
+/* 予定名を先、時間を改行して1文字分下げる */
 body.plan-mode #planPanel .plan-entry{
   display:block !important;
   white-space:normal !important;
+  overflow:hidden !important;
   -webkit-line-clamp:unset !important;
+  margin-top:4px !important;
 }
 body.plan-mode #planPanel .plan-name{
-  display:block;
+  display:block !important;
   font-weight:700;
-  line-height:1.15;
+  line-height:1.1;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
 }
 body.plan-mode #planPanel .plan-time{
-  display:block;
+  display:block !important;
   padding-left:1em;
-  line-height:1.15;
+  line-height:1.1;
   white-space:nowrap;
   font-weight:500;
 }
@@ -1206,19 +1211,19 @@ function getCalendarItems(key){
   if(slots.length){
     const range=getShiftTimeRange(slots);
     const start=range.split("-")[0]||"";
-    items.push({start,text:`${range} 塾`});
+    items.push({start,name:"塾",time:range});
   }
   const hours=getStudyHours(key);
   if(hours>0){
     const range=getStudyTimeRange(key);
     const studyEntry=getStudyEntry(key);
-    if(range) items.push({start:studyEntry.start||"",text:`${range} 勉強会`});
-    else items.push({start:"",text:`時間未定 勉強会（${hours}h）`});
+    if(range) items.push({start:studyEntry.start||"",name:"勉強会",time:range});
+    else items.push({start:"",name:"勉強会",time:`時間未定（${hours}h）`});
   }
   const plan=getPlan(key);
   for(const e of plan.events){
     const title=e.title || "予定";
-    items.push({start:e.start||"",text:`${planTimeText(e.start,e.end)} ${title}`});
+    items.push({start:e.start||"",name:title,time:planTimeText(e.start,e.end)});
   }
   return items.sort((a,b)=>sortStart(a.start).localeCompare(sortStart(b.start)));
 }
@@ -1237,7 +1242,7 @@ function renderPlanCalendar(){
     const btn=document.createElement("button"); btn.type="button"; btn.className="day";
     if(today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===d)btn.classList.add("today");
     if(planSelected===key)btn.classList.add("selected-day");
-    const entries=getCalendarItems(key).map(item=>`<span class="plan-entry">${escapeHtml(item.text)}</span>`).join("");
+    const entries=getCalendarItems(key).map(item=>`<span class="plan-entry"><span class="plan-name">${escapeHtml(item.name)}</span><span class="plan-time">${escapeHtml(item.time)}</span></span>`).join("");
     const memo=plan.memo?`<span class="memo-dot">●</span>`:"";
     btn.innerHTML=`<span class="daynum">${d}</span>${memo}${entries}`;
     btn.addEventListener("click",()=>selectPlanDay(key));
