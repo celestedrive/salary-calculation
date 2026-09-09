@@ -1166,6 +1166,75 @@ html,body,.wrap,.calendar-pager{
   overflow:hidden !important;
 }
 
+
+/* 日付タップ後の拡大詳細 */
+.plan-detail-modal{
+  width:min(520px,calc(100vw - 20px)) !important;
+  max-height:calc(100dvh - 20px) !important;
+  overflow-y:auto !important;
+}
+.plan-detail-timeline{
+  display:grid;
+  grid-template-columns:22px 1fr;
+  height:310px;
+  margin:8px 12px 12px;
+  min-height:310px;
+}
+.detail-hours{
+  position:relative;
+  font-size:9px;
+  color:#9ca3af;
+}
+.detail-hours span{position:absolute;right:4px;transform:translateY(-50%)}
+.detail-hours span:nth-child(1){top:0;transform:none}
+.detail-hours span:nth-child(2){top:25%}
+.detail-hours span:nth-child(3){top:50%}
+.detail-hours span:nth-child(4){top:75%}
+.detail-hours span:nth-child(5){bottom:0;transform:none}
+.detail-track{
+  position:relative;
+  min-width:0;
+  border-left:1px solid #374151;
+  background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(25% - 1px),#263244 calc(25% - 1px),#263244 25%);
+  overflow:hidden;
+}
+.detail-band{
+  position:absolute;
+  box-sizing:border-box;
+  padding:3px 4px;
+  border-left:3px solid #93c5fd;
+  border-radius:4px;
+  background:rgba(96,165,250,.32);
+  overflow:hidden;
+  font-size:11px;
+  line-height:1.15;
+}
+.detail-band strong,.detail-band span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.detail-band span{font-size:9px;margin-top:2px}
+.plan-detail-memo{margin:8px 12px;font-size:12px;white-space:pre-wrap}
+.plan-open-editor{width:calc(100% - 24px)!important;margin:12px!important}
+.plan-editor-backdrop{z-index:180!important;background:rgba(0,0,0,.78)!important}
+.plan-editor-modal{width:min(500px,calc(100vw - 20px))!important;max-height:calc(100dvh - 20px)!important;overflow-y:auto!important}
+
+
+/* 重複予定は横分割せず、フル幅に近い帯を少しずつずらして重ねる */
+#planPanel .time-band{
+  max-width:calc(100% - 2px) !important;
+}
+.detail-band{
+  max-width:calc(100% - 4px) !important;
+}
+/* 詳細ポップアップの登録済み予定は必ず縦並びで全文確認 */
+.plan-detail-modal .plan-event-item{
+  align-items:center;
+}
+.plan-detail-modal .plan-event-text{
+  min-width:0;
+  flex:1 1 auto;
+  white-space:normal;
+  overflow:visible;
+}
+
 </style>
 </head>
 <body>
@@ -1288,16 +1357,28 @@ html,body,.wrap,.calendar-pager{
 </div>
 
 <div class="plan-modal-backdrop" id="planModalBackdrop" onclick="closePlanModalFromBackdrop(event)">
-  <div class="plan-modal" role="dialog" aria-modal="true" aria-labelledby="planSelected">
+  <div class="plan-modal plan-detail-modal" role="dialog" aria-modal="true" aria-labelledby="planSelected">
     <div class="plan-modal-head">
       <div class="plan-modal-date" id="planSelected">日付</div>
       <button type="button" class="plan-modal-close" onclick="closePlanModal()" aria-label="閉じる">×</button>
     </div>
+    <div class="plan-detail-timeline" id="planDetailTimeline"></div>
     <div class="plan-info" id="planWorkInfo">
       <div class="plan-info-row"><span class="plan-info-label">塾</span><span id="planShiftInfo">なし</span></div>
       <div class="plan-info-row"><span class="plan-info-label">勉強会</span><span id="planStudyInfo">なし</span></div>
     </div>
     <div class="plan-event-list" id="planEventList"></div>
+    <div class="plan-detail-memo" id="planMemoPreview"></div>
+    <button type="button" class="plan-add plan-open-editor" onclick="openPlanEditorForAdd()">＋ 予定を追加</button>
+  </div>
+</div>
+
+<div class="plan-modal-backdrop plan-editor-backdrop" id="planEditorBackdrop" onclick="closePlanEditorFromBackdrop(event)">
+  <div class="plan-modal plan-editor-modal" role="dialog" aria-modal="true" aria-labelledby="planEditorTitle">
+    <div class="plan-modal-head">
+      <div class="plan-modal-date" id="planEditorTitle">予定を追加</div>
+      <button type="button" class="plan-modal-close" onclick="closePlanEditor()" aria-label="閉じる">×</button>
+    </div>
     <div class="plan-form">
       <label>予定名<input id="planTitle" type="text" maxlength="60" placeholder="例：ご飯"></label>
       <div class="plan-time-row">
@@ -1313,7 +1394,6 @@ html,body,.wrap,.calendar-pager{
     </div>
   </div>
 </div>
-
 
 <div class="month-picker-backdrop" id="monthPickerBackdrop" onclick="closeMonthPickerFromBackdrop(event)">
   <div class="month-picker">
@@ -1956,11 +2036,12 @@ function renderDayTimeline(key){
   const items=layoutTimedItems(getTimedCalendarItems(key));
   const bands=items.map(item=>{
     const rawTop=(item.startMin/1440)*100;
-    const width=100/item._cols;
-    const left=item._col*width;
-    // 下端付近はbottom:0で固定し、固定高さの帯全体を必ずマス内に収める。
-    const vertical = rawTop >= 76 ? `bottom:0;top:auto;` : `top:${rawTop}%;bottom:auto;`;
-    return `<span class="time-band" style="${vertical}left:${left}%;width:${width}%"><span class="time-band-name">${escapeHtml(item.name)}</span><span class="time-band-time">${escapeHtml(item.time)}</span></span>`;
+    const stagger=item._col;
+    const left=Math.min(stagger*5,15);
+    const topOffset=stagger*3;
+    // 重複しても横幅を分割せず、少し右・下へずらして重ねる。
+    const vertical = rawTop >= 76 ? `bottom:${topOffset}px;top:auto;` : `top:calc(${rawTop}% + ${topOffset}px);bottom:auto;`;
+    return `<span class="time-band" style="${vertical}left:${left}px;right:1px;width:auto;z-index:${10+stagger}"><span class="time-band-name">${escapeHtml(item.name)}</span><span class="time-band-time">${escapeHtml(item.time)}</span></span>`;
   }).join("");
   return `<span class="day-timeline">${bands}</span>`;
 }
@@ -2002,9 +2083,8 @@ function renderPlanEventList(){
     return;
   }
   const sorted=[...plan.events].sort((a,b)=>sortStart(a.start).localeCompare(sortStart(b.start)));
-  list.innerHTML=sorted.map(e=>`<div class="plan-event-item"><div class="plan-event-text">${escapeHtml(planTimeText(e.start,e.end))} ${escapeHtml(e.title||"予定")}</div><button type="button" class="plan-event-edit" data-id="${escapeHtml(e.id)}">編集</button><button type="button" class="plan-event-delete" data-id="${escapeHtml(e.id)}">削除</button></div>`).join("");
-  list.querySelectorAll(".plan-event-edit").forEach(btn=>btn.addEventListener("click",()=>editPlanEvent(btn.dataset.id)));
-  list.querySelectorAll(".plan-event-delete").forEach(btn=>btn.addEventListener("click",()=>deletePlanEvent(btn.dataset.id)));
+  list.innerHTML=sorted.map(e=>`<div class="plan-event-item"><div class="plan-event-text"><strong>${escapeHtml(e.title||"予定")}</strong><br>${escapeHtml(planTimeText(e.start,e.end))}</div><button type="button" class="plan-event-edit" data-id="${escapeHtml(e.id)}">変更</button></div>`).join("");
+  list.querySelectorAll(".plan-event-edit").forEach(btn=>btn.addEventListener("click",()=>openPlanEditorForEdit(btn.dataset.id)));
 }
 
 function selectPlanDay(key){
@@ -2014,12 +2094,10 @@ function selectPlanDay(key){
   document.getElementById("planShiftInfo").textContent=slots.length?`${getShiftTimeRange(slots)}（${slots.join("・")}・${slots.length}コマ）`:"なし";
   const studyRange=getStudyTimeRange(key);
   document.getElementById("planStudyInfo").textContent=hours>0?(studyRange?`${studyRange}（${hours}時間）`:`${hours}時間`):"なし";
-  resetPlanEventEditor();
-  document.getElementById("planMemo").value=plan.memo||"";
+  document.getElementById("planMemoPreview").textContent=plan.memo?`メモ：${plan.memo}`:"";
   renderPlanEventList();
-  renderPlanCalendar();
+  renderPlanDetailTimeline();
   document.getElementById("planModalBackdrop").classList.add("open");
-  document.body.style.overflow="hidden";
 }
 
 function persistPlan(date, plan){
@@ -2071,6 +2149,9 @@ function savePlanEvent(){
   resetPlanEventEditor();
   renderPlanEventList();
   renderPlanCalendar();
+  renderPlanDetailTimeline();
+  document.getElementById("planMemoPreview").textContent=getPlan(planSelected).memo?`メモ：${getPlan(planSelected).memo}`:"";
+  closePlanEditor();
 }
 
 function deletePlanEvent(id){
@@ -2103,6 +2184,42 @@ function clearPlanDay(){
   closePlanModal();
 }
 
+
+function renderPlanDetailTimeline(){
+  const box=document.getElementById("planDetailTimeline");
+  if(!box||!planSelected)return;
+  const items=layoutTimedItems(getTimedCalendarItems(planSelected));
+  box.innerHTML='<div class="detail-hours"><span>0</span><span>6</span><span>12</span><span>18</span><span>24</span></div><div class="detail-track">'+
+    items.map(item=>{
+      const top=(item.startMin/1440)*100;
+      const h=Math.max(((item.endMin-item.startMin)/1440)*100,5);
+      const stagger=item._col;
+      const left=Math.min(stagger*7,21);
+      const topOffset=stagger*4;
+      return `<div class="detail-band" style="top:calc(${top}% + ${topOffset}px);height:${h}%;left:${left}px;right:4px;width:auto;z-index:${10+stagger}"><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.time)}</span></div>`;
+    }).join("")+'</div>';
+}
+function openPlanEditorForAdd(){
+  resetPlanEventEditor();
+  const plan=getPlan(planSelected);
+  document.getElementById("planMemo").value=plan.memo||"";
+  document.getElementById("planEditorTitle").textContent="予定を追加";
+  document.getElementById("planEditorBackdrop").classList.add("open");
+}
+function openPlanEditorForEdit(id){
+  editPlanEvent(id);
+  const plan=getPlan(planSelected);
+  document.getElementById("planMemo").value=plan.memo||"";
+  document.getElementById("planEditorTitle").textContent="予定を変更";
+  document.getElementById("planEditorBackdrop").classList.add("open");
+}
+function closePlanEditor(){
+  document.getElementById("planEditorBackdrop")?.classList.remove("open");
+  resetPlanEventEditor();
+}
+function closePlanEditorFromBackdrop(event){
+  if(event.target===event.currentTarget)closePlanEditor();
+}
 function closePlanModal(){
   const modal=document.getElementById("planModalBackdrop");
   if(modal)modal.classList.remove("open");
