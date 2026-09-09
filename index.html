@@ -382,6 +382,57 @@ body.plan-mode #planPanel .plan-entry{
 .plan-modal input,.plan-modal textarea,.plan-modal select{display:block;width:100%;min-width:0;max-width:100%;box-sizing:border-box}
 .plan-modal input[type="time"]{min-width:0;max-width:100%}
 
+
+/* iPhone: 時刻入力の横はみ出し対策 */
+.plan-modal-backdrop{
+  box-sizing:border-box !important;
+  width:100vw !important;
+  max-width:100vw !important;
+}
+.plan-modal{
+  box-sizing:border-box !important;
+  width:calc(100vw - 20px) !important;
+  max-width:520px !important;
+  min-width:0 !important;
+  overflow-x:hidden !important;
+}
+.plan-modal .plan-form,
+.plan-modal .plan-form label,
+.plan-modal .plan-form > *{
+  box-sizing:border-box !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:100% !important;
+}
+.plan-modal input,
+.plan-modal textarea,
+.plan-modal select{
+  box-sizing:border-box !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:100% !important;
+}
+.plan-modal input[type="time"]{
+  display:block !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:100% !important;
+  -webkit-appearance:none;
+  appearance:none;
+}
+.plan-modal input[type="time"]::-webkit-date-and-time-value{
+  text-align:left;
+  min-width:0;
+}
+@media (max-width:480px){
+  .plan-modal-backdrop{padding:8px !important}
+  .plan-modal{
+    width:calc(100vw - 16px) !important;
+    max-width:calc(100vw - 16px) !important;
+    padding:12px !important;
+  }
+}
+
 </style>
 </head>
 <body>
