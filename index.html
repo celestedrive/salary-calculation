@@ -2249,37 +2249,26 @@ function renderDayTimeline(key){
   if(!items.length) return `<span class="day-timeline"></span>`;
 
   const sorted=[...items].sort((a,b)=>a.startMin-b.startMin || a.endMin-b.endMin);
+  const bands=[];
 
-  // Transitive overlap groups: only events whose real time ranges overlap share a row.
-  const groups=[];
   for(const item of sorted){
-    const last=groups[groups.length-1];
-    if(last && item.startMin < last.endMin){
-      last.items.push(item);
-      last.endMin=Math.max(last.endMin,item.endMin);
-    }else{
-      groups.push({startMin:item.startMin,endMin:item.endMin,items:[item]});
-    }
+    // 0:00〜24:00 をそのままセル内の縦位置へ対応させる。
+    // 帯が上下にはみ出さないよう、使用範囲は 2%〜78% に圧縮。
+    const baseTop=2+(item.startMin/1440)*76;
+
+    // _col は「実際に時間が重なっている予定」にだけ付く。
+    // 重なる場合のみ少し右・下へずらす。
+    const overlapIndex=item._col || 0;
+    const left=Math.min(overlapIndex*6,18);
+    const top=Math.min(80,baseTop+overlapIndex*3);
+
+    bands.push(
+      `<span class="time-band" style="top:${top.toFixed(2)}%;bottom:auto;left:${left}px;right:1px;width:auto;z-index:${20+overlapIndex}">`+
+      `<span class="time-band-name">${escapeHtml(item.name)}</span>`+
+      `<span class="time-band-time">${escapeHtml(item.time)}</span></span>`
+    );
   }
 
-  // Place chronological rows through the full usable height of the day cell.
-  // This avoids the previous "everything at the top" effect.
-  const n=groups.length;
-  const topMin=4, topMax=76;
-  const bands=[];
-  groups.forEach((group,row)=>{
-    const baseTop=n===1 ? 38 : topMin+(topMax-topMin)*(row/(n-1));
-    group.items.forEach((item,i)=>{
-      // Actual overlaps are staggered horizontally/down slightly; unrelated events never share baseTop.
-      const left=Math.min(i*6,18);
-      const top=baseTop+Math.min(i*3,9);
-      bands.push(
-        `<span class="time-band" style="top:${top.toFixed(2)}%;bottom:auto;left:${left}px;right:1px;width:auto;z-index:${20+i}">`+
-        `<span class="time-band-name">${escapeHtml(item.name)}</span>`+
-        `<span class="time-band-time">${escapeHtml(item.time)}</span></span>`
-      );
-    });
-  });
   return `<span class="day-timeline">${bands.join("")}</span>`;
 }
 
