@@ -1140,6 +1140,25 @@ html,body,.wrap,.calendar-pager{
   }
 }
 
+
+/* 全予定の帯を同じ高さに固定し、日付マスからの見切れを防止 */
+#planPanel .day-timeline{
+  overflow:hidden !important;
+}
+#planPanel .time-band{
+  height:24px !important;
+  min-height:24px !important;
+  max-height:24px !important;
+  bottom:auto !important;
+}
+@media (min-width:481px){
+  #planPanel .time-band{
+    height:26px !important;
+    min-height:26px !important;
+    max-height:26px !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1929,11 +1948,12 @@ function layoutTimedItems(items){
 function renderDayTimeline(key){
   const items=layoutTimedItems(getTimedCalendarItems(key));
   const bands=items.map(item=>{
-    const top=(item.startMin/1440)*100;
-    const height=Math.max(((item.endMin-item.startMin)/1440)*100,2.6);
+    const rawTop=(item.startMin/1440)*100;
+    // 帯は全予定で同じ高さ。23時台でも下端からはみ出さない位置に制限する。
+    const top=Math.min(rawTop,82);
     const width=100/item._cols;
     const left=item._col*width;
-    return `<span class="time-band" style="top:${top}%;height:${height}%;left:${left}%;width:${width}%"><span class="time-band-name">${escapeHtml(item.name)}</span><span class="time-band-time">${escapeHtml(item.time)}</span></span>`;
+    return `<span class="time-band" style="top:${top}%;left:${left}%;width:${width}%"><span class="time-band-name">${escapeHtml(item.name)}</span><span class="time-band-time">${escapeHtml(item.time)}</span></span>`;
   }).join("");
   return `<span class="day-timeline">${bands}</span>`;
 }
