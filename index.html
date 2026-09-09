@@ -1361,6 +1361,32 @@ html,body,.wrap,.calendar-pager{
   color:#9ca3af;
 }
 
+
+/* 最終指定：予定/給与カレンダー共通の曜日・祝日色 */
+#planPanel .day.holiday-date .daynum,
+#salaryPanel .day.holiday-date .daynum,
+.day.holiday-date .daynum{
+  color:#ff5f67 !important;
+}
+#planPanel .day.saturday-date .daynum,
+#salaryPanel .day.saturday-date .daynum,
+.day.saturday-date .daynum{
+  color:#5aa7ff !important;
+}
+
+/* 月表示の予定帯：行の高さを固定し、帯同士の視覚的な侵入を抑える */
+#planPanel .day-timeline{
+  position:absolute !important;
+  inset:22px 2px 2px 2px !important;
+  overflow:hidden !important;
+}
+#planPanel .time-band{
+  height:24px !important;
+  min-height:24px !important;
+  max-height:24px !important;
+  box-sizing:border-box !important;
+}
+
 </style>
 </head>
 <body>
@@ -2222,38 +2248,38 @@ function renderDayTimeline(key){
   const items=layoutTimedItems(getTimedCalendarItems(key));
   if(!items.length) return `<span class="day-timeline"></span>`;
 
-  // 月表示では「時刻の正確な縮尺」より、各予定が読めて区別できることを優先。
-  // 実際に時間が重なる予定だけ同じ行で少しずらし、
-  // 重ならない予定は開始時刻順に別の行へ置く。
-  const groups=[];
   const sorted=[...items].sort((a,b)=>a.startMin-b.startMin || a.endMin-b.endMin);
+
+  // Transitive overlap groups: only events whose real time ranges overlap share a row.
+  const groups=[];
   for(const item of sorted){
-    let group=groups.find(g=>item.startMin < g.endMin && item.endMin > g.startMin);
-    if(!group){
-      group={startMin:item.startMin,endMin:item.endMin,items:[]};
-      groups.push(group);
+    const last=groups[groups.length-1];
+    if(last && item.startMin < last.endMin){
+      last.items.push(item);
+      last.endMin=Math.max(last.endMin,item.endMin);
     }else{
-      group.startMin=Math.min(group.startMin,item.startMin);
-      group.endMin=Math.max(group.endMin,item.endMin);
+      groups.push({startMin:item.startMin,endMin:item.endMin,items:[item]});
     }
-    group.items.push(item);
   }
 
-  // 最大4行程度に均等配置。予定数が多い日は行間を自動で詰める。
-  const rowCount=Math.max(1,groups.length);
-  const usableTop=3, usableBottom=78;
-  const step=rowCount===1 ? 0 : (usableBottom-usableTop)/(rowCount-1);
-
+  // Place chronological rows through the full usable height of the day cell.
+  // This avoids the previous "everything at the top" effect.
+  const n=groups.length;
+  const topMin=4, topMax=76;
   const bands=[];
   groups.forEach((group,row)=>{
-    group.items.sort((a,b)=>a.startMin-b.startMin);
-    group.items.forEach((item,overlapIndex)=>{
-      const left=Math.min(overlapIndex*5,15);
-      const y=usableTop+(row*step)+(overlapIndex*3);
-      bands.push(`<span class="time-band" style="top:${y.toFixed(2)}%;bottom:auto;left:${left}px;right:1px;width:auto;z-index:${10+overlapIndex}"><span class="time-band-name">${escapeHtml(item.name)}</span><span class="time-band-time">${escapeHtml(item.time)}</span></span>`);
+    const baseTop=n===1 ? 38 : topMin+(topMax-topMin)*(row/(n-1));
+    group.items.forEach((item,i)=>{
+      // Actual overlaps are staggered horizontally/down slightly; unrelated events never share baseTop.
+      const left=Math.min(i*6,18);
+      const top=baseTop+Math.min(i*3,9);
+      bands.push(
+        `<span class="time-band" style="top:${top.toFixed(2)}%;bottom:auto;left:${left}px;right:1px;width:auto;z-index:${20+i}">`+
+        `<span class="time-band-name">${escapeHtml(item.name)}</span>`+
+        `<span class="time-band-time">${escapeHtml(item.time)}</span></span>`
+      );
     });
   });
-
   return `<span class="day-timeline">${bands.join("")}</span>`;
 }
 
@@ -2269,6 +2295,8 @@ function renderPlanCalendar(){
   for(let d=1;d<=lastDate;d++){
     const key=keyOf(y,m,d), plan=getPlan(key);
     const btn=document.createElement("button"); btn.type="button"; btn.className="day";
+    const planDateColorClass=dayColorClass(y,m,d);
+    if(planDateColorClass) btn.classList.add(planDateColorClass);
     if(today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===d)btn.classList.add("today");
     if(planSelected===key)btn.classList.add("selected-day");
     const entries=getCalendarItems(key).map(item=>`<span class="plan-entry"><span class="plan-name">${escapeHtml(item.name)}</span><span class="plan-time">${escapeHtml(item.time)}</span></span>`).join("");
