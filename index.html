@@ -292,6 +292,89 @@ body.plan-mode #planPanel{
   box-sizing:border-box;
 }
 
+
+/* 両カレンダー共通：7列の幅を内容に左右されないよう固定 */
+.calendar .week,
+.calendar .grid{
+  grid-template-columns:repeat(7,minmax(0,1fr)) !important;
+  width:100%;
+  min-width:0;
+}
+.calendar .day,
+.calendar .blank{
+  min-width:0 !important;
+  width:auto !important;
+  overflow:hidden;
+  box-sizing:border-box;
+}
+
+/* 給与カレンダーも長い内容で横幅を押し広げない */
+#salaryPanel,
+#salaryPanel .calendar{
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  box-sizing:border-box;
+  overflow:hidden;
+}
+#salaryPanel .day{
+  min-width:0;
+  overflow:hidden;
+}
+
+/* 日付マス内の情報量を増やすため文字を小さくする */
+#salaryPanel .day,
+#planPanel .day{
+  font-size:10px;
+}
+#salaryPanel .daynum,
+#planPanel .daynum{
+  font-size:12px;
+  line-height:1.05;
+}
+#salaryPanel .day .sub,
+#salaryPanel .day .slots,
+#salaryPanel .day .study,
+#salaryPanel .day .amount,
+#planPanel .plan-entry{
+  font-size:8.5px !important;
+  line-height:1.15 !important;
+  letter-spacing:-.25px;
+  max-width:100%;
+}
+
+/* 予定は省略記号で1行だけにせず、マス内で最大3行まで見せる */
+body.plan-mode #planPanel .plan-entry{
+  white-space:normal !important;
+  overflow:hidden;
+  text-overflow:clip;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:3;
+}
+
+/* 給与側の文字もマス内で折り返して情報を残す */
+#salaryPanel .day *{
+  max-width:100%;
+  overflow-wrap:anywhere;
+}
+@media (max-width:480px){
+  #salaryPanel .day,
+  #planPanel .day{font-size:9px}
+  #salaryPanel .daynum,
+  #planPanel .daynum{font-size:11px}
+  #salaryPanel .day .sub,
+  #salaryPanel .day .slots,
+  #salaryPanel .day .study,
+  #salaryPanel .day .amount,
+  #planPanel .plan-entry{
+    font-size:7.5px !important;
+    line-height:1.12 !important;
+  }
+}
+
 </style>
 </head>
 <body>
