@@ -1333,6 +1333,34 @@ html,body,.wrap,.calendar-pager{
   color:#5aa7ff !important;
 }
 
+
+/* 日付詳細ポップアップのメモ表示 */
+.plan-detail-memo{
+  margin:10px 12px !important;
+  padding:10px !important;
+  border:1px solid #374151;
+  border-radius:10px;
+  background:#172033;
+  box-sizing:border-box;
+}
+.plan-memo-title{
+  margin-bottom:5px;
+  font-size:11px;
+  font-weight:800;
+  color:#d1d5db;
+}
+.plan-memo-text{
+  font-size:12px;
+  line-height:1.45;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+.plan-memo-empty{
+  font-size:12px;
+  color:#9ca3af;
+}
+
 </style>
 </head>
 <body>
@@ -1484,7 +1512,7 @@ html,body,.wrap,.calendar-pager{
         <label>終了時間（任意）<input id="planEnd" type="time" step="300"></label>
       </div>
       <button type="button" class="plan-add" id="planEventSaveButton" onclick="savePlanEvent()">＋ 予定を追加</button>
-      <label>メモ<textarea id="planMemo" maxlength="1000" placeholder="その日のメモ"></textarea></label>
+      <label>メモ<textarea id="planMemo" maxlength="120" placeholder="その日のメモ（120文字まで）"></textarea></label>
       <div class="plan-actions">
         <button type="button" class="plan-save" onclick="savePlanMemo()">メモを保存</button>
         <button type="button" class="plan-clear" onclick="clearPlanDay()">この日の予定・メモを削除</button>
@@ -2192,30 +2220,41 @@ function layoutTimedItems(items){
 }
 function renderDayTimeline(key){
   const items=layoutTimedItems(getTimedCalendarItems(key));
-  const bands=items.map(item=>{
-    const hour=item.startMin/60;
-    const stagger=item._col; // _col > 0 only when the actual times overlap
-    const left=Math.min(stagger*5,15);
-    const overlapOffset=stagger*3;
+  if(!items.length) return `<span class="day-timeline"></span>`;
 
-    let zoneStart, zoneEnd, zoneTop, zoneSpan;
-    if(hour < 11){
-      zoneStart=0; zoneEnd=11; zoneTop=2; zoneSpan=20;
-    }else if(hour < 16){
-      zoneStart=11; zoneEnd=16; zoneTop=27; zoneSpan=20;
-    }else if(hour < 20){
-      zoneStart=16; zoneEnd=20; zoneTop=52; zoneSpan=18;
+  // 月表示では「時刻の正確な縮尺」より、各予定が読めて区別できることを優先。
+  // 実際に時間が重なる予定だけ同じ行で少しずらし、
+  // 重ならない予定は開始時刻順に別の行へ置く。
+  const groups=[];
+  const sorted=[...items].sort((a,b)=>a.startMin-b.startMin || a.endMin-b.endMin);
+  for(const item of sorted){
+    let group=groups.find(g=>item.startMin < g.endMin && item.endMin > g.startMin);
+    if(!group){
+      group={startMin:item.startMin,endMin:item.endMin,items:[]};
+      groups.push(group);
     }else{
-      zoneStart=20; zoneEnd=24; zoneTop=74; zoneSpan=16;
+      group.startMin=Math.min(group.startMin,item.startMin);
+      group.endMin=Math.max(group.endMin,item.endMin);
     }
+    group.items.push(item);
+  }
 
-    // 同じ朝/昼/夕方/夜ゾーンでも、実際の開始時刻に応じて少し縦位置を変える。
-    // 本当に時間が重なる予定だけ overlapOffset で重ね表示する。
-    const progress=Math.max(0,Math.min(1,(hour-zoneStart)/(zoneEnd-zoneStart)));
-    const topPct=zoneTop+(progress*zoneSpan);
-    return `<span class="time-band" style="top:calc(${topPct.toFixed(2)}% + ${overlapOffset}px);bottom:auto;left:${left}px;right:1px;width:auto;z-index:${10+stagger}"><span class="time-band-name">${escapeHtml(item.name)}</span><span class="time-band-time">${escapeHtml(item.time)}</span></span>`;
-  }).join("");
-  return `<span class="day-timeline">${bands}</span>`;
+  // 最大4行程度に均等配置。予定数が多い日は行間を自動で詰める。
+  const rowCount=Math.max(1,groups.length);
+  const usableTop=3, usableBottom=78;
+  const step=rowCount===1 ? 0 : (usableBottom-usableTop)/(rowCount-1);
+
+  const bands=[];
+  groups.forEach((group,row)=>{
+    group.items.sort((a,b)=>a.startMin-b.startMin);
+    group.items.forEach((item,overlapIndex)=>{
+      const left=Math.min(overlapIndex*5,15);
+      const y=usableTop+(row*step)+(overlapIndex*3);
+      bands.push(`<span class="time-band" style="top:${y.toFixed(2)}%;bottom:auto;left:${left}px;right:1px;width:auto;z-index:${10+overlapIndex}"><span class="time-band-name">${escapeHtml(item.name)}</span><span class="time-band-time">${escapeHtml(item.time)}</span></span>`);
+    });
+  });
+
+  return `<span class="day-timeline">${bands.join("")}</span>`;
 }
 
 function renderPlanCalendar(){
@@ -2266,7 +2305,10 @@ function selectPlanDay(key){
   document.getElementById("planShiftInfo").textContent=slots.length?`${getShiftTimeRange(slots)}（${slots.join("・")}・${slots.length}コマ）`:"なし";
   const studyRange=getStudyTimeRange(key);
   document.getElementById("planStudyInfo").textContent=hours>0?(studyRange?`${studyRange}（${hours}時間）`:`${hours}時間`):"なし";
-  document.getElementById("planMemoPreview").textContent=plan.memo?`メモ：${plan.memo}`:"";
+  const memoText=(plan.memo||"").slice(0,120);
+  document.getElementById("planMemoPreview").innerHTML=memoText
+    ? `<div class="plan-memo-title">メモ</div><div class="plan-memo-text">${escapeHtml(memoText)}</div>`
+    : `<div class="plan-memo-title">メモ</div><div class="plan-memo-empty">なし</div>`;
   renderPlanEventList();
   renderPlanDetailTimeline();
   document.getElementById("planModalBackdrop").classList.add("open");
@@ -2322,7 +2364,10 @@ function savePlanEvent(){
   renderPlanEventList();
   renderPlanCalendar();
   renderPlanDetailTimeline();
-  document.getElementById("planMemoPreview").textContent=getPlan(planSelected).memo?`メモ：${getPlan(planSelected).memo}`:"";
+  const savedMemo=(getPlan(planSelected).memo||"").slice(0,120);
+  document.getElementById("planMemoPreview").innerHTML=savedMemo
+    ? `<div class="plan-memo-title">メモ</div><div class="plan-memo-text">${escapeHtml(savedMemo)}</div>`
+    : `<div class="plan-memo-title">メモ</div><div class="plan-memo-empty">なし</div>`;
   closePlanEditor();
 }
 
