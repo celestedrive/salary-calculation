@@ -611,7 +611,6 @@ body.plan-mode #planPanel .daynum{
   top:5px !important;
   left:5px !important;
   right:auto !important;
-  bottom:auto !important;
   transform:none !important;
   margin:0 !important;
   padding:0 !important;
@@ -814,7 +813,6 @@ html,body{
   top:5px !important;
   left:5px !important;
   right:auto !important;
-  bottom:auto !important;
   transform:none !important;
   margin:0 !important;
   padding:0 !important;
@@ -1149,7 +1147,6 @@ html,body,.wrap,.calendar-pager{
   height:24px !important;
   min-height:24px !important;
   max-height:24px !important;
-  bottom:auto !important;
 }
 @media (min-width:481px){
   #planPanel .time-band{
@@ -1157,6 +1154,16 @@ html,body,.wrap,.calendar-pager{
     min-height:26px !important;
     max-height:26px !important;
   }
+}
+
+
+#planPanel .day-timeline{
+  box-sizing:border-box !important;
+  contain:layout paint !important;
+}
+#planPanel .time-band{
+  box-sizing:border-box !important;
+  overflow:hidden !important;
 }
 
 </style>
@@ -1949,11 +1956,11 @@ function renderDayTimeline(key){
   const items=layoutTimedItems(getTimedCalendarItems(key));
   const bands=items.map(item=>{
     const rawTop=(item.startMin/1440)*100;
-    // 帯は全予定で同じ高さ。23時台でも下端からはみ出さない位置に制限する。
-    const top=Math.min(rawTop,82);
     const width=100/item._cols;
     const left=item._col*width;
-    return `<span class="time-band" style="top:${top}%;left:${left}%;width:${width}%"><span class="time-band-name">${escapeHtml(item.name)}</span><span class="time-band-time">${escapeHtml(item.time)}</span></span>`;
+    // 下端付近はbottom:0で固定し、固定高さの帯全体を必ずマス内に収める。
+    const vertical = rawTop >= 76 ? `bottom:0;top:auto;` : `top:${rawTop}%;bottom:auto;`;
+    return `<span class="time-band" style="${vertical}left:${left}%;width:${width}%"><span class="time-band-name">${escapeHtml(item.name)}</span><span class="time-band-time">${escapeHtml(item.time)}</span></span>`;
   }).join("");
   return `<span class="day-timeline">${bands}</span>`;
 }
