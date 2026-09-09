@@ -935,6 +935,84 @@ html,body{
   overscroll-behavior:none !important;
 }
 
+
+.rate-settings-open{
+  display:block;
+  width:100%;
+  margin:10px 0 0;
+  padding:11px 12px;
+  border:1px solid #374151;
+  border-radius:12px;
+  background:#1f2937;
+  color:#f9fafb;
+  font-weight:700;
+}
+.rate-modal-backdrop{
+  position:fixed;
+  inset:0;
+  z-index:120;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:10px;
+  background:rgba(0,0,0,.68);
+  box-sizing:border-box;
+}
+.rate-modal-backdrop.open{display:flex}
+.rate-modal{
+  width:min(560px,calc(100vw - 20px));
+  max-width:calc(100vw - 20px);
+  max-height:calc(100dvh - 20px);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  box-sizing:border-box;
+  border:1px solid #374151;
+  border-radius:18px;
+  background:#111827;
+  color:#f9fafb;
+  box-shadow:0 18px 50px rgba(0,0,0,.4);
+}
+.rate-modal-head{
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:12px 14px;
+  border-bottom:1px solid #374151;
+  font-size:17px;
+  font-weight:800;
+}
+.rate-modal-close{
+  width:38px;
+  height:38px;
+  flex:0 0 38px;
+  border:0;
+  border-radius:10px;
+  background:#374151;
+  color:#f9fafb;
+  font-size:24px;
+  line-height:1;
+}
+.rate-modal-body{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding:12px;
+  box-sizing:border-box;
+  -webkit-overflow-scrolling:touch;
+}
+.rate-modal-body #rateList,
+.rate-modal-body .rate-row,
+.rate-modal-body input,
+.rate-modal-body button,
+.rate-modal-body label{
+  max-width:100%;
+  box-sizing:border-box;
+}
+
 </style>
 </head>
 <body>
@@ -1012,8 +1090,21 @@ html,body{
 <div class="note" id="rateSummary"></div>
 </div>
 
-<details class="settings-panel">
-<summary>給与単価の設定</summary>
+<button type="button" class="rate-settings-open" onclick="openRateModal()">給与単価の設定</button>
+</section>
+</div>
+</div>
+
+
+
+<div class="rate-modal-backdrop" id="rateModalBackdrop" onclick="closeRateModalFromBackdrop(event)">
+  <div class="rate-modal" role="dialog" aria-modal="true" aria-labelledby="rateModalTitle">
+    <div class="rate-modal-head">
+      <div id="rateModalTitle">給与単価の設定</div>
+      <button type="button" class="rate-modal-close" onclick="closeRateModal()" aria-label="閉じる">×</button>
+    </div>
+    <div class="rate-modal-body">
+      
 <div id="rateList"></div>
 <button class="rate-add" onclick="addRate()">＋ 単価を追加</button>
 <div class="rate-note">
@@ -1026,11 +1117,10 @@ html,body{
   </label>
 </div>
 <div class="rate-note">勤務データと給与単価設定をJSONファイルに保存・復元できます。</div>
-</details>
-</section>
-</div>
-</div>
 
+    </div>
+  </div>
+</div>
 
 <div class="month-modal-backdrop" id="planMonthPickerBackdrop" onclick="closePlanMonthPickerFromBackdrop(event)">
   <div class="month-modal" role="dialog" aria-modal="true">
@@ -1911,6 +2001,19 @@ document.addEventListener("DOMContentLoaded",()=>{
   const pager=document.getElementById("calendarPager");
   if(pager) pager.scrollLeft=0;
 });
+
+
+function openRateModal(){
+  const el=document.getElementById("rateModalBackdrop");
+  if(el)el.classList.add("open");
+}
+function closeRateModal(){
+  const el=document.getElementById("rateModalBackdrop");
+  if(el)el.classList.remove("open");
+}
+function closeRateModalFromBackdrop(event){
+  if(event.target===event.currentTarget)closeRateModal();
+}
 
 </script>
 </body>
