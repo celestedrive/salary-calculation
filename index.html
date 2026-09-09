@@ -1110,6 +1110,36 @@ html,body,.wrap,.calendar-pager{
   display:none !important;
 }
 
+
+/* 月表示では実時間比率のままだと短時間予定が読めないため、
+   位置は24時間基準のまま、帯には文字が読める最低高さを確保 */
+#planPanel .time-band{
+  min-height:26px !important;
+  padding:3px 3px !important;
+  z-index:1;
+}
+#planPanel .time-band-name{
+  font-size:9px !important;
+  line-height:1.05 !important;
+}
+#planPanel .time-band-time{
+  font-size:7.5px !important;
+  line-height:1.05 !important;
+  margin-top:2px !important;
+}
+@media (max-width:480px){
+  #planPanel .time-band{
+    min-height:24px !important;
+    padding:2px 2px !important;
+  }
+  #planPanel .time-band-name{
+    font-size:8.5px !important;
+  }
+  #planPanel .time-band-time{
+    font-size:7px !important;
+  }
+}
+
 </style>
 </head>
 <body>
