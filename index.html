@@ -512,6 +512,93 @@ body.plan-mode #planPanel .plan-time{
   font-weight:500;
 }
 
+
+/* 予定カレンダー：日付をマス上端へ固定し、予定表示領域を最大化 */
+body.plan-mode #planPanel .day{
+  position:relative !important;
+  display:block !important;
+  text-align:left !important;
+  align-content:unset !important;
+  justify-content:unset !important;
+  padding:5px 3px 4px !important;
+  overflow:hidden !important;
+}
+body.plan-mode #planPanel .daynum{
+  position:static !important;
+  display:block !important;
+  width:max-content;
+  margin:0 0 5px 0 !important;
+  padding:0 !important;
+  line-height:1 !important;
+  text-align:left !important;
+}
+
+/* 今日の日付の丸も上端のまま */
+body.plan-mode #planPanel .day.today .daynum{
+  margin-bottom:5px !important;
+}
+
+/* 1件ごとの予定をコンパクトにして、時間を見切れさせない */
+body.plan-mode #planPanel .plan-entry{
+  display:block !important;
+  width:100% !important;
+  max-width:100% !important;
+  margin:0 0 5px 0 !important;
+  padding:0 !important;
+  overflow:visible !important;
+  white-space:normal !important;
+}
+body.plan-mode #planPanel .plan-name{
+  display:block !important;
+  width:100% !important;
+  font-size:8px !important;
+  line-height:1.08 !important;
+  font-weight:700;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+body.plan-mode #planPanel .plan-time{
+  display:block !important;
+  width:100% !important;
+  padding-left:.55em !important;
+  padding-right:0 !important;
+  font-size:7px !important;
+  line-height:1.08 !important;
+  font-weight:500;
+  letter-spacing:-.45px !important;
+  white-space:nowrap !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  box-sizing:border-box !important;
+}
+
+/* 大きくしたマスの高さを最初から最後まで予定表示に使う */
+body.plan-mode #planPanel .day,
+body.plan-mode #planPanel .blank{
+  vertical-align:top !important;
+}
+@media (max-width:480px){
+  body.plan-mode #planPanel .day{
+    padding:4px 2px 3px !important;
+  }
+  body.plan-mode #planPanel .daynum{
+    margin-bottom:4px !important;
+    font-size:11px !important;
+  }
+  body.plan-mode #planPanel .plan-entry{
+    margin-bottom:4px !important;
+  }
+  body.plan-mode #planPanel .plan-name{
+    font-size:7.5px !important;
+  }
+  body.plan-mode #planPanel .plan-time{
+    font-size:6.5px !important;
+    padding-left:.45em !important;
+    letter-spacing:-.55px !important;
+  }
+}
+
 </style>
 </head>
 <body>
