@@ -1253,6 +1253,77 @@ html,body,.wrap,.calendar-pager{
   --timeline-band-height:24px;
 }
 
+
+/* 月表示：時刻文字を途中で切らず、帯内に必ず収める */
+#planPanel .time-band{
+  height:28px !important;
+  min-height:28px !important;
+  max-height:28px !important;
+  padding:2px 2px !important;
+  overflow:hidden !important;
+}
+#planPanel .time-band-name{
+  font-size:8px !important;
+  line-height:10px !important;
+  height:10px !important;
+}
+#planPanel .time-band-time{
+  font-size:6px !important;
+  line-height:9px !important;
+  height:9px !important;
+  margin-top:1px !important;
+  white-space:nowrap !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  letter-spacing:-0.35px;
+  transform:scaleX(.88);
+  transform-origin:left center;
+  width:113.6% !important;
+}
+@media (min-width:481px){
+  #planPanel .time-band{
+    height:30px !important;
+    min-height:30px !important;
+    max-height:30px !important;
+  }
+  #planPanel .time-band-time{
+    font-size:7px !important;
+    transform:none;
+    width:100% !important;
+    letter-spacing:-0.2px;
+  }
+}
+
+/* 詳細ポップアップ：帯の文字量に対して最低高さを確保 */
+.plan-detail-timeline .detail-band{
+  min-height:32px !important;
+  padding:4px 5px !important;
+  overflow:hidden !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:flex-start !important;
+  box-sizing:border-box !important;
+}
+.plan-detail-timeline .detail-band strong{
+  display:block !important;
+  flex:0 0 auto;
+  font-size:11px !important;
+  line-height:13px !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+.plan-detail-timeline .detail-band span{
+  display:block !important;
+  flex:0 0 auto;
+  margin-top:2px !important;
+  font-size:9px !important;
+  line-height:11px !important;
+  white-space:nowrap !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+}
+
 </style>
 </head>
 <body>
