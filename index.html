@@ -52,7 +52,12 @@ h1{font-size:22px;margin:2px 0 8px;text-align:center}
   font-size:17px;font-weight:800;cursor:pointer
 }
 .slot.active{background:#f9fafb;color:#111827;border-color:#f9fafb}
-.study-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.study-row{display:grid;grid-template-columns:1fr;gap:8px;margin:8px 0}
+.study-settings{display:none;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.study-settings.active{display:grid}
+.study-time{display:flex;flex-direction:column;gap:4px;border:1px solid #4b5563;background:#111827;border-radius:10px;padding:6px 8px;font-size:11px;color:#d1d5db}
+.study-time input{width:100%;min-width:0;padding:6px 7px;border:0;border-radius:7px;background:#1f2937;color:#f9fafb;font-size:15px;font-weight:700;color-scheme:dark}
+@media(max-width:520px){.study-settings{grid-template-columns:1fr 1fr}.study-hours{grid-column:1/-1}}
 .study-toggle{border:1px solid #4b5563;background:#111827;color:#f9fafb;border-radius:10px;padding:10px 8px;font-size:15px;font-weight:800}
 .study-toggle.active{background:#f9fafb;color:#111827;border-color:#f9fafb}
 .study-hours{display:none;align-items:center;gap:7px;border:1px solid #4b5563;background:#111827;border-radius:10px;padding:5px 8px;font-size:12px;color:#d1d5db}
@@ -209,6 +214,12 @@ h1{font-size:22px;margin:2px 0 8px;text-align:center}
 .plan-info-row{font-size:13px;line-height:1.45}
 .plan-info-label{color:#9ca3af;font-size:11px;margin-right:6px}
 .plan-form{display:grid;gap:9px;margin-top:10px}
+.plan-time-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.plan-event-list{display:grid;gap:7px;margin:8px 0 12px}
+.plan-event-item{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;background:#111827;border:1px solid #374151;border-radius:10px;padding:9px 10px}
+.plan-event-text{font-size:13px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plan-event-delete{border:0;border-radius:8px;background:#374151;color:#f9fafb;padding:7px 9px;font-size:12px;font-weight:800}
+.plan-add{background:#f9fafb;color:#111827;border:0;border-radius:11px;padding:11px;font-size:14px;font-weight:800}
 .plan-form label{display:grid;gap:5px;font-size:12px;color:#d1d5db}
 .plan-form input,.plan-form textarea{width:100%;border:1px solid #4b5563;border-radius:10px;background:#111827;color:#f9fafb;padding:10px;font:inherit;font-size:16px}
 .plan-form textarea{min-height:92px;resize:vertical}
@@ -293,10 +304,14 @@ body.plan-mode #planPanel .controls{display:none}
 
 <div class="study-row">
   <button type="button" class="study-toggle" id="studyToggle" onclick="toggleStudy()">勉強会</button>
-  <label class="study-hours" id="studyHoursWrap">
-    <span>時間</span>
-    <input id="studyHours" type="number" inputmode="decimal" min="0.5" step="0.5" value="2" oninput="updateStudyHours(this.value)">
-  </label>
+  <div class="study-settings" id="studySettings">
+    <label class="study-time"><span>開始</span><input id="studyStart" type="time" oninput="updateStudyTime()"></label>
+    <label class="study-time"><span>終了</span><input id="studyEnd" type="time" oninput="updateStudyTime()"></label>
+    <label class="study-hours active" id="studyHoursWrap">
+      <span>時間</span>
+      <input id="studyHours" type="number" inputmode="decimal" min="0.5" step="0.5" value="2" oninput="updateStudyHours(this.value)">
+    </label>
+  </div>
 </div>
 
 <div class="preview">
@@ -353,13 +368,18 @@ body.plan-mode #planPanel .controls{display:none}
       <div class="plan-info-row"><span class="plan-info-label">塾</span><span id="planShiftInfo">なし</span></div>
       <div class="plan-info-row"><span class="plan-info-label">勉強会</span><span id="planStudyInfo">なし</span></div>
     </div>
+    <div class="plan-event-list" id="planEventList"></div>
     <div class="plan-form">
-      <label>予定名<input id="planTitle" type="text" maxlength="60" placeholder="例：友達とご飯"></label>
-      <label>時間<input id="planTime" type="time"></label>
+      <label>予定名<input id="planTitle" type="text" maxlength="60" placeholder="例：ご飯"></label>
+      <div class="plan-time-row">
+        <label>開始時間<input id="planStart" type="time"></label>
+        <label>終了時間（任意）<input id="planEnd" type="time"></label>
+      </div>
+      <button type="button" class="plan-add" onclick="addPlanEvent()">＋ 予定を追加</button>
       <label>メモ<textarea id="planMemo" maxlength="1000" placeholder="その日のメモ"></textarea></label>
       <div class="plan-actions">
-        <button type="button" class="plan-save" onclick="savePlan()">保存</button>
-        <button type="button" class="plan-clear" onclick="clearPlan()">予定・メモを削除</button>
+        <button type="button" class="plan-save" onclick="savePlanMemo()">メモを保存</button>
+        <button type="button" class="plan-clear" onclick="clearPlanDay()">この日の予定・メモを削除</button>
       </div>
     </div>
   </div>
@@ -400,6 +420,8 @@ let selected = null;
 let tempSlots = [];
 let tempStudy = false;
 let tempStudyHours = 2;
+let tempStudyStart = "";
+let tempStudyEnd = "";
 let pickerYear = view.getFullYear();
 let planView = new Date(view.getFullYear(), view.getMonth(), 1);
 let planSelected = null;
@@ -420,9 +442,27 @@ function dayPay(c, date){
   const r = getRate(date);
   return r.lesson * c + r.daily + r.transport;
 }
-function getStudyHours(date){
-  const h = Number(studyData[date]);
-  return Number.isFinite(h) && h > 0 ? h : 0;
+function getStudyEntry(date){
+  const v = studyData[date];
+  if(v && typeof v === "object") {
+    const h = Number(v.hours);
+    return {hours:Number.isFinite(h)&&h>0?h:0,start:typeof v.start==="string"?v.start:"",end:typeof v.end==="string"?v.end:""};
+  }
+  const h = Number(v);
+  return {hours:Number.isFinite(h)&&h>0?h:0,start:"",end:""};
+}
+function getStudyHours(date){ return getStudyEntry(date).hours; }
+function getStudyTimeRange(date){
+  const e=getStudyEntry(date);
+  return e.start && e.end ? `${e.start}-${e.end}` : "";
+}
+function minutesBetween(start,end){
+  if(!start||!end) return 0;
+  const [sh,sm]=start.split(":").map(Number), [eh,em]=end.split(":").map(Number);
+  if(![sh,sm,eh,em].every(Number.isFinite)) return 0;
+  let mins=(eh*60+em)-(sh*60+sm);
+  if(mins<=0) return 0;
+  return mins;
 }
 function studyPay(hours){
   return hours > 0 ? STUDY_HOURLY * hours + STUDY_TRANSPORT : 0;
@@ -471,8 +511,9 @@ function renderCalendar(){
     const shift = c > 0
       ? `<span class="entry">${slots.join("・")}<br>${money(dayPay(c,key))}</span>`
       : "";
+    const studyRange = getStudyTimeRange(key);
     const study = studyHours > 0
-      ? `<span class="entry">勉強会 ${studyHours}h<br>${money(studyPay(studyHours))}</span>`
+      ? `<span class="entry">勉強会 ${studyRange ? studyRange+"<br>" : ""}${studyHours}h<br>${money(studyPay(studyHours))}</span>`
       : "";
 
     btn.innerHTML = `<span class="daynum">${d}</span>${payday}${shift}${study}`;
@@ -531,8 +572,11 @@ function renderSummary(){
 function selectDay(key){
   selected = key;
   tempSlots = [...getSlots(key)];
-  tempStudyHours = getStudyHours(key) || 2;
-  tempStudy = getStudyHours(key) > 0;
+  const studyEntry = getStudyEntry(key);
+  tempStudyHours = studyEntry.hours || 2;
+  tempStudyStart = studyEntry.start || "";
+  tempStudyEnd = studyEntry.end || "";
+  tempStudy = studyEntry.hours > 0;
 
   document.getElementById("selected").textContent =
     selected.replaceAll("-","/") + " のコマを選択";
@@ -579,13 +623,30 @@ function updateStudyHours(value){
   renderDayPreview();
 }
 
+function updateStudyTime(){
+  const start=document.getElementById("studyStart")?.value || "";
+  const end=document.getElementById("studyEnd")?.value || "";
+  tempStudyStart=start; tempStudyEnd=end;
+  const mins=minutesBetween(start,end);
+  if(mins>0){
+    tempStudyHours=Math.round((mins/60)*100)/100;
+    tempStudy=true;
+  }
+  renderStudyControls();
+  renderDayPreview();
+}
+
 function renderStudyControls(){
   const btn = document.getElementById("studyToggle");
-  const wrap = document.getElementById("studyHoursWrap");
+  const settings = document.getElementById("studySettings");
   const input = document.getElementById("studyHours");
+  const startInput = document.getElementById("studyStart");
+  const endInput = document.getElementById("studyEnd");
   if(btn) btn.classList.toggle("active", tempStudy);
-  if(wrap) wrap.classList.toggle("active", tempStudy);
+  if(settings) settings.classList.toggle("active", tempStudy);
   if(input && document.activeElement !== input) input.value = tempStudyHours || 2;
+  if(startInput && document.activeElement !== startInput) startInput.value=tempStudyStart;
+  if(endInput && document.activeElement !== endInput) endInput.value=tempStudyEnd;
 }
 
 function renderDayPreview(){
@@ -593,7 +654,7 @@ function renderDayPreview(){
   const hours = tempStudy ? tempStudyHours : 0;
   const parts = [];
   if(c > 0) parts.push(`${tempSlots.join("・")}　${c}コマ`);
-  if(hours > 0) parts.push(`勉強会 ${hours}時間`);
+  if(hours > 0) parts.push(`勉強会 ${tempStudyStart&&tempStudyEnd?tempStudyStart+"-"+tempStudyEnd+"・":""}${hours}時間`);
   document.getElementById("selectedSlots").textContent = parts.length ? parts.join(" ＋ ") : "勤務なし";
   document.getElementById("dayPay").textContent = money(dayPay(c, selected || "9999-12-31") + studyPay(hours));
 }
@@ -608,7 +669,7 @@ function save(){
   }
 
   if(tempStudy && tempStudyHours > 0){
-    studyData[selected] = tempStudyHours;
+    studyData[selected] = {hours:tempStudyHours,start:tempStudyStart,end:tempStudyEnd};
   }else{
     delete studyData[selected];
   }
@@ -626,6 +687,8 @@ function clearDay(){
   tempSlots = [];
   tempStudy = false;
   tempStudyHours = 2;
+  tempStudyStart = "";
+  tempStudyEnd = "";
   localStorage.setItem(KEY, JSON.stringify(data));
   localStorage.setItem(STUDY_KEY, JSON.stringify(studyData));
 
@@ -676,7 +739,7 @@ function renderMonthPicker(){
       view = new Date(pickerYear, m, 1);
       selected = null;
       tempSlots = [];
-      tempStudy = false; tempStudyHours = 2;
+      tempStudy = false; tempStudyHours = 2; tempStudyStart=""; tempStudyEnd="";
       document.getElementById("selected").textContent = "日付をタップ";
       renderCalendar();
       renderSlotButtons();
@@ -694,7 +757,7 @@ function moveMonth(diff){
   view = new Date(view.getFullYear(), view.getMonth()+diff, 1);
   selected = null;
   tempSlots = [];
-  tempStudy = false; tempStudyHours = 2;
+  tempStudy = false; tempStudyHours = 2; tempStudyStart=""; tempStudyEnd="";
 
   document.getElementById("selected").textContent = "日付をタップ";
   renderCalendar();
@@ -707,7 +770,7 @@ function moveMonth(diff){
 
 
 function exportBackup(){
-  const backup={app:"salary-calendar",version:3,exportedAt:new Date().toISOString(),shifts:data,rates:rates,study:studyData,plans:planData};
+  const backup={app:"salary-calendar",version:4,exportedAt:new Date().toISOString(),shifts:data,rates:rates,study:studyData,plans:planData};
   const blob=new Blob([JSON.stringify(backup,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");
@@ -737,7 +800,7 @@ function importBackup(event){
       localStorage.setItem(RATE_KEY,JSON.stringify(rates));
       localStorage.setItem(STUDY_KEY,JSON.stringify(studyData));
       localStorage.setItem(PLAN_KEY,JSON.stringify(planData));
-      selected=null; tempSlots=[]; tempStudy=false; tempStudyHours=2;
+      selected=null; tempSlots=[]; tempStudy=false; tempStudyHours=2; tempStudyStart=""; tempStudyEnd="";
       document.getElementById("selected").textContent="日付をタップ";
       renderRates(); renderCalendar(); renderSlotButtons(); renderStudyControls(); renderDayPreview();
       alert("バックアップを復元しました");
@@ -862,7 +925,54 @@ function getShiftTimeRange(slots){
 
 function getPlan(date){
   const v = planData[date];
-  return v && typeof v === "object" ? v : {title:"",time:"",memo:""};
+  if(!v || typeof v !== "object") return {events:[],memo:""};
+  if(Array.isArray(v.events)){
+    return {
+      events:v.events.filter(e=>e&&typeof e==="object").map((e,i)=>({
+        id:String(e.id || `${date}-${i}`),
+        title:String(e.title || ""),
+        start:String(e.start || ""),
+        end:String(e.end || "")
+      })),
+      memo:String(v.memo || "")
+    };
+  }
+  // 旧データ（予定1件のみ）を自動変換
+  const legacy=[];
+  if(v.title || v.time) legacy.push({id:`${date}-legacy`,title:String(v.title||""),start:String(v.time||""),end:""});
+  return {events:legacy,memo:String(v.memo||"")};
+}
+
+function planTimeText(start,end){
+  if(start) return `${start}-${end || "未定"}`;
+  return end ? `未定-${end}` : "時間未定";
+}
+
+function sortStart(value){
+  return /^\d{2}:\d{2}$/.test(value||"") ? value : "99:99";
+}
+
+function getCalendarItems(key){
+  const items=[];
+  const slots=getSlots(key);
+  if(slots.length){
+    const range=getShiftTimeRange(slots);
+    const start=range.split("-")[0]||"";
+    items.push({start,text:`${range} 塾`});
+  }
+  const hours=getStudyHours(key);
+  if(hours>0){
+    const range=getStudyTimeRange(key);
+    const studyEntry=getStudyEntry(key);
+    if(range) items.push({start:studyEntry.start||"",text:`${range} 勉強会`});
+    else items.push({start:"",text:`時間未定 勉強会（${hours}h）`});
+  }
+  const plan=getPlan(key);
+  for(const e of plan.events){
+    const title=e.title || "予定";
+    items.push({start:e.start||"",text:`${planTimeText(e.start,e.end)} ${title}`});
+  }
+  return items.sort((a,b)=>sortStart(a.start).localeCompare(sortStart(b.start)));
 }
 
 function renderPlanCalendar(){
@@ -875,16 +985,13 @@ function renderPlanCalendar(){
   for(let i=0;i<firstDay;i++){const b=document.createElement("div");b.className="blank";grid.appendChild(b);}
   const today=new Date();
   for(let d=1;d<=lastDate;d++){
-    const key=keyOf(y,m,d), slots=getSlots(key), studyHours=getStudyHours(key), plan=getPlan(key);
+    const key=keyOf(y,m,d), plan=getPlan(key);
     const btn=document.createElement("button"); btn.type="button"; btn.className="day";
     if(today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===d)btn.classList.add("today");
     if(planSelected===key)btn.classList.add("selected-day");
-    const shiftRange=getShiftTimeRange(slots);
-    const shift=slots.length?`<span class="plan-entry">塾 ${shiftRange}</span>`:"";
-    const study=studyHours>0?`<span class="plan-entry">勉強会 ${studyHours}h</span>`:"";
-    const event=plan.title?`<span class="plan-entry">${escapeHtml(plan.time?plan.time+" "+plan.title:plan.title)}</span>`:"";
+    const entries=getCalendarItems(key).map(item=>`<span class="plan-entry">${escapeHtml(item.text)}</span>`).join("");
     const memo=plan.memo?`<span class="memo-dot">●</span>`:"";
-    btn.innerHTML=`<span class="daynum">${d}</span>${memo}${shift}${study}${event}`;
+    btn.innerHTML=`<span class="daynum">${d}</span>${memo}${entries}`;
     btn.addEventListener("click",()=>selectPlanDay(key));
     grid.appendChild(btn);
   }
@@ -896,38 +1003,87 @@ function escapeHtml(value){
   return String(value||"").replace(/[&<>'"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[ch]));
 }
 
+function renderPlanEventList(){
+  const list=document.getElementById("planEventList");
+  if(!list || !planSelected) return;
+  const plan=getPlan(planSelected);
+  if(!plan.events.length){
+    list.innerHTML='<div class="plan-info-row"><span class="plan-info-label">登録済み予定</span>なし</div>';
+    return;
+  }
+  const sorted=[...plan.events].sort((a,b)=>sortStart(a.start).localeCompare(sortStart(b.start)));
+  list.innerHTML=sorted.map(e=>`<div class="plan-event-item"><div class="plan-event-text">${escapeHtml(planTimeText(e.start,e.end))} ${escapeHtml(e.title||"予定")}</div><button type="button" class="plan-event-delete" data-id="${escapeHtml(e.id)}">削除</button></div>`).join("");
+  list.querySelectorAll(".plan-event-delete").forEach(btn=>btn.addEventListener("click",()=>deletePlanEvent(btn.dataset.id)));
+}
+
 function selectPlanDay(key){
   planSelected=key;
   const slots=getSlots(key), hours=getStudyHours(key), plan=getPlan(key);
   document.getElementById("planSelected").textContent=key.replaceAll("-","/");
   document.getElementById("planShiftInfo").textContent=slots.length?`${getShiftTimeRange(slots)}（${slots.join("・")}・${slots.length}コマ）`:"なし";
-  document.getElementById("planStudyInfo").textContent=hours>0?`${hours}時間`:"なし";
-  document.getElementById("planTitle").value=plan.title||"";
-  document.getElementById("planTime").value=plan.time||"";
+  const studyRange=getStudyTimeRange(key);
+  document.getElementById("planStudyInfo").textContent=hours>0?(studyRange?`${studyRange}（${hours}時間）`:`${hours}時間`):"なし";
+  document.getElementById("planTitle").value="";
+  document.getElementById("planStart").value="";
+  document.getElementById("planEnd").value="";
   document.getElementById("planMemo").value=plan.memo||"";
+  renderPlanEventList();
   renderPlanCalendar();
   document.getElementById("planModalBackdrop").classList.add("open");
   document.body.style.overflow="hidden";
 }
 
-function savePlan(){
+function persistPlan(date, plan){
+  if(plan.events.length || plan.memo) planData[date]=plan;
+  else delete planData[date];
+  localStorage.setItem(PLAN_KEY,JSON.stringify(planData));
+}
+
+function addPlanEvent(){
   if(!planSelected)return;
   const title=document.getElementById("planTitle").value.trim();
-  const time=document.getElementById("planTime").value;
-  const memo=document.getElementById("planMemo").value.trim();
-  if(title||time||memo)planData[planSelected]={title,time,memo}; else delete planData[planSelected];
-  localStorage.setItem(PLAN_KEY,JSON.stringify(planData));
+  const start=document.getElementById("planStart").value;
+  const end=document.getElementById("planEnd").value;
+  if(!title){ alert("予定名を入力してください"); return; }
+  if(!start){ alert("開始時間を入力してください"); return; }
+  if(end && end < start){ alert("終了時間は開始時間より後にしてください"); return; }
+  const plan=getPlan(planSelected);
+  plan.events.push({id:`${Date.now()}-${Math.random().toString(36).slice(2,7)}`,title,start,end});
+  persistPlan(planSelected,plan);
+  document.getElementById("planTitle").value="";
+  document.getElementById("planStart").value="";
+  document.getElementById("planEnd").value="";
+  renderPlanEventList();
+  renderPlanCalendar();
+}
+
+function deletePlanEvent(id){
+  if(!planSelected)return;
+  const plan=getPlan(planSelected);
+  plan.events=plan.events.filter(e=>e.id!==id);
+  persistPlan(planSelected,plan);
+  renderPlanEventList();
+  renderPlanCalendar();
+}
+
+function savePlanMemo(){
+  if(!planSelected)return;
+  const plan=getPlan(planSelected);
+  plan.memo=document.getElementById("planMemo").value.trim();
+  persistPlan(planSelected,plan);
   renderPlanCalendar();
   closePlanModal();
 }
 
-function clearPlan(){
+function clearPlanDay(){
   if(!planSelected)return;
   delete planData[planSelected];
   localStorage.setItem(PLAN_KEY,JSON.stringify(planData));
   document.getElementById("planTitle").value="";
-  document.getElementById("planTime").value="";
+  document.getElementById("planStart").value="";
+  document.getElementById("planEnd").value="";
   document.getElementById("planMemo").value="";
+  renderPlanEventList();
   renderPlanCalendar();
   closePlanModal();
 }
@@ -949,7 +1105,8 @@ function movePlanMonth(diff){
   document.getElementById("planShiftInfo").textContent="なし";
   document.getElementById("planStudyInfo").textContent="なし";
   document.getElementById("planTitle").value="";
-  document.getElementById("planTime").value="";
+  document.getElementById("planStart").value="";
+  document.getElementById("planEnd").value="";
   document.getElementById("planMemo").value="";
   renderPlanCalendar();
 }
