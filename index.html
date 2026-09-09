@@ -842,6 +842,24 @@ function switchTab(tab){
   }
 }
 
+const SLOT_TIMES = {
+  X:["9:00","10:30"],
+  Y:["10:35","12:05"],
+  Z:["12:10","13:40"],
+  A:["14:55","16:25"],
+  B:["16:30","18:00"],
+  C:["18:05","19:35"],
+  D:["19:40","21:10"]
+};
+
+function getShiftTimeRange(slots){
+  if(!slots || !slots.length) return "";
+  const ordered=[...slots].sort((a,b)=>SLOTS.indexOf(a)-SLOTS.indexOf(b));
+  const first=SLOT_TIMES[ordered[0]];
+  const last=SLOT_TIMES[ordered[ordered.length-1]];
+  return first && last ? `${first[0]}-${last[1]}` : "";
+}
+
 function getPlan(date){
   const v = planData[date];
   return v && typeof v === "object" ? v : {title:"",time:"",memo:""};
@@ -861,7 +879,8 @@ function renderPlanCalendar(){
     const btn=document.createElement("button"); btn.type="button"; btn.className="day";
     if(today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===d)btn.classList.add("today");
     if(planSelected===key)btn.classList.add("selected-day");
-    const shift=slots.length?`<span class="plan-entry">塾 ${slots.join("・")}</span>`:"";
+    const shiftRange=getShiftTimeRange(slots);
+    const shift=slots.length?`<span class="plan-entry">塾 ${shiftRange}</span>`:"";
     const study=studyHours>0?`<span class="plan-entry">勉強会 ${studyHours}h</span>`:"";
     const event=plan.title?`<span class="plan-entry">${escapeHtml(plan.time?plan.time+" "+plan.title:plan.title)}</span>`:"";
     const memo=plan.memo?`<span class="memo-dot">●</span>`:"";
@@ -881,7 +900,7 @@ function selectPlanDay(key){
   planSelected=key;
   const slots=getSlots(key), hours=getStudyHours(key), plan=getPlan(key);
   document.getElementById("planSelected").textContent=key.replaceAll("-","/");
-  document.getElementById("planShiftInfo").textContent=slots.length?`${slots.join("・")}（${slots.length}コマ）`:"なし";
+  document.getElementById("planShiftInfo").textContent=slots.length?`${getShiftTimeRange(slots)}（${slots.join("・")}・${slots.length}コマ）`:"なし";
   document.getElementById("planStudyInfo").textContent=hours>0?`${hours}時間`:"なし";
   document.getElementById("planTitle").value=plan.title||"";
   document.getElementById("planTime").value=plan.time||"";
