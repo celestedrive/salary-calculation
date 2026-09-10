@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#111827">
-<meta name="calendar-build" content="1789043404">
+<meta name="calendar-build" content="1789043954">
 <title>カレンダー</title>
 <style>
 *{box-sizing:border-box}
@@ -307,6 +307,15 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 .detail-track{overflow:hidden!important}
 .detail-band{right:auto!important;box-sizing:border-box!important}
 
+
+.hhmm-input{
+  width:82px!important;max-width:82px!important;height:34px!important;
+  padding:3px 7px!important;font-size:16px!important;letter-spacing:.6px!important;
+  font-variant-numeric:tabular-nums;
+}
+.time-row{grid-template-columns:92px 148px!important}
+.end-time-wrap{gap:5px!important}
+
 </style>
 </head>
 <body>
@@ -357,7 +366,7 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 <div class="modal-head"><div class="modal-title" id="editorTitle">予定を追加</div><button class="close" data-close="eventEditor">×</button></div>
 <div class="form">
 <label>予定名<input id="eventName" type="text"></label>
-<div class="time-row"><label>開始<input id="eventStart" type="time" step="300"></label><label>終了<div class="end-time-wrap"><input id="eventEnd" type="time" step="300"><button type="button" id="unsetEnd">未定</button></div></label></div>
+<div class="time-row"><label>開始<input id="eventStart" class="hhmm-input" type="text" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="1700"></label><label>終了<div class="end-time-wrap"><input id="eventEnd" class="hhmm-input" type="text" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="2130"><button type="button" id="unsetEnd">未定</button></div></label></div>
 <label>メモ<textarea id="eventMemo" maxlength="120" placeholder="120文字まで"></textarea></label>
 <div class="actions"><button class="danger" id="deleteEvent">削除</button><button class="primary" id="saveEvent">保存</button></div>
 </div></div></div>
@@ -451,6 +460,24 @@ studyStart.value=st.start||"";
 updateStudyEnd();
 dayPayEl.textContent=yen(dayPay(selectedSalary))}
 
+function hhmmToTime(v){
+ const s=String(v||"").replace(/\D/g,"").slice(0,4);
+ if(s.length!==4)return "";
+ const h=Number(s.slice(0,2)),m=Number(s.slice(2));
+ if(h>23||m>59)return "";
+ return `${pad(h)}:${pad(m)}`;
+}
+function timeToHHMM(v){return /^\d{2}:\d{2}$/.test(v)?v.replace(":",""):""}
+function setupHHMMInput(inp){
+ inp.addEventListener("input",()=>{
+   const digits=inp.value.replace(/\D/g,"").slice(0,4);
+   if(inp.value!==digits)inp.value=digits;
+ });
+ inp.addEventListener("blur",()=>{
+   const v=hhmmToTime(inp.value);
+   if(v)inp.value=timeToHHMM(v);
+ });
+}
 function roundTime5(v){
  if(!v||!/^\d{2}:\d{2}$/.test(v))return v;
  let [h,m]=v.split(":").map(Number),total=h*60+m;
@@ -496,9 +523,17 @@ function renderDetailTimeline(k){
  }).join("");
  detailTimeline.innerHTML=hours+`<div class="detail-track">${bands}</div>`
 }
-function openPlanDetail(){let k=selectedPlan,p=plan(k);detailDate.textContent=k.replaceAll("-","/");renderDetailTimeline(k);let sl=getSlots(k),st=study(k);autoInfo.innerHTML=`<div class="summary-row"><span>塾</span><span>${sl.length?esc(slotRange(sl)):"なし"}</span></div><div class="summary-row"><span>勉強会</span><span>${st.hours?esc(studyRange(k)||st.hours+"時間"):"なし"}</span></div>`;eventList.innerHTML=p.events.length?p.events.sort((a,b)=>(a.start||"99").localeCompare(b.start||"99")).map(e=>`<div class="event-item"><div class="event-text"><strong>${esc(e.title||"予定")}</strong><br>${esc(e.start?`${e.start}-${e.end||"未定"}`:"時間未定")}${e.memo?`<br><small>${esc(e.memo)}</small>`:""}</div><div class="event-actions"><button data-edit="${esc(e.id)}">変更</button><button class="event-delete-inline" data-del="${esc(e.id)}">削除</button></div></div>`).join(""):'<div class="summary-empty">登録済み予定なし</div>';eventList.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openEditor(b.dataset.edit));eventList.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deleteEventById(b.dataset.del));memoPreview.innerHTML="";open("planDetail")}
-function openEditor(id=null){editingEvent=id;let p=plan(selectedPlan),e=id?p.events.find(x=>x.id==id):null;editorTitle.textContent=e?"予定を変更":"予定を追加";eventName.value=e?.title||"";eventStart.value=e?.start||"";eventEnd.value=e?.end||"";eventMemo.value=e?.memo||"";deleteEvent.style.visibility=e?"visible":"hidden";open("eventEditor")}
-function saveEventFn(){if(!selectedPlan||!eventStart.value)return;let p=plan(selectedPlan),e={id:editingEvent||`${Date.now()}`,title:eventName.value.trim()||"予定",start:eventStart.value,end:eventEnd.value,memo:eventMemo.value.slice(0,120)};if(editingEvent){let i=p.events.findIndex(x=>x.id==editingEvent);if(i>=0)p.events[i]=e}else p.events.push(e);plans[selectedPlan]=p;save(PLAN_KEY,plans);close("eventEditor");renderPlan();openPlanDetail()}
+function openPlanDetail(){let k=selectedPlan,p=plan(k);detailDate.textContent=k.replaceAll("-","/");renderDetailTimeline(k);let sl=getSlots(k),st=study(k);autoInfo.innerHTML=`<div class="summary-row"><span>塾</span><span>${sl.length?esc(slotRange(sl)):"なし"}</span></div><div class="summary-row"><span>勉強会</span><span>${st.hours?esc(studyRange(k)||st.hours+"時間"):"なし"}</span></div>`;eventList.innerHTML=p.events.length?p.events.sort((a,b)=>(a.start||"99").localeCompare(b.start||"99")).map(e=>`<div class="event-item"><div class="event-text"><strong>${esc(e.title||"予定")}</strong><br>${esc(e.start?`${e.start}-${e.end||"未定"}`:"時間未定")}${e.memo?`<br><small>${esc(e.memo)}</small>`:""}</div><div class="event-actions"><button class="event-delete-inline" data-del="${esc(e.id)}">削除</button><button data-edit="${esc(e.id)}">変更</button></div></div>`).join(""):'<div class="summary-empty">登録済み予定なし</div>';eventList.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openEditor(b.dataset.edit));eventList.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deleteEventById(b.dataset.del));memoPreview.innerHTML="";open("planDetail")}
+function openEditor(id=null){editingEvent=id;let p=plan(selectedPlan),e=id?p.events.find(x=>x.id==id):null;editorTitle.textContent=e?"予定を変更":"予定を追加";eventName.value=e?.title||"";eventStart.value=timeToHHMM(e?.start||"");eventEnd.value=timeToHHMM(e?.end||"");eventMemo.value=e?.memo||"";deleteEvent.style.visibility=e?"visible":"hidden";open("eventEditor")}
+function saveEventFn(){
+ if(!selectedPlan)return;
+ const start=hhmmToTime(eventStart.value),end=eventEnd.value?hhmmToTime(eventEnd.value):"";
+ if(!start){eventStart.focus();return}
+ if(eventEnd.value&&!end){eventEnd.focus();return}
+ let p=plan(selectedPlan),e={id:editingEvent||`${Date.now()}`,title:eventName.value.trim()||"予定",start,end,memo:eventMemo.value.slice(0,120)};
+ if(editingEvent){let i=p.events.findIndex(x=>x.id==editingEvent);if(i>=0)p.events[i]=e}else p.events.push(e);
+ plans[selectedPlan]=p;save(PLAN_KEY,plans);close("eventEditor");renderPlan();openPlanDetail()
+}
 function deleteEventById(id){let p=plan(selectedPlan);p.events=p.events.filter(x=>x.id!=id);plans[selectedPlan]=p;save(PLAN_KEY,plans);close("eventEditor");renderPlan();openPlanDetail()}
 function deleteEventFn(){if(editingEvent)deleteEventById(editingEvent)}
 function open(id){document.getElementById(id).classList.add("open")}function close(id){document.getElementById(id).classList.remove("open")}
