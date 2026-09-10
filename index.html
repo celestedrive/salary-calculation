@@ -1500,6 +1500,77 @@ html,body,.wrap,.calendar-pager{
   box-shadow:none !important;
 }
 
+
+/* 予定画面を実際に「月カレンダー + 選択日詳細」の2段へ再配置 */
+#planPanel{
+  height:100dvh !important;
+  min-height:100dvh !important;
+  display:flex !important;
+  flex-direction:column !important;
+  overflow:hidden !important;
+  box-sizing:border-box !important;
+}
+
+/* ヘッダー類は通常サイズのまま */
+#planPanel > .topbar,
+#planPanel > .toolbar,
+#planPanel > .month-nav,
+#planPanel > h1{
+  flex:0 0 auto !important;
+}
+
+/* 月カレンダー自体を縮め、全週を上段内に必ず収める */
+#planPanel .calendar{
+  flex:1 1 0 !important;
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  overflow:hidden !important;
+  box-sizing:border-box !important;
+}
+#planPanel .calendar .days,
+#planPanel .calendar-grid,
+#planPanel .days{
+  height:100% !important;
+  min-height:0 !important;
+  grid-auto-rows:minmax(0,1fr) !important;
+  box-sizing:border-box !important;
+}
+#planPanel .day{
+  min-height:0 !important;
+  height:auto !important;
+  overflow:hidden !important;
+}
+
+/* 下段は常に画面内に確保 */
+#planPanel .plan-day-summary{
+  flex:0 0 27dvh !important;
+  height:27dvh !important;
+  min-height:135px !important;
+  max-height:27dvh !important;
+  margin:6px 8px 8px !important;
+  box-sizing:border-box !important;
+  display:block !important;
+  visibility:visible !important;
+  overflow:hidden !important;
+}
+
+
+/* 今日のマス：両カレンダーで背景色だけ確実に変える */
+#planPanel .day.today,
+#salaryPanel .day.today,
+.day.today{
+  background:#344154 !important;
+  box-shadow:none !important;
+}
+#planPanel .day.today .daynum,
+#salaryPanel .day.today .daynum,
+.day.today .daynum{
+  background:transparent !important;
+  box-shadow:none !important;
+  font-weight:900 !important;
+}
+
 </style>
 </head>
 <body>
@@ -2817,6 +2888,57 @@ async function checkForAppUpdate(){
 window.addEventListener("pageshow",()=>{enableFiveMinuteTimeInputs();checkForAppUpdate();});
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")checkForAppUpdate();});
 window.addEventListener("focus",checkForAppUpdate);
+
+</script>
+<script>
+
+function applyTodayHighlight(){
+  const now=new Date();
+  const todayKey=keyOf(now.getFullYear(),now.getMonth(),now.getDate());
+
+  document.querySelectorAll(".day.today").forEach(el=>el.classList.remove("today"));
+
+  document.querySelectorAll(".day").forEach(day=>{
+    const candidates=[
+      day.dataset.date,
+      day.dataset.key,
+      day.getAttribute("data-day"),
+      day.getAttribute("data-date")
+    ].filter(Boolean);
+    if(candidates.includes(todayKey)) day.classList.add("today");
+  });
+
+  // Fallback for calendars whose cells do not carry a date data attribute.
+  // Only mark the visible current month.
+  document.querySelectorAll("#planPanel, #salaryPanel").forEach(panel=>{
+    const title=(panel.querySelector(".month-title,.monthTitle,[id*='MonthTitle'],h1")?.textContent||"");
+    const currentMonth=now.getMonth()+1;
+    const currentYear=now.getFullYear();
+    if(!(title.includes(String(currentMonth)) && (!/\d{4}/.test(title)||title.includes(String(currentYear))))) return;
+    panel.querySelectorAll(".day").forEach(day=>{
+      const num=day.querySelector(".daynum");
+      if(num && Number(num.textContent.trim())===now.getDate()) day.classList.add("today");
+    });
+  });
+}
+window.addEventListener("pageshow",()=>requestAnimationFrame(applyTodayHighlight));
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="visible") requestAnimationFrame(applyTodayHighlight);
+});
+
+</script>
+<script>
+
+const todayHighlightObserver=new MutationObserver(()=>{
+  requestAnimationFrame(applyTodayHighlight);
+});
+window.addEventListener("DOMContentLoaded",()=>{
+  ["planPanel","salaryPanel"].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) todayHighlightObserver.observe(el,{childList:true,subtree:true});
+  });
+  applyTodayHighlight();
+});
 
 </script>
 </body>
