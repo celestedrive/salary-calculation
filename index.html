@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#111827">
-<meta name="calendar-build" content="1789045573">
+<meta name="calendar-build" content="1789045860">
 <title>カレンダー</title>
 <style>
 *{box-sizing:border-box}
@@ -529,56 +529,38 @@ function hhmmToTime(v){
  return `${pad(h)}:${pad(m)}`;
 }
 function timeToHHMM(v){return /^\d{2}:\d{2}$/.test(v)?v:""}
-function setupHHMMInput(inp,next=null){
+function setupHHMMInput(inp,next=null,prev=null){
  let digits="";
- const paint=()=>{
-   inp.value=digits.length<=2?digits:digits.slice(0,2)+":"+digits.slice(2);
- };
- inp.addEventListener("focus",()=>{
-   digits=inp.value.replace(/\D/g,"").slice(0,4);
-   paint();
- });
+ const paint=()=>{inp.value=digits.length<=2?digits:digits.slice(0,2)+":"+digits.slice(2)};
+ inp.addEventListener("focus",()=>{digits=inp.value.replace(/\D/g,"").slice(0,4);paint()});
  inp.addEventListener("keydown",e=>{
    if(/^\d$/.test(e.key)){
      e.preventDefault();
      if(digits.length>=4)return;
-     digits+=e.key;
-     paint();
+     digits+=e.key;paint();
      if(digits.length===4){
        const valid=hhmmToTime(digits);
        if(!valid){digits="";paint();return}
        inp.value=valid;
-       if(next)setTimeout(()=>next.focus(),20);
+       if(next)setTimeout(()=>next.focus(),0);
      }
      return;
    }
    if(e.key==="Backspace"){
-     e.preventDefault();digits=digits.slice(0,-1);paint();return;
-   }
- });
- inp.addEventListener("beforeinput",e=>{
-   if(e.inputType==="insertText"&&e.data&&/^\d+$/.test(e.data)){
      e.preventDefault();
-     for(const ch of e.data){
-       if(digits.length<4)digits+=ch;
+     if(digits.length){
+       digits=digits.slice(0,-1);paint();
+     }else if(prev){
+       prev.focus();
+       let pd=prev.value.replace(/\D/g,"").slice(0,4);
+       pd=pd.slice(0,-1);
+       prev.value=pd.length<=2?pd:pd.slice(0,2)+":"+pd.slice(2);
+       setTimeout(()=>prev.setSelectionRange?.(prev.value.length,prev.value.length),0);
      }
-     paint();
-     if(digits.length===4){
-       const valid=hhmmToTime(digits);
-       if(valid){inp.value=valid;if(next)setTimeout(()=>next.focus(),20)}
-     }
+     return;
    }
  });
- inp.addEventListener("input",()=>{
-   const d=inp.value.replace(/\D/g,"").slice(0,4);
-   if(d!==digits){digits=d;paint()}
-   if(digits.length===4){
-     const valid=hhmmToTime(digits);
-     if(valid){inp.value=valid;if(next)setTimeout(()=>next.focus(),20)}
-   }
- });
-}
-function roundTime5(v){
+}function roundTime5(v){
  if(!v||!/^\d{2}:\d{2}$/.test(v))return v;
  let [h,m]=v.split(":").map(Number),total=h*60+m;
  total=Math.round(total/5)*5;
@@ -684,7 +666,8 @@ document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
 document.addEventListener("gesturechange",e=>e.preventDefault(),{passive:false});
 document.addEventListener("gestureend",e=>e.preventDefault(),{passive:false});
 pager.addEventListener("scroll",()=>{if(pager.scrollLeft<pager.clientWidth*.5){shifts=load(KEY,{});studies=load(STUDY_KEY,{});renderPlan()}},{passive:true});pager.addEventListener("scroll",()=>{let max=Math.max(0,pager.scrollWidth-pager.clientWidth);if(pager.scrollLeft<0)pager.scrollLeft=0;else if(pager.scrollLeft>max)pager.scrollLeft=max},{passive:true});
-setupHHMMInput(eventStart,eventEnd);setupHHMMInput(eventEnd);
+
+setupHHMMInput(eventStart,eventEnd,null);setupHHMMInput(eventEnd,null,eventStart);
 renderPlan();renderSalary();
 </script>
 </body></html>
