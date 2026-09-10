@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#111827">
-<meta name="calendar-build" content="1789043954">
+<meta name="calendar-build" content="1789044184">
 <title>カレンダー</title>
 <style>
 *{box-sizing:border-box}
@@ -316,6 +316,59 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 .time-row{grid-template-columns:92px 148px!important}
 .end-time-wrap{gap:5px!important}
 
+
+/* 下部の予定一覧：3件まではそのまま表示、4件以上は縦スクロール */
+#summary{
+  height:auto!important;
+  min-height:145px!important;
+  max-height:none!important;
+  overflow:hidden!important;
+}
+#summary .summary-title{
+  font-size:15px!important;
+  line-height:1.2!important;
+  margin-bottom:5px!important;
+}
+#summary .summary-list{
+  max-height:108px!important; /* 約3件分 */
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  overscroll-behavior:contain!important;
+  -webkit-overflow-scrolling:touch;
+}
+#summary .summary-row{
+  min-height:36px!important;
+  padding:5px 2px!important;
+  font-size:13px!important;
+  line-height:1.2!important;
+}
+#summary .summary-time{
+  font-size:12px!important;
+  font-weight:800!important;
+  min-width:88px!important;
+}
+#summary .summary-name{
+  font-size:13px!important;
+  font-weight:800!important;
+  min-width:0!important;
+}
+#summary .summary-name small{
+  font-size:11px!important;
+  line-height:1.15!important;
+}
+
+
+#summary{height:auto!important;min-height:0!important;overflow:hidden!important}
+#summary .summary-title{font-size:14px!important;line-height:1.2!important;padding-bottom:5px!important}
+#summary .summary-list{max-height:126px!important;overflow-y:auto!important;overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch}
+#summary .summary-row{min-height:42px!important;padding:5px 2px!important;font-size:13px!important;line-height:1.18!important;align-items:flex-start!important}
+#summary .summary-time{font-size:12px!important;line-height:1.2!important;min-width:88px!important}
+#summary .summary-name{font-size:13px!important;line-height:1.2!important;min-width:0!important}
+#summary .summary-name small{font-size:11px!important;line-height:1.15!important}
+.detail-band{padding:2px 4px!important;line-height:1.05!important}
+.detail-band strong{font-size:clamp(9px,2.7vw,12px)!important;line-height:1.05!important}
+.detail-band span{font-size:clamp(8px,2.35vw,11px)!important;line-height:1.05!important}
+
 </style>
 </head>
 <body>
@@ -451,7 +504,7 @@ function renderSalary(){
 function renderSummary(){
  if(!selectedPlan){summary.innerHTML='<div class="summary-title">日付を選択</div><div class="summary-empty">日付を1回押すと、その日の予定を表示します</div>';return}
  let [y,m,d]=selectedPlan.split("-").map(Number),w=["日","月","火","水","木","金","土"][new Date(y,m-1,d).getDay()],a=items(selectedPlan);
- summary.innerHTML=`<div class="summary-title">${m}月${d}日（${w}）</div>${a.length?a.map(x=>`<div class="summary-row"><span class="summary-time">${esc(x.time)}</span><span class="summary-name">${esc(x.name)}${x.memo?`<br><small>${esc(x.memo)}</small>`:""}</span></div>`).join(""):'<div class="summary-empty">予定なし</div>'}`
+ summary.innerHTML=`<div class="summary-title">${m}月${d}日（${w}）</div>${a.length?`<div class="summary-list">${a.map(x=>`<div class="summary-row"><span class="summary-time">${esc(x.time)}</span><span class="summary-name">${esc(x.name)}${x.memo?`<br><small>${esc(x.memo)}</small>`:""}</span></div>`).join("")}</div>`:'<div class="summary-empty">予定なし</div>'}`
 }
 function clickPlan(k){if(selectedPlan==k)openPlanDetail();else{selectedPlan=k;renderPlan()}}
 function clickSalary(k){selectedSalary=k;renderSalary()}
