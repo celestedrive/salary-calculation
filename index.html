@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#111827">
-<meta name="calendar-build" content="1789061600">
+<meta name="calendar-build" content="1789063574">
 <title>カレンダー</title>
 <style>
 *{box-sizing:border-box}
@@ -395,7 +395,6 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 .today.has-custom-image{background-position:center!important;background-size:cover!important;background-repeat:no-repeat!important}
 </style>
 <link rel="apple-touch-icon" href="icon.png">
-<link rel="manifest" href="manifest.webmanifest">
 </head>
 <body>
 <div class="wrap"><main class="pager" id="pager">
@@ -460,10 +459,6 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 <div class="today-image-preview" id="todayImagePreview">画像なし</div>
 <div class="today-image-actions"><label class="secondary image-pick">画像を選択<input type="file" id="todayImageFile" accept="image/*"></label><button class="danger" id="removeTodayImage">画像を削除</button></div>
 <div class="settings-note">選んだ画像を「今日」の日付マスに表示します。</div></div>
-<div class="settings-section"><div class="settings-heading">今日の予定通知</div>
-<div class="notify-row"><label class="notify-switch"><input type="checkbox" id="notifyEnabled"> 毎朝通知</label><input id="notifyTime" type="time" value="08:00" step="300"></div>
-<button class="secondary" id="enableNotifications" style="width:100%;margin-top:8px">通知を許可</button>
-<div class="settings-note" id="notifyStatus">ホーム画面アプリで通知を許可してください。</div></div>
 <div class="settings-section"><div class="settings-heading">給与単価</div><div id="rateRows"></div><button class="secondary" id="addRate" style="width:100%">＋単価を追加</button></div>
 <div class="settings-section"><div class="settings-heading">バックアップ</div><div class="backup"><button id="exportBtn">バックアップ</button><label>復元<input type="file" id="importFile" accept=".json,application/json"></label></div></div>
 </div></div>
@@ -497,63 +492,6 @@ async function saveTodayImageFile(file){
    URL.revokeObjectURL(url)
  };
  img.src=url
-}
-const NOTIFY_KEY="calendar_notify_settings_v1";
-const VAPID_PUBLIC_KEY="BItVE_jpcUWXXleESHIKQPTK5lF699p7IJ3LOrT63Rs_b4dgB1vLgFF0bSdD-MrHTYMAPDCQbM-towybrx3cqos";
-const PUSH_SERVER="https://calendar-notification.shogo-20050206.workers.dev";
-function urlBase64ToUint8Array(base64String){
- const padding="=".repeat((4-base64String.length%4)%4);
- const base64=(base64String+padding).replace(/-/g,"+").replace(/_/g,"/");
- const raw=atob(base64);return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)))
-}
-function getNotifySettings(){return load(NOTIFY_KEY,{enabled:false,time:"08:00"})}
-function saveNotifySettings(){
- const v={enabled:!!notifyEnabled.checked,time:notifyTime.value||"08:00"};
- save(NOTIFY_KEY,v);updateNotifyStatus();return v
-}
-async function ensureServiceWorker(){
- if(!("serviceWorker" in navigator))throw new Error("Service Worker非対応");
- return navigator.serviceWorker.register("./sw.js")
-}
-async function requestCalendarNotifications(){
- try{
-   if(!("Notification" in window))throw new Error("通知非対応");
-   const registration=await ensureServiceWorker();
-   const permission=await Notification.requestPermission();
-   if(permission!=="granted")throw new Error("通知が許可されていません");
-   let subscription=await registration.pushManager.getSubscription();
-   const wantedKey=urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
-   if(subscription){
-     const currentKey=subscription.options?.applicationServerKey;
-     const sameKey=currentKey&&currentKey.byteLength===wantedKey.byteLength&&
-       new Uint8Array(currentKey).every((v,i)=>v===wantedKey[i]);
-     if(!sameKey){
-       await subscription.unsubscribe();
-       subscription=null;
-     }
-   }
-   if(!subscription){
-     subscription=await registration.pushManager.subscribe({
-       userVisibleOnly:true,
-       applicationServerKey:wantedKey
-     });
-   }
-   const settings=saveNotifySettings();
-   const res=await fetch(PUSH_SERVER+"/subscribe",{
-     method:"POST",headers:{"Content-Type":"application/json"},
-     body:JSON.stringify({subscription:subscription.toJSON(),settings,timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone||"Asia/Tokyo"})
-   });
-   if(!res.ok)throw new Error("通知サーバーへの登録に失敗しました");
-   notifyStatus.textContent="Push通知の登録が完了しました。";
- }catch(e){notifyStatus.textContent=e.message||"通知を有効にできませんでした"}
-}
-function updateNotifyStatus(){
- const s=getNotifySettings();
- notifyEnabled.checked=!!s.enabled;notifyTime.value=s.time||"08:00";
- if(!("Notification" in window))notifyStatus.textContent="この環境では通知を利用できません。";
- else if(Notification.permission==="granted")notifyStatus.textContent="通知は許可されています。";
- else if(Notification.permission==="denied")notifyStatus.textContent="iPhoneの設定から通知を許可してください。";
- else notifyStatus.textContent="「通知を許可」を押してください。";
 }
 const KEY="juku_salary_slots_v1", RATE_KEY="juku_salary_rates_v1", STUDY_KEY="salary_calendar_study_v1", PLAN_KEY="salary_calendar_plans_v1";
 const SLOT_ORDER=["X","Y","Z","A","B","C","D"];
@@ -776,9 +714,6 @@ pager.addEventListener("scroll",()=>{if(pager.scrollLeft<pager.clientWidth*.5){s
 
 eventName.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();eventStart.focus()}});
 setupHHMMInput(eventStart,eventEnd,null);setupHHMMInput(eventEnd,null,eventStart);
-enableNotifications.onclick=requestCalendarNotifications;
-notifyEnabled.onchange=saveNotifySettings;notifyTime.onchange=saveNotifySettings;
-updateNotifyStatus();
 todayImageFile.onchange=e=>{const f=e.target.files?.[0];if(f)saveTodayImageFile(f);e.target.value=""};
 removeTodayImage.onclick=()=>{localStorage.removeItem(TODAY_IMAGE_KEY);refreshTodayImagePreview();renderPlan();renderSalary()};
 refreshTodayImagePreview();
