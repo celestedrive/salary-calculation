@@ -2,9 +2,9 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#111827">
-<meta name="calendar-build" content="1789040171">
+<meta name="calendar-build" content="1789040715">
 <title>カレンダー</title>
 <style>
 *{box-sizing:border-box}
@@ -109,6 +109,139 @@ input[type=time],input[type=number],input[type=text],textarea{width:100%;min-wid
   border-bottom-right-radius:17px !important;
 }
 
+
+/* 操作中の拡大を抑止 */
+html,body{touch-action:pan-x !important;-webkit-text-size-adjust:100% !important}
+
+/* 予定カレンダー：予定を帯表示 */
+#planPanel .day{padding:20px 4px 3px !important}
+#planPanel .entry{
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+  width:100% !important;
+  min-width:0 !important;
+  min-height:27px !important;
+  margin:2px 0 0 !important;
+  padding:3px 4px !important;
+  border-left:2px solid #7dd3fc !important;
+  border-radius:4px !important;
+  background:#365b86 !important;
+  color:#fff !important;
+  overflow:hidden !important;
+  white-space:normal !important;
+  line-height:1.05 !important;
+}
+#planPanel .entry strong{
+  display:block !important;
+  width:100% !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+  font-size:8px !important;
+  line-height:1.05 !important;
+}
+#planPanel .entry .entry-time{
+  display:block !important;
+  width:100% !important;
+  font-size:7px !important;
+  line-height:1.1 !important;
+  white-space:nowrap !important;
+  letter-spacing:-.25px !important;
+  transform:scaleX(.88);
+  transform-origin:left center;
+  width:113.6% !important;
+}
+
+/* 給与カレンダー：日額をセル内に表示 */
+#salaryPanel .day-pay{
+  display:block;
+  margin-top:2px;
+  font-size:8px;
+  font-weight:800;
+  color:#d1d5db;
+  white-space:nowrap;
+}
+
+
+/* 復元機能：月合計・給料日・勉強会終了時刻・詳細タイムライン */
+.month-total{
+  flex:0 0 auto;
+  padding:5px 8px;
+  border-top:1px solid #374151;
+  background:#1f2937;
+  text-align:right;
+  font-size:11px;
+  font-weight:800;
+}
+.payday-badge{
+  position:absolute;
+  top:4px;
+  right:4px;
+  padding:1px 3px;
+  border-radius:4px;
+  background:#374151;
+  font-size:7px;
+  font-weight:900;
+  color:#f9fafb;
+}
+.study-end{
+  font-size:11px;
+  color:#cbd5e1;
+  white-space:nowrap;
+}
+.detail-timeline{
+  display:grid;
+  grid-template-columns:34px minmax(0,1fr);
+  height:360px;
+  margin:10px 0 12px;
+  border:1px solid #374151;
+  border-radius:12px;
+  overflow:hidden;
+  background:#111827;
+}
+.detail-hours{position:relative;border-right:1px solid #374151;color:#9ca3af;font-size:8px}
+.detail-hours span{position:absolute;right:4px;transform:translateY(-50%)}
+.detail-hours span:first-child{top:0;transform:none}
+.detail-hours span:last-child{bottom:0;transform:none}
+.detail-track{
+  position:relative;
+  min-width:0;
+  background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(8.333333% - 1px),#263244 calc(8.333333% - 1px),#263244 8.333333%);
+}
+.detail-band{
+  position:absolute;
+  left:4px;
+  right:4px;
+  min-height:22px;
+  padding:3px 5px;
+  border-left:3px solid #7dd3fc;
+  border-radius:5px;
+  background:#365b86;
+  color:#fff;
+  overflow:hidden;
+  font-size:9px;
+  line-height:1.15;
+}
+.detail-band strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.detail-band span{display:block;font-size:8px;white-space:nowrap}
+.rate-row{
+  grid-template-columns:1.15fr .8fr .8fr .8fr auto !important;
+  align-items:end;
+}
+.rate-delete{
+  border:0;
+  border-radius:8px;
+  background:#7f1d1d;
+  color:#fff;
+  padding:8px;
+  font-weight:800;
+}
+@media(max-width:480px){
+  .rate-row{grid-template-columns:1fr 1fr !important}
+  .rate-delete{grid-column:1/-1}
+}
+
 </style>
 </head>
 <body>
@@ -129,11 +262,16 @@ input[type=time],input[type=number],input[type=text],textarea{width:100%;min-wid
 <div class="cal-head"><button class="nav" id="salPrev">‹</button><button class="month" id="salMonth"></button><button class="nav" id="salNext">›</button></div>
 <div class="week"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>
 <div class="grid" id="salGrid"></div>
+<div class="month-total" id="monthTotal">月合計 0円</div>
 </div>
 <div class="controls card">
 <div class="selected-date" id="selectedDate">日付を選択</div>
 <div class="slot-grid" id="slotGrid"></div>
-<div class="study-row"><button class="study-toggle" id="studyToggle">勉強会</button><div class="study-fields" id="studyFields"><input id="studyHours" type="number" min="0.5" step="0.5" placeholder="時間"><input id="studyStart" type="time" step="300"></div></div>
+<div class="study-row"><button class="study-toggle" id="studyToggle">勉強会</button><div class="study-fields" id="studyFields">
+<input id="studyHours" type="number" min="0.5" step="0.5" placeholder="時間">
+<input id="studyStart" type="time" step="300">
+<div class="study-end" id="studyEnd">終了 --:--</div>
+</div></div>
 <div class="preview"><small>この日の給与</small><strong id="dayPay">0円</strong></div>
 <div class="actions"><button class="primary" id="saveDay">保存</button><button class="secondary" id="clearDay">クリア</button></div>
 <div class="settings"><button id="openSettings">給与単価・バックアップ</button></div>
@@ -143,7 +281,9 @@ input[type=time],input[type=number],input[type=text],textarea{width:100%;min-wid
 
 <div class="backdrop" id="planDetail"><div class="modal">
 <div class="modal-head"><div class="modal-title" id="detailDate"></div><button class="close" data-close="planDetail">×</button></div>
-<div id="autoInfo"></div><div class="event-list" id="eventList"></div>
+<div id="autoInfo"></div>
+<div class="detail-timeline" id="detailTimeline"></div>
+<div class="event-list" id="eventList"></div>
 <button class="primary" id="addEvent" style="width:100%">＋予定を追加</button>
 <div id="memoPreview" class="summary-memo"></div>
 </div></div>
@@ -170,7 +310,7 @@ input[type=time],input[type=number],input[type=text],textarea{width:100%;min-wid
 
 <script>
 const KEY="juku_salary_slots_v1", RATE_KEY="juku_salary_rates_v1", STUDY_KEY="salary_calendar_study_v1", PLAN_KEY="salary_calendar_plans_v1";
-const SLOT_ORDER=["A","B","C","D","X","Y","Z"];
+const SLOT_ORDER=["X","Y","Z","A","B","C","D"];
 const SLOT_TIMES={X:["09:00","10:30"],Y:["10:35","12:05"],Z:["12:10","13:40"],A:["14:55","16:25"],B:["16:30","18:00"],C:["18:05","19:35"],D:["19:40","21:10"]};
 let shifts=load(KEY,{}), studies=load(STUDY_KEY,{}), plans=load(PLAN_KEY,{}), rates=load(RATE_KEY,[]);
 if(!Array.isArray(rates)||!rates.length) rates=[{from:"2000-01-01",lesson:2026,daily:513,transport:420}];
@@ -214,14 +354,25 @@ function renderGrid(grid,view,kind){
    if(today.getFullYear()==y&&today.getMonth()==m&&today.getDate()==d)b.classList.add("today");
    if((kind=="plan"?selectedPlan:selectedSalary)==k)b.classList.add("selected");
    let content="";
-   if(kind=="plan"){content=items(k).map(x=>`<span class="entry"><strong>${esc(x.name)}</strong> ${esc(x.time)}</span>`).join("")+(plan(k).memo?'<span class="memo-dot">●</span>':"")}
-   else {let sl=getSlots(k),st=study(k);content=(sl.length?`<span class="entry"><strong>${esc(sl.join(""))}</strong></span>`:"")+(st.hours?'<span class="entry"><strong>勉強会</strong></span>':"")}
+   if(kind=="plan"){content=items(k).map(x=>`<span class="entry"><strong>${esc(x.name)}</strong><span class="entry-time">${esc(x.time)}</span></span>`).join("")+(plan(k).memo?'<span class="memo-dot">●</span>':"")}
+   else {
+     let sl=getSlots(k),st=study(k),pay=dayPay(k);
+     content=(d===15?'<span class="payday-badge">給料日</span>':"")+
+       (sl.length?`<span class="entry"><strong>${esc(sl.join(""))}</strong></span>`:"")+
+       (st.hours?'<span class="entry"><strong>勉強会</strong></span>':"")+
+       (pay>0?`<span class="day-pay">${yen(pay)}</span>`:"");
+   }
    b.innerHTML=`<span class="daynum">${d}</span>${content}`;
    b.onclick=()=>kind=="plan"?clickPlan(k):clickSalary(k);grid.appendChild(b)
  }
 }
 function renderPlan(){planMonth.textContent=`${planView.getFullYear()}年${planView.getMonth()+1}月`;renderGrid(planGrid,planView,"plan");renderSummary()}
-function renderSalary(){salMonth.textContent=`${salView.getFullYear()}年${salView.getMonth()+1}月`;renderGrid(salGrid,salView,"salary");if(selectedSalary)loadSalaryDay()}
+function renderSalary(){
+ salMonth.textContent=`${salView.getFullYear()}年${salView.getMonth()+1}月`;
+ renderGrid(salGrid,salView,"salary");
+ monthTotal.textContent=`月合計 ${yen(monthPay(salView.getFullYear(),salView.getMonth()))}`;
+ if(selectedSalary)loadSalaryDay()
+}
 function renderSummary(){
  if(!selectedPlan){summary.innerHTML='<div class="summary-title">日付を選択</div><div class="summary-empty">日付を1回押すと、その日の予定を表示します</div>';return}
  let [y,m,d]=selectedPlan.split("-").map(Number),w=["日","月","火","水","木","金","土"][new Date(y,m-1,d).getDay()],a=items(selectedPlan),p=plan(selectedPlan);
@@ -229,11 +380,34 @@ function renderSummary(){
 }
 function clickPlan(k){if(selectedPlan==k)openPlanDetail();else{selectedPlan=k;renderPlan()}}
 function clickSalary(k){selectedSalary=k;renderSalary()}
-function loadSalaryDay(){selectedDate.textContent=selectedSalary.replaceAll("-","/");let sl=getSlots(selectedSalary);document.querySelectorAll(".slot").forEach(b=>b.classList.toggle("active",sl.includes(b.dataset.slot)));let st=study(selectedSalary);studyToggle.classList.toggle("active",st.hours>0);studyFields.classList.toggle("active",st.hours>0);studyHours.value=st.hours||"";studyStart.value=st.start||"";dayPayEl.textContent=yen(dayPay(selectedSalary))}
+function loadSalaryDay(){selectedDate.textContent=selectedSalary.replaceAll("-","/");let sl=getSlots(selectedSalary);document.querySelectorAll(".slot").forEach(b=>b.classList.toggle("active",sl.includes(b.dataset.slot)));let st=study(selectedSalary);studyToggle.classList.toggle("active",st.hours>0);studyFields.classList.toggle("active",st.hours>0);studyHours.value=st.hours||"";
+studyStart.value=st.start||"";
+updateStudyEnd();
+dayPayEl.textContent=yen(dayPay(selectedSalary))}
+function updateStudyEnd(){
+ const h=Number(studyHours.value)||0,start=studyStart.value||"";
+ studyEnd.textContent=`終了 ${h>0&&start?addMinutes(start,h*60):"--:--"}`;
+}
 function saveSalary(){if(!selectedSalary)return;let sl=[...document.querySelectorAll(".slot.active")].map(b=>b.dataset.slot);if(sl.length)shifts[selectedSalary]=sl;else delete shifts[selectedSalary];let h=Number(studyHours.value)||0;if(studyToggle.classList.contains("active")&&h>0){let start=studyStart.value||"";studies[selectedSalary]={hours:h,start,end:start?addMinutes(start,h*60):""}}else delete studies[selectedSalary];save(KEY,shifts);save(STUDY_KEY,studies);renderSalary();renderPlan()}
 function clearSalary(){if(!selectedSalary)return;delete shifts[selectedSalary];delete studies[selectedSalary];save(KEY,shifts);save(STUDY_KEY,studies);renderSalary();renderPlan()}
 
-function openPlanDetail(){let k=selectedPlan,p=plan(k);detailDate.textContent=k.replaceAll("-","/");let sl=getSlots(k),st=study(k);autoInfo.innerHTML=`<div class="summary-row"><span>塾</span><span>${sl.length?esc(slotRange(sl)):"なし"}</span></div><div class="summary-row"><span>勉強会</span><span>${st.hours?esc(studyRange(k)||st.hours+"時間"):"なし"}</span></div>`;eventList.innerHTML=p.events.length?p.events.sort((a,b)=>(a.start||"99").localeCompare(b.start||"99")).map(e=>`<div class="event-item"><div class="event-text"><strong>${esc(e.title||"予定")}</strong><br>${esc(e.start?`${e.start}-${e.end||"未定"}`:"時間未定")}</div><button data-id="${esc(e.id)}">変更</button></div>`).join(""):'<div class="summary-empty">登録済み予定なし</div>';eventList.querySelectorAll("button").forEach(b=>b.onclick=()=>openEditor(b.dataset.id));memoPreview.innerHTML=p.memo?`<strong>メモ</strong><br>${esc(p.memo)}`:"";open("planDetail")}
+function renderDetailTimeline(k){
+ const a=items(k).filter(x=>mins(x.start)!=null);
+ let hours='<div class="detail-hours">';
+ for(let h=0;h<=24;h+=2){
+   const pos=(h/24)*100;
+   hours+=`<span style="${h===24?'bottom:0':`top:${pos}%`}">${pad(h)}:00</span>`;
+ }
+ hours+='</div>';
+ let bands=a.map(x=>{
+   const s=mins(x.start),parts=(x.time||"").split("-"),e=mins(parts[1]);
+   const end=e!=null&&e>s?e:Math.min(s+60,1440);
+   const top=(s/1440)*100,height=Math.max(((end-s)/1440)*100,6);
+   return `<div class="detail-band" style="top:${top}%;height:${height}%"><strong>${esc(x.name)}</strong><span>${esc(x.time)}</span></div>`;
+ }).join("");
+ detailTimeline.innerHTML=hours+`<div class="detail-track">${bands}</div>`;
+}
+function openPlanDetail(){let k=selectedPlan,p=plan(k);detailDate.textContent=k.replaceAll("-","/");renderDetailTimeline(k);let sl=getSlots(k),st=study(k);autoInfo.innerHTML=`<div class="summary-row"><span>塾</span><span>${sl.length?esc(slotRange(sl)):"なし"}</span></div><div class="summary-row"><span>勉強会</span><span>${st.hours?esc(studyRange(k)||st.hours+"時間"):"なし"}</span></div>`;eventList.innerHTML=p.events.length?p.events.sort((a,b)=>(a.start||"99").localeCompare(b.start||"99")).map(e=>`<div class="event-item"><div class="event-text"><strong>${esc(e.title||"予定")}</strong><br>${esc(e.start?`${e.start}-${e.end||"未定"}`:"時間未定")}</div><button data-id="${esc(e.id)}">変更</button></div>`).join(""):'<div class="summary-empty">登録済み予定なし</div>';eventList.querySelectorAll("button").forEach(b=>b.onclick=()=>openEditor(b.dataset.id));memoPreview.innerHTML=p.memo?`<strong>メモ</strong><br>${esc(p.memo)}`:"";open("planDetail")}
 function openEditor(id=null){editingEvent=id;let p=plan(selectedPlan),e=id?p.events.find(x=>x.id==id):null;editorTitle.textContent=e?"予定を変更":"予定を追加";eventName.value=e?.title||"";eventStart.value=e?.start||"";eventEnd.value=e?.end||"";eventMemo.value=p.memo||"";deleteEvent.style.visibility=e?"visible":"hidden";open("eventEditor")}
 function saveEventFn(){if(!selectedPlan||!eventStart.value)return;let p=plan(selectedPlan),e={id:editingEvent||`${Date.now()}`,title:eventName.value.trim()||"予定",start:eventStart.value,end:eventEnd.value};if(editingEvent){let i=p.events.findIndex(x=>x.id==editingEvent);if(i>=0)p.events[i]=e}else p.events.push(e);p.memo=eventMemo.value.slice(0,120);plans[selectedPlan]=p;save(PLAN_KEY,plans);close("eventEditor");close("planDetail");renderPlan()}
 function deleteEventFn(){if(!editingEvent)return;let p=plan(selectedPlan);p.events=p.events.filter(x=>x.id!=editingEvent);p.memo=eventMemo.value.slice(0,120);plans[selectedPlan]=p;save(PLAN_KEY,plans);close("eventEditor");close("planDetail");renderPlan()}
@@ -241,7 +415,25 @@ function open(id){document.getElementById(id).classList.add("open")}function clo
 
 function openMonth(kind){pickerTarget=kind;let v=kind=="plan"?planView:salView;pickerYear=v.getFullYear();renderPicker();open("monthPicker")}
 function renderPicker(){pickerYearEl.textContent=pickerYear+"年";monthGrid.innerHTML="";for(let m=0;m<12;m++){let b=document.createElement("button");b.textContent=(m+1)+"月";b.onclick=()=>{if(pickerTarget=="plan")planView=new Date(pickerYear,m,1);else salView=new Date(pickerYear,m,1);close("monthPicker");renderPlan();renderSalary()};monthGrid.appendChild(b)}}
-function renderRates(){rateRows.innerHTML=rates.map((r,i)=>`<div class="rate-row"><label>適用日<input data-i="${i}" data-k="from" type="text" value="${esc(r.from||"")}"></label><label>1コマ<input data-i="${i}" data-k="lesson" type="number" value="${Number(r.lesson)||0}"></label><label>日時手当<input data-i="${i}" data-k="daily" type="number" value="${Number(r.daily)||0}"></label></div>`).join("");rateRows.querySelectorAll("input").forEach(x=>x.onchange=()=>{let i=+x.dataset.i,k=x.dataset.k;rates[i][k]=k=="from"?x.value:Number(x.value);save(RATE_KEY,rates);renderSalary()})}
+function renderRates(){
+ rateRows.innerHTML=rates.map((r,i)=>`<div class="rate-row">
+ <label>適用日<input data-i="${i}" data-k="from" type="date" value="${esc(r.from||"")}"></label>
+ <label>1コマ<input data-i="${i}" data-k="lesson" type="number" value="${Number(r.lesson)||0}"></label>
+ <label>日時手当<input data-i="${i}" data-k="daily" type="number" value="${Number(r.daily)||0}"></label>
+ <label>交通費<input data-i="${i}" data-k="transport" type="number" value="${Number(r.transport)||0}"></label>
+ <button class="rate-delete" data-delete-rate="${i}" type="button">削除</button>
+ </div>`).join("");
+ rateRows.querySelectorAll("input").forEach(x=>x.onchange=()=>{
+   let i=+x.dataset.i,k=x.dataset.k;
+   rates[i][k]=k=="from"?x.value:Number(x.value);
+   save(RATE_KEY,rates);renderSalary()
+ });
+ rateRows.querySelectorAll("[data-delete-rate]").forEach(b=>b.onclick=()=>{
+   if(rates.length<=1)return;
+   rates.splice(Number(b.dataset.deleteRate),1);
+   save(RATE_KEY,rates);renderRates();renderSalary()
+ });
+}
 function exportData(){let blob=new Blob([JSON.stringify({version:5,shifts,rates,studies,plans},null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="calendar-backup.json";a.click();URL.revokeObjectURL(a.href)}
 async function importData(f){try{let j=JSON.parse(await f.text());if(j.shifts)shifts=j.shifts;if(j.rates)rates=j.rates;if(j.studies)studies=j.studies;if(j.plans)plans=j.plans;save(KEY,shifts);save(RATE_KEY,rates);save(STUDY_KEY,studies);save(PLAN_KEY,plans);renderPlan();renderSalary();alert("復元しました")}catch{alert("復元できませんでした")}}
 
@@ -250,12 +442,22 @@ SLOT_ORDER.forEach(s=>{let b=document.createElement("button");b.className="slot"
 planPrev.onclick=()=>{planView=new Date(planView.getFullYear(),planView.getMonth()-1,1);renderPlan()};planNext.onclick=()=>{planView=new Date(planView.getFullYear(),planView.getMonth()+1,1);renderPlan()};salPrev.onclick=()=>{salView=new Date(salView.getFullYear(),salView.getMonth()-1,1);renderSalary()};salNext.onclick=()=>{salView=new Date(salView.getFullYear(),salView.getMonth()+1,1);renderSalary()};
 planMonth.onclick=()=>openMonth("plan");salMonth.onclick=()=>openMonth("salary");yearPrev.onclick=()=>{pickerYear--;renderPicker()};yearNext.onclick=()=>{pickerYear++;renderPicker()};
 studyToggle.onclick=()=>{studyToggle.classList.toggle("active");studyFields.classList.toggle("active",studyToggle.classList.contains("active"))};
-studyHours.oninput=()=>{if(selectedSalary)dayPayEl.textContent=yen(dayPay(selectedSalary))};saveDay.onclick=saveSalary;clearDay.onclick=clearSalary;
+studyHours.oninput=()=>{updateStudyEnd();if(selectedSalary)dayPayEl.textContent=yen(dayPay(selectedSalary))};
+studyStart.oninput=updateStudyEnd;saveDay.onclick=saveSalary;clearDay.onclick=clearSalary;
 addEvent.onclick=()=>openEditor();saveEvent.onclick=saveEventFn;deleteEvent.onclick=deleteEventFn;
 openSettings.onclick=()=>{renderRates();open("settingsModal")};addRate.onclick=()=>{rates.push({from:new Date().toISOString().slice(0,10),lesson:2026,daily:513,transport:420});save(RATE_KEY,rates);renderRates()};
 exportBtn.onclick=exportData;importFile.onchange=e=>e.target.files[0]&&importData(e.target.files[0]);
 document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>close(b.dataset.close));
 document.querySelectorAll(".backdrop").forEach(b=>b.addEventListener("click",e=>{if(e.target===b)close(b.id)}));
+let lastTouchEnd=0;
+document.addEventListener("touchend",e=>{
+  const now=Date.now();
+  if(now-lastTouchEnd<=300)e.preventDefault();
+  lastTouchEnd=now;
+},{passive:false});
+document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
+document.addEventListener("gesturechange",e=>e.preventDefault(),{passive:false});
+document.addEventListener("gestureend",e=>e.preventDefault(),{passive:false});
 pager.addEventListener("scroll",()=>{if(pager.scrollLeft<pager.clientWidth*.5){shifts=load(KEY,{});studies=load(STUDY_KEY,{});renderPlan()}},{passive:true});
 renderPlan();renderSalary();
 </script>
