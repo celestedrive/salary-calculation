@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#111827">
-<meta name="calendar-build" content="1789040715">
+<meta name="calendar-build" content="1789042612">
 <title>カレンダー</title>
 <style>
 *{box-sizing:border-box}
@@ -242,6 +242,35 @@ html,body{touch-action:pan-x !important;-webkit-text-size-adjust:100% !important
   .rate-delete{grid-column:1/-1}
 }
 
+
+/* 10 requested fixes */
+html,body{width:100%;max-width:100%;height:100%;overflow:hidden!important;overscroll-behavior:none!important}
+.wrap,.pager,.panel{max-width:100vw!important;overscroll-behavior:none!important}
+.pager{overscroll-behavior-x:none!important;scroll-snap-stop:always!important}
+button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlight-color:transparent}
+
+/* calendar event band */
+#planPanel .day{padding:18px 3px 2px!important}
+#planPanel .entry{height:auto!important;min-height:0!important;padding:3px!important;overflow:hidden!important}
+#planPanel .entry-time{font-size:6.3px!important;line-height:1.05!important;letter-spacing:-.35px!important;transform:none!important;width:100%!important;overflow:visible!important}
+#planPanel .entry-memo{display:block!important;margin-top:2px!important;padding-top:2px!important;border-top:1px solid rgba(255,255,255,.2);font-size:6.2px!important;line-height:1.1!important;white-space:normal!important;overflow-wrap:anywhere!important;color:#e5e7eb!important}
+
+/* compact time controls */
+.study-fields{grid-template-columns:66px 90px minmax(0,1fr)!important;gap:5px!important}
+#studyHours,#studyStart{width:100%!important;min-width:0!important;height:34px!important;padding:3px 5px!important;font-size:16px!important}
+.time-row{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:7px!important}
+.time-row label,.time-row input{min-width:0!important;width:100%!important;box-sizing:border-box!important}
+.time-row input{height:36px!important;padding:3px 5px!important;font-size:16px!important}
+
+/* edit/delete side by side */
+.event-actions{display:flex!important;gap:6px!important}
+.event-delete-inline{background:#7f1d1d!important;color:#fff!important;border:0!important;border-radius:8px!important;padding:7px 9px!important;font-weight:800!important}
+
+/* larger monthly salary summary */
+.month-total{padding:9px 10px!important;text-align:left!important}
+.total-main{font-size:17px!important;font-weight:900!important}
+.total-breakdown{margin-top:3px;font-size:11px!important;font-weight:700!important;color:#cbd5e1!important}
+
 </style>
 </head>
 <body>
@@ -324,12 +353,12 @@ function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&l
 function yen(n){return Math.round(n).toLocaleString("ja-JP")+"円"}
 function getSlots(k){return Array.isArray(shifts[k])?shifts[k]:[]}
 function study(k){let v=studies[k];if(typeof v==="number")return {hours:v,start:"",end:""};return v&&typeof v==="object"?{hours:Number(v.hours)||0,start:v.start||"",end:v.end||""}:{hours:0,start:"",end:""}}
-function plan(k){let v=plans[k];if(!v||typeof v!=="object")return {events:[],memo:""};if(Array.isArray(v.events))return {events:v.events.map((e,i)=>({id:String(e.id||`${k}-${i}`),title:String(e.title||""),start:String(e.start||""),end:String(e.end||"")})),memo:String(v.memo||"")};let e=[];if(v.title||v.time)e.push({id:`${k}-legacy`,title:String(v.title||""),start:String(v.time||""),end:""});return {events:e,memo:String(v.memo||"")}}
+function plan(k){let v=plans[k];if(!v||typeof v!=="object")return {events:[]};let events=[];if(Array.isArray(v.events)){events=v.events.map((e,i)=>({id:String(e.id||`${k}-${i}`),title:String(e.title||""),start:String(e.start||""),end:String(e.end||""),memo:String(e.memo??(i===0?(v.memo||""):""))}))}else if(v.title||v.time){events=[{id:`${k}-legacy`,title:String(v.title||""),start:String(v.time||""),end:"",memo:String(v.memo||"")}]}return {events}}
 function mins(t){if(!/^\d{1,2}:\d{2}$/.test(t||""))return null;let [h,m]=t.split(":").map(Number);return h*60+m}
 function addMinutes(t,n){let m=mins(t);if(m==null)return "";m=Math.min(1439,m+n);return `${pad(Math.floor(m/60))}:${pad(m%60)}`}
 function slotRange(slots){if(!slots.length)return "";let s=[...slots].sort((a,b)=>mins(SLOT_TIMES[a]?.[0])-mins(SLOT_TIMES[b]?.[0]));return `${SLOT_TIMES[s[0]][0]}-${SLOT_TIMES[s.at(-1)][1]}`}
 function studyRange(k){let s=study(k);if(!s.hours||!s.start)return "";return `${s.start}-${s.end||addMinutes(s.start,s.hours*60)}`}
-function items(k){let a=[],sl=getSlots(k);if(sl.length)a.push({name:"塾",time:slotRange(sl),start:SLOT_TIMES[[...sl].sort((x,y)=>mins(SLOT_TIMES[x][0])-mins(SLOT_TIMES[y][0]))[0]][0]});let st=study(k);if(st.hours)a.push({name:"勉強会",time:studyRange(k)||`時間未定（${st.hours}h）`,start:st.start});for(let e of plan(k).events)a.push({name:e.title||"予定",time:e.start?`${e.start}-${e.end||"未定"}`:"時間未定",start:e.start});return a.sort((x,y)=>(x.start||"99:99").localeCompare(y.start||"99:99"))}
+function items(k){let a=[],sl=getSlots(k);if(sl.length){let r=slotRange(sl);a.push({id:"auto-juku",name:"塾",time:r,start:r.split("-")[0],end:r.split("-")[1],memo:"",auto:true})}let st=study(k);if(st.hours){let r=studyRange(k)||`時間未定（${st.hours}h）`;a.push({id:"auto-study",name:"勉強会",time:r,start:st.start,end:st.end||addMinutes(st.start,st.hours*60),memo:"",auto:true})}for(let e of plan(k).events)a.push({id:e.id,name:e.title||"予定",time:e.start?`${e.start}-${e.end||"未定"}`:"時間未定",start:e.start,end:e.end,memo:e.memo||"",auto:false});return a.sort((x,y)=>(x.start||"99:99").localeCompare(y.start||"99:99"))}
 function rateFor(k){return [...rates].sort((a,b)=>String(a.from).localeCompare(String(b.from))).filter(r=>!r.from||r.from<=k).at(-1)||rates[0]}
 function dayPay(k){let r=rateFor(k),sl=getSlots(k),st=study(k);return sl.length*(Number(r.lesson)||0)+(sl.length?(Number(r.daily)||0)+(Number(r.transport)||0):0)+(st.hours?st.hours*1500+420:0)}
 function monthPay(y,m){let sum=0,last=new Date(y,m+1,0).getDate();for(let d=1;d<=last;d++)sum+=dayPay(keyOf(y,m,d));return sum}
@@ -354,7 +383,7 @@ function renderGrid(grid,view,kind){
    if(today.getFullYear()==y&&today.getMonth()==m&&today.getDate()==d)b.classList.add("today");
    if((kind=="plan"?selectedPlan:selectedSalary)==k)b.classList.add("selected");
    let content="";
-   if(kind=="plan"){content=items(k).map(x=>`<span class="entry"><strong>${esc(x.name)}</strong><span class="entry-time">${esc(x.time)}</span></span>`).join("")+(plan(k).memo?'<span class="memo-dot">●</span>':"")}
+   if(kind=="plan"){content=items(k).map(x=>`<span class="entry"><strong>${esc(x.name)}</strong><span class="entry-time">${esc(x.time)}</span>${x.memo?`<span class="entry-memo">${esc(x.memo)}</span>`:""}</span>`).join("")}
    else {
      let sl=getSlots(k),st=study(k),pay=dayPay(k);
      content=(d===15?'<span class="payday-badge">給料日</span>':"")+
@@ -367,16 +396,17 @@ function renderGrid(grid,view,kind){
  }
 }
 function renderPlan(){planMonth.textContent=`${planView.getFullYear()}年${planView.getMonth()+1}月`;renderGrid(planGrid,planView,"plan");renderSummary()}
+function monthBreakdown(y,m){let juku=0,studyPay=0,last=new Date(y,m+1,0).getDate();for(let d=1;d<=last;d++){let k=keyOf(y,m,d),r=rateFor(k),sl=getSlots(k),st=study(k);if(sl.length)juku+=sl.length*(Number(r.lesson)||0)+(Number(r.daily)||0)+(Number(r.transport)||0);if(st.hours)studyPay+=st.hours*1500+420}return {juku,study:studyPay,total:juku+studyPay}}
 function renderSalary(){
  salMonth.textContent=`${salView.getFullYear()}年${salView.getMonth()+1}月`;
  renderGrid(salGrid,salView,"salary");
- monthTotal.textContent=`月合計 ${yen(monthPay(salView.getFullYear(),salView.getMonth()))}`;
+ let mb=monthBreakdown(salView.getFullYear(),salView.getMonth());monthTotal.innerHTML=`<div class="total-main">月合計 ${yen(mb.total)}</div><div class="total-breakdown">バイト ${yen(mb.juku)} ／ 勉強会 ${yen(mb.study)}</div>`;
  if(selectedSalary)loadSalaryDay()
 }
 function renderSummary(){
  if(!selectedPlan){summary.innerHTML='<div class="summary-title">日付を選択</div><div class="summary-empty">日付を1回押すと、その日の予定を表示します</div>';return}
- let [y,m,d]=selectedPlan.split("-").map(Number),w=["日","月","火","水","木","金","土"][new Date(y,m-1,d).getDay()],a=items(selectedPlan),p=plan(selectedPlan);
- summary.innerHTML=`<div class="summary-title">${m}月${d}日（${w}）</div>${a.length?a.map(x=>`<div class="summary-row"><span class="summary-time">${esc(x.time)}</span><span class="summary-name">${esc(x.name)}</span></div>`).join(""):'<div class="summary-empty">予定なし</div>'}${p.memo?`<div class="summary-memo"><strong>メモ</strong><br>${esc(p.memo)}</div>`:""}`
+ let [y,m,d]=selectedPlan.split("-").map(Number),w=["日","月","火","水","木","金","土"][new Date(y,m-1,d).getDay()],a=items(selectedPlan);
+ summary.innerHTML=`<div class="summary-title">${m}月${d}日（${w}）</div>${a.length?a.map(x=>`<div class="summary-row"><span class="summary-time">${esc(x.time)}</span><span class="summary-name">${esc(x.name)}${x.memo?`<br><small>${esc(x.memo)}</small>`:""}</span></div>`).join(""):'<div class="summary-empty">予定なし</div>'}`
 }
 function clickPlan(k){if(selectedPlan==k)openPlanDetail();else{selectedPlan=k;renderPlan()}}
 function clickSalary(k){selectedSalary=k;renderSalary()}
@@ -394,23 +424,16 @@ function clearSalary(){if(!selectedSalary)return;delete shifts[selectedSalary];d
 function renderDetailTimeline(k){
  const a=items(k).filter(x=>mins(x.start)!=null);
  let hours='<div class="detail-hours">';
- for(let h=0;h<=24;h+=2){
-   const pos=(h/24)*100;
-   hours+=`<span style="${h===24?'bottom:0':`top:${pos}%`}">${pad(h)}:00</span>`;
- }
+ for(let h=0;h<=24;h+=2){const pos=(h/24)*100;hours+=`<span style="${h===0?'top:0;transform:none':h===24?'bottom:0;transform:none':`top:${pos}%`}">${pad(h)}:00</span>`}
  hours+='</div>';
- let bands=a.map(x=>{
-   const s=mins(x.start),parts=(x.time||"").split("-"),e=mins(parts[1]);
-   const end=e!=null&&e>s?e:Math.min(s+60,1440);
-   const top=(s/1440)*100,height=Math.max(((end-s)/1440)*100,6);
-   return `<div class="detail-band" style="top:${top}%;height:${height}%"><strong>${esc(x.name)}</strong><span>${esc(x.time)}</span></div>`;
- }).join("");
- detailTimeline.innerHTML=hours+`<div class="detail-track">${bands}</div>`;
+ let bands=a.map(x=>{const s=mins(x.start);let e=mins(x.end);if(e==null||e<=s)e=Math.min(s+60,1440);const top=(s/1440)*100,height=Math.max(((e-s)/1440)*100,1.5);return `<div class="detail-band" style="top:${top}%;height:${height}%"><strong>${esc(x.name)}</strong><span>${esc(x.time)}</span>${x.memo?`<span>${esc(x.memo)}</span>`:""}</div>`}).join("");
+ detailTimeline.innerHTML=hours+`<div class="detail-track">${bands}</div>`
 }
-function openPlanDetail(){let k=selectedPlan,p=plan(k);detailDate.textContent=k.replaceAll("-","/");renderDetailTimeline(k);let sl=getSlots(k),st=study(k);autoInfo.innerHTML=`<div class="summary-row"><span>塾</span><span>${sl.length?esc(slotRange(sl)):"なし"}</span></div><div class="summary-row"><span>勉強会</span><span>${st.hours?esc(studyRange(k)||st.hours+"時間"):"なし"}</span></div>`;eventList.innerHTML=p.events.length?p.events.sort((a,b)=>(a.start||"99").localeCompare(b.start||"99")).map(e=>`<div class="event-item"><div class="event-text"><strong>${esc(e.title||"予定")}</strong><br>${esc(e.start?`${e.start}-${e.end||"未定"}`:"時間未定")}</div><button data-id="${esc(e.id)}">変更</button></div>`).join(""):'<div class="summary-empty">登録済み予定なし</div>';eventList.querySelectorAll("button").forEach(b=>b.onclick=()=>openEditor(b.dataset.id));memoPreview.innerHTML=p.memo?`<strong>メモ</strong><br>${esc(p.memo)}`:"";open("planDetail")}
-function openEditor(id=null){editingEvent=id;let p=plan(selectedPlan),e=id?p.events.find(x=>x.id==id):null;editorTitle.textContent=e?"予定を変更":"予定を追加";eventName.value=e?.title||"";eventStart.value=e?.start||"";eventEnd.value=e?.end||"";eventMemo.value=p.memo||"";deleteEvent.style.visibility=e?"visible":"hidden";open("eventEditor")}
-function saveEventFn(){if(!selectedPlan||!eventStart.value)return;let p=plan(selectedPlan),e={id:editingEvent||`${Date.now()}`,title:eventName.value.trim()||"予定",start:eventStart.value,end:eventEnd.value};if(editingEvent){let i=p.events.findIndex(x=>x.id==editingEvent);if(i>=0)p.events[i]=e}else p.events.push(e);p.memo=eventMemo.value.slice(0,120);plans[selectedPlan]=p;save(PLAN_KEY,plans);close("eventEditor");close("planDetail");renderPlan()}
-function deleteEventFn(){if(!editingEvent)return;let p=plan(selectedPlan);p.events=p.events.filter(x=>x.id!=editingEvent);p.memo=eventMemo.value.slice(0,120);plans[selectedPlan]=p;save(PLAN_KEY,plans);close("eventEditor");close("planDetail");renderPlan()}
+function openPlanDetail(){let k=selectedPlan,p=plan(k);detailDate.textContent=k.replaceAll("-","/");renderDetailTimeline(k);let sl=getSlots(k),st=study(k);autoInfo.innerHTML=`<div class="summary-row"><span>塾</span><span>${sl.length?esc(slotRange(sl)):"なし"}</span></div><div class="summary-row"><span>勉強会</span><span>${st.hours?esc(studyRange(k)||st.hours+"時間"):"なし"}</span></div>`;eventList.innerHTML=p.events.length?p.events.sort((a,b)=>(a.start||"99").localeCompare(b.start||"99")).map(e=>`<div class="event-item"><div class="event-text"><strong>${esc(e.title||"予定")}</strong><br>${esc(e.start?`${e.start}-${e.end||"未定"}`:"時間未定")}${e.memo?`<br><small>${esc(e.memo)}</small>`:""}</div><div class="event-actions"><button data-edit="${esc(e.id)}">変更</button><button class="event-delete-inline" data-del="${esc(e.id)}">削除</button></div></div>`).join(""):'<div class="summary-empty">登録済み予定なし</div>';eventList.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openEditor(b.dataset.edit));eventList.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deleteEventById(b.dataset.del));memoPreview.innerHTML="";open("planDetail")}
+function openEditor(id=null){editingEvent=id;let p=plan(selectedPlan),e=id?p.events.find(x=>x.id==id):null;editorTitle.textContent=e?"予定を変更":"予定を追加";eventName.value=e?.title||"";eventStart.value=e?.start||"";eventEnd.value=e?.end||"";eventMemo.value=e?.memo||"";deleteEvent.style.visibility=e?"visible":"hidden";open("eventEditor")}
+function saveEventFn(){if(!selectedPlan||!eventStart.value)return;let p=plan(selectedPlan),e={id:editingEvent||`${Date.now()}`,title:eventName.value.trim()||"予定",start:eventStart.value,end:eventEnd.value,memo:eventMemo.value.slice(0,120)};if(editingEvent){let i=p.events.findIndex(x=>x.id==editingEvent);if(i>=0)p.events[i]=e}else p.events.push(e);plans[selectedPlan]=p;save(PLAN_KEY,plans);close("eventEditor");close("planDetail");renderPlan()}
+function deleteEventById(id){let p=plan(selectedPlan);p.events=p.events.filter(x=>x.id!=id);plans[selectedPlan]=p;save(PLAN_KEY,plans);close("eventEditor");close("planDetail");renderPlan()}
+function deleteEventFn(){if(editingEvent)deleteEventById(editingEvent)}
 function open(id){document.getElementById(id).classList.add("open")}function close(id){document.getElementById(id).classList.remove("open")}
 
 function openMonth(kind){pickerTarget=kind;let v=kind=="plan"?planView:salView;pickerYear=v.getFullYear();renderPicker();open("monthPicker")}
@@ -449,16 +472,10 @@ openSettings.onclick=()=>{renderRates();open("settingsModal")};addRate.onclick=(
 exportBtn.onclick=exportData;importFile.onchange=e=>e.target.files[0]&&importData(e.target.files[0]);
 document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>close(b.dataset.close));
 document.querySelectorAll(".backdrop").forEach(b=>b.addEventListener("click",e=>{if(e.target===b)close(b.id)}));
-let lastTouchEnd=0;
-document.addEventListener("touchend",e=>{
-  const now=Date.now();
-  if(now-lastTouchEnd<=300)e.preventDefault();
-  lastTouchEnd=now;
-},{passive:false});
 document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
 document.addEventListener("gesturechange",e=>e.preventDefault(),{passive:false});
 document.addEventListener("gestureend",e=>e.preventDefault(),{passive:false});
-pager.addEventListener("scroll",()=>{if(pager.scrollLeft<pager.clientWidth*.5){shifts=load(KEY,{});studies=load(STUDY_KEY,{});renderPlan()}},{passive:true});
+pager.addEventListener("scroll",()=>{if(pager.scrollLeft<pager.clientWidth*.5){shifts=load(KEY,{});studies=load(STUDY_KEY,{});renderPlan()}},{passive:true});pager.addEventListener("scroll",()=>{let max=Math.max(0,pager.scrollWidth-pager.clientWidth);if(pager.scrollLeft<0)pager.scrollLeft=0;else if(pager.scrollLeft>max)pager.scrollLeft=max},{passive:true});
 renderPlan();renderSalary();
 </script>
 </body></html>
