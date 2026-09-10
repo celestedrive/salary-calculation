@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#111827">
-<meta name="calendar-build" content="1789046273">
+<meta name="calendar-build" content="1789049416">
 <title>カレンダー</title>
 <style>
 *{box-sizing:border-box}
@@ -426,7 +426,7 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 <div class="backdrop" id="eventEditor"><div class="modal">
 <div class="modal-head"><div class="modal-title" id="editorTitle">予定を追加</div><button class="close" data-close="eventEditor">×</button></div>
 <div class="form">
-<label>予定名<input id="eventName" type="text"></label>
+<label>予定名<input id="eventName" type="text" enterkeyhint="next"></label>
 <div class="time-row"><label>開始<input id="eventStart" class="hhmm-input" type="tel" inputmode="numeric" autocomplete="off" aria-label="開始時間"></label><label>終了<div class="end-time-wrap"><input id="eventEnd" class="hhmm-input" type="tel" inputmode="numeric" autocomplete="off" aria-label="終了時間"><button type="button" id="unsetEnd">未定</button></div></label></div>
 <label>メモ<textarea id="eventMemo" maxlength="120" placeholder="120文字まで"></textarea></label>
 <div class="actions"><button class="danger" id="deleteEvent">削除</button><button class="primary" id="saveEvent">保存</button></div>
@@ -601,7 +601,7 @@ function renderDetailTimeline(k){
  detailTimeline.innerHTML=hours+`<div class="detail-track">${bands}</div>`
 }
 function openPlanDetail(){let k=selectedPlan,p=plan(k);detailDate.textContent=k.replaceAll("-","/");renderDetailTimeline(k);let sl=getSlots(k),st=study(k);autoInfo.innerHTML=`<div class="summary-row"><span>塾</span><span>${sl.length?esc(slotRange(sl)):"なし"}</span></div><div class="summary-row"><span>勉強会</span><span>${st.hours?esc(studyRange(k)||st.hours+"時間"):"なし"}</span></div>`;eventList.innerHTML=p.events.length?p.events.sort((a,b)=>(a.start||"99").localeCompare(b.start||"99")).map(e=>`<div class="event-item"><div class="event-text"><strong>${esc(e.title||"予定")}</strong><br>${esc(e.start?`${e.start}-${e.end||"未定"}`:"時間未定")}${e.memo?`<br><small>${esc(e.memo)}</small>`:""}</div><div class="event-actions"><button class="event-delete-inline" data-del="${esc(e.id)}">削除</button><button data-edit="${esc(e.id)}">変更</button></div></div>`).join(""):'<div class="summary-empty">登録済み予定なし</div>';eventList.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openEditor(b.dataset.edit));eventList.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deleteEventById(b.dataset.del));memoPreview.innerHTML="";open("planDetail")}
-function openEditor(id=null){editingEvent=id;let p=plan(selectedPlan),e=id?p.events.find(x=>x.id==id):null;editorTitle.textContent=e?"予定を変更":"予定を追加";eventName.value=e?.title||"";eventStart.value=timeToHHMM(e?.start||"");eventEnd.value=timeToHHMM(e?.end||"");eventMemo.value=e?.memo||"";deleteEvent.style.visibility=e?"visible":"hidden";open("eventEditor")}
+function openEditor(id=null){editingEvent=id;let p=plan(selectedPlan),e=id?p.events.find(x=>x.id==id):null;editorTitle.textContent=e?"予定を変更":"予定を追加";eventName.value=e?.title||"";eventStart.value=timeToHHMM(e?.start||"");eventEnd.value=timeToHHMM(e?.end||"");eventMemo.value=e?.memo||"";deleteEvent.style.visibility=e?"visible":"hidden";open("eventEditor");if(!e)setTimeout(()=>eventName.focus(),0)}
 function saveEventFn(){
  if(!selectedPlan)return;
  const start=hhmmToTime(eventStart.value),end=eventEnd.value?hhmmToTime(eventEnd.value):"";
@@ -662,6 +662,7 @@ document.addEventListener("gesturechange",e=>e.preventDefault(),{passive:false})
 document.addEventListener("gestureend",e=>e.preventDefault(),{passive:false});
 pager.addEventListener("scroll",()=>{if(pager.scrollLeft<pager.clientWidth*.5){shifts=load(KEY,{});studies=load(STUDY_KEY,{});renderPlan()}},{passive:true});pager.addEventListener("scroll",()=>{let max=Math.max(0,pager.scrollWidth-pager.clientWidth);if(pager.scrollLeft<0)pager.scrollLeft=0;else if(pager.scrollLeft>max)pager.scrollLeft=max},{passive:true});
 
+eventName.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();eventStart.focus()}});
 setupHHMMInput(eventStart,eventEnd,null);setupHHMMInput(eventEnd,null,eventStart);
 renderPlan();renderSalary();
 </script>
