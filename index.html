@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#111827">
-<meta name="calendar-build" content="1789050283">
+<meta name="calendar-build" content="1789050608">
 <title>カレンダー</title>
 <style>
 *{box-sizing:border-box}
@@ -383,8 +383,19 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 .settings-section:last-child{border-bottom:0}
 .settings-heading{font-size:13px;font-weight:900;margin-bottom:8px}
 .settings-note{font-size:11px;color:#9ca3af}
+.notify-row{display:grid;grid-template-columns:1fr 110px;gap:8px;align-items:center}
+.notify-switch{font-size:13px;font-weight:800;color:#f3f4f6}
+#notifyTime{width:110px;height:34px}
+#notifyStatus{margin-top:7px}
+.gear{right:2px!important;top:-4px!important;width:44px!important;height:38px!important;font-size:28px!important;line-height:38px!important}
+.today-image-preview{height:82px;border:1px solid #4b5563;border-radius:10px;background:#111827 center/cover no-repeat;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:12px;margin-bottom:8px;overflow:hidden}
+.today-image-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:7px}
+.image-pick{display:flex;align-items:center;justify-content:center;cursor:pointer}
+.image-pick input{display:none}
+.today.has-custom-image{background-position:center!important;background-size:cover!important;background-repeat:no-repeat!important}
 </style>
 <link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.webmanifest">
 </head>
 <body>
 <div class="wrap"><main class="pager" id="pager">
@@ -445,12 +456,75 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 
 <div class="backdrop" id="settingsModal"><div class="modal">
 <div class="modal-head"><div class="modal-title">設定</div><button class="close" data-close="settingsModal">×</button></div>
-<div class="settings-section"><div class="settings-heading">今日の画像</div><div class="settings-note">画像設定は次の変更でここに追加できます。</div></div>
+<div class="settings-section"><div class="settings-heading">今日の画像</div>
+<div class="today-image-preview" id="todayImagePreview">画像なし</div>
+<div class="today-image-actions"><label class="secondary image-pick">画像を選択<input type="file" id="todayImageFile" accept="image/*"></label><button class="danger" id="removeTodayImage">画像を削除</button></div>
+<div class="settings-note">選んだ画像を「今日」の日付マスに表示します。</div></div>
+<div class="settings-section"><div class="settings-heading">今日の予定通知</div>
+<div class="notify-row"><label class="notify-switch"><input type="checkbox" id="notifyEnabled"> 毎朝通知</label><input id="notifyTime" type="time" value="08:00" step="300"></div>
+<button class="secondary" id="enableNotifications" style="width:100%;margin-top:8px">通知を許可</button>
+<div class="settings-note" id="notifyStatus">ホーム画面アプリで通知を許可してください。</div></div>
 <div class="settings-section"><div class="settings-heading">給与単価</div><div id="rateRows"></div><button class="secondary" id="addRate" style="width:100%">＋単価を追加</button></div>
 <div class="settings-section"><div class="settings-heading">バックアップ</div><div class="backup"><button id="exportBtn">バックアップ</button><label>復元<input type="file" id="importFile" accept=".json,application/json"></label></div></div>
 </div></div>
 
 <script>
+
+
+const TODAY_IMAGE_KEY="calendar_today_image_v1";
+function getTodayImage(){return localStorage.getItem(TODAY_IMAGE_KEY)||""}
+function refreshTodayImagePreview(){
+ const src=getTodayImage();
+ todayImagePreview.style.backgroundImage=src?`linear-gradient(rgba(0,0,0,.15),rgba(0,0,0,.15)),url("${src}")`:"";
+ todayImagePreview.textContent=src?"":"画像なし";
+}
+function applyTodayImage(){
+ const src=getTodayImage();
+ document.querySelectorAll(".day.today").forEach(el=>{
+   el.classList.toggle("has-custom-image",!!src);
+   el.style.backgroundImage=src?`linear-gradient(rgba(0,0,0,.28),rgba(0,0,0,.28)),url("${src}")`:"";
+ });
+}
+async function saveTodayImageFile(file){
+ if(!file)return;
+ const img=new Image(),url=URL.createObjectURL(file);
+ img.onload=()=>{
+   const max=600,scale=Math.min(1,max/Math.max(img.width,img.height));
+   const c=document.createElement("canvas");c.width=Math.max(1,Math.round(img.width*scale));c.height=Math.max(1,Math.round(img.height*scale));
+   c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+   try{localStorage.setItem(TODAY_IMAGE_KEY,c.toDataURL("image/jpeg",.78));refreshTodayImagePreview();renderPlan();renderSalary()}
+   catch(e){alert("画像を保存できませんでした。別の画像を選んでください。")}
+   URL.revokeObjectURL(url)
+ };
+ img.src=url
+}
+const NOTIFY_KEY="calendar_notify_settings_v1";
+function getNotifySettings(){return load(NOTIFY_KEY,{enabled:false,time:"08:00"})}
+function saveNotifySettings(){
+ const v={enabled:!!notifyEnabled.checked,time:notifyTime.value||"08:00"};
+ save(NOTIFY_KEY,v);updateNotifyStatus();return v
+}
+async function ensureServiceWorker(){
+ if(!("serviceWorker" in navigator))throw new Error("Service Worker非対応");
+ return navigator.serviceWorker.register("./sw.js")
+}
+async function requestCalendarNotifications(){
+ try{
+   if(!("Notification" in window))throw new Error("通知非対応");
+   await ensureServiceWorker();
+   const permission=await Notification.requestPermission();
+   if(permission!=="granted")throw new Error("通知が許可されていません");
+   updateNotifyStatus();
+ }catch(e){notifyStatus.textContent=e.message||"通知を有効にできませんでした"}
+}
+function updateNotifyStatus(){
+ const s=getNotifySettings();
+ notifyEnabled.checked=!!s.enabled;notifyTime.value=s.time||"08:00";
+ if(!("Notification" in window))notifyStatus.textContent="この環境では通知を利用できません。";
+ else if(Notification.permission==="granted")notifyStatus.textContent="通知は許可されています。";
+ else if(Notification.permission==="denied")notifyStatus.textContent="iPhoneの設定から通知を許可してください。";
+ else notifyStatus.textContent="「通知を許可」を押してください。";
+}
 const KEY="juku_salary_slots_v1", RATE_KEY="juku_salary_rates_v1", STUDY_KEY="salary_calendar_study_v1", PLAN_KEY="salary_calendar_plans_v1";
 const SLOT_ORDER=["X","Y","Z","A","B","C","D"];
 const SLOT_TIMES={X:["09:00","10:30"],Y:["10:35","12:05"],Z:["12:10","13:40"],A:["14:55","16:25"],B:["16:30","18:00"],C:["18:05","19:35"],D:["19:40","21:10"]};
@@ -507,7 +581,7 @@ function renderGrid(grid,view,kind){
    b.innerHTML=`<span class="daynum">${d}</span>${content}`;
    b.onclick=()=>kind=="plan"?clickPlan(k):clickSalary(k);grid.appendChild(b)
  }
-}
+;applyTodayImage()}
 function renderPlan(){planMonth.textContent=`${planView.getFullYear()}年${planView.getMonth()+1}月`;renderGrid(planGrid,planView,"plan");renderSummary()}
 function monthBreakdown(y,m){let juku=0,studyPay=0,last=new Date(y,m+1,0).getDate();for(let d=1;d<=last;d++){let k=keyOf(y,m,d),r=rateFor(k),sl=getSlots(k),st=study(k);if(sl.length)juku+=sl.length*(Number(r.lesson)||0)+(Number(r.daily)||0)+(Number(r.transport)||0);if(st.hours)studyPay+=st.hours*1500+420}return {juku,study:studyPay,total:juku+studyPay}}
 function renderSalary(){
@@ -672,6 +746,12 @@ pager.addEventListener("scroll",()=>{if(pager.scrollLeft<pager.clientWidth*.5){s
 
 eventName.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();eventStart.focus()}});
 setupHHMMInput(eventStart,eventEnd,null);setupHHMMInput(eventEnd,null,eventStart);
+enableNotifications.onclick=requestCalendarNotifications;
+notifyEnabled.onchange=saveNotifySettings;notifyTime.onchange=saveNotifySettings;
+updateNotifyStatus();
+todayImageFile.onchange=e=>{const f=e.target.files?.[0];if(f)saveTodayImageFile(f);e.target.value=""};
+removeTodayImage.onclick=()=>{localStorage.removeItem(TODAY_IMAGE_KEY);refreshTodayImagePreview();renderPlan();renderSalary()};
+refreshTodayImagePreview();
 renderPlan();renderSalary();
 </script>
 </body></html>
