@@ -1752,6 +1752,60 @@ html,body,.wrap,.calendar-pager{
   overflow:hidden !important;
 }
 
+
+/* === STABLE PLAN SCREEN === */
+#planPanel{
+  display:flex !important;
+  flex-direction:column !important;
+  height:100dvh !important;
+  max-height:100dvh !important;
+  padding:0 4px 8px !important;
+  overflow:hidden !important;
+  box-sizing:border-box !important;
+}
+#planPanel > h1{flex:0 0 auto !important;}
+#planPanel > .calendar{
+  display:block !important;
+  flex:1 1 auto !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  overflow:hidden !important;
+}
+#planPanel #planGrid{
+  display:grid !important;
+  grid-template-columns:repeat(7,minmax(0,1fr)) !important;
+  grid-template-rows:repeat(6,minmax(0,1fr)) !important;
+  width:100% !important;
+  height:calc(100% - 76px) !important;
+  min-height:0 !important;
+}
+#planPanel #planGrid > .day,
+#planPanel #planGrid > .blank{
+  min-height:0 !important;
+  height:auto !important;
+  max-height:none !important;
+}
+#planPanel > #planDaySummary{
+  display:block !important;
+  flex:0 0 150px !important;
+  width:auto !important;
+  height:150px !important;
+  min-height:150px !important;
+  max-height:150px !important;
+  margin:6px 4px 0 !important;
+  padding:9px 10px !important;
+  overflow:auto !important;
+  visibility:visible !important;
+  box-sizing:border-box !important;
+}
+#planGrid > .day.today,
+#grid > .day.today{
+  background:#3b475a !important;
+  box-shadow:none !important;
+}
+
 </style>
 </head>
 <body>
@@ -3046,59 +3100,11 @@ document.addEventListener("DOMContentLoaded",()=>{
 });
 
 </script>
-<script>
 
-async function checkForAppUpdate(){
-  if(!/^https?:$/.test(location.protocol))return;
-  try{
-    const base=location.origin+location.pathname;
-    const freshUrl=base+"?v="+Date.now();
-    const res=await fetch(freshUrl,{
-      method:"GET",
-      cache:"no-store",
-      headers:{
-        "Cache-Control":"no-cache, no-store, max-age=0",
-        "Pragma":"no-cache"
-      }
-    });
-    if(!res.ok)return;
-    const html=await res.text();
-
-    let hash=2166136261;
-    for(let i=0;i<html.length;i++){
-      hash^=html.charCodeAt(i);
-      hash=Math.imul(hash,16777619);
-    }
-    const sig=(hash>>>0).toString(16)+":"+html.length;
-    const k="calendar_app_deployed_signature_v2";
-    const prev=localStorage.getItem(k);
-    localStorage.setItem(k,sig);
-
-    if(prev && prev!==sig && !sessionStorage.getItem("calendar_fresh_document_loaded")){
-      sessionStorage.setItem("calendar_fresh_document_loaded","1");
-
-      // The fetched response is already the newest deployed index.html.
-      // Replace the current standalone document with those exact bytes so an
-      // older home-screen document cache cannot win during navigation.
-      document.open();
-      document.write(html);
-      document.close();
-      history.replaceState(null,"",base);
-    }
-  }catch(e){}
-}
-window.addEventListener("pageshow",()=>{enableFiveMinuteTimeInputs();checkForAppUpdate();});
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")checkForAppUpdate();});
-window.addEventListener("focus",checkForAppUpdate);
-
-</script>
 <script>
 
 
-window.addEventListener("pageshow",()=>requestAnimationFrame(applyTodayHighlight));
-document.addEventListener("visibilitychange",()=>{
-  if(document.visibilityState==="visible") requestAnimationFrame(applyTodayHighlight);
-});
+
 
 </script>
 <script>
