@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111827">
-<meta name="calendar-build" content="1789039861">
+<meta name="calendar-build" content="1789040171">
 <title>カレンダー</title>
 <style>
 *{box-sizing:border-box}
@@ -82,6 +82,33 @@ input[type=time],input[type=number],input[type=text],textarea{width:100%;min-wid
 .backup label,.backup button{display:flex;align-items:center;justify-content:center;border:0;border-radius:9px;background:#374151;padding:9px;font-weight:800}
 .backup input{display:none}
 @media(max-width:480px){.panel{padding-left:4px;padding-right:4px}.summary{flex-basis:145px}}
+
+/* カレンダーの見えている四隅を確実に角丸にする */
+#planPanel .calendar,
+#salaryPanel .calendar{
+  border-radius:18px !important;
+  overflow:hidden !important;
+  border:1px solid #374151 !important;
+  isolation:isolate;
+}
+#planPanel .cal-head,
+#salaryPanel .cal-head{
+  border-radius:17px 17px 0 0 !important;
+}
+#planPanel .grid,
+#salaryPanel .grid{
+  border-radius:0 0 17px 17px !important;
+  overflow:hidden !important;
+}
+#planPanel .grid > :nth-last-child(7),
+#salaryPanel .grid > :nth-last-child(7){
+  border-bottom-left-radius:17px !important;
+}
+#planPanel .grid > :last-child,
+#salaryPanel .grid > :last-child{
+  border-bottom-right-radius:17px !important;
+}
+
 </style>
 </head>
 <body>
