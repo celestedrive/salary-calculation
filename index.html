@@ -1708,6 +1708,19 @@ html,body{
   align-content:stretch !important;
 }
 
+
+/* 予定カレンダー：6週(42マス)を常に描画し、最下段まで罫線＋角丸を成立させる */
+#planPanel > .calendar{
+  border:1px solid #374151 !important;
+  border-radius:16px !important;
+  overflow:hidden !important;
+}
+#planPanel #planGrid{
+  grid-template-rows:repeat(6,minmax(0,1fr)) !important;
+  border-radius:0 0 15px 15px !important;
+  overflow:hidden !important;
+}
+
 </style>
 <meta name="calendar-build" content="1789038839">
 </head>
@@ -2671,8 +2684,13 @@ function renderPlanCalendar(){
     });
     grid.appendChild(btn);
   }
-  const used=firstDay+lastDate, trailing=(7-(used%7))%7;
-  for(let i=0;i<trailing;i++){const b=document.createElement("div");b.className="blank";grid.appendChild(b);}
+  const used=firstDay+lastDate;
+  const trailing=Math.max(0,42-used);
+  for(let i=0;i<trailing;i++){
+    const b=document.createElement("div");
+    b.className="blank";
+    grid.appendChild(b);
+  }
 
   renderPlanDaySummary();
 }
