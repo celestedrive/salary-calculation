@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#111827">
-<meta name="calendar-build" content="1789045860">
+<meta name="calendar-build" content="1789046273">
 <title>カレンダー</title>
 <style>
 *{box-sizing:border-box}
@@ -530,34 +530,29 @@ function hhmmToTime(v){
 }
 function timeToHHMM(v){return /^\d{2}:\d{2}$/.test(v)?v:""}
 function setupHHMMInput(inp,next=null,prev=null){
- let digits="";
- const paint=()=>{inp.value=digits.length<=2?digits:digits.slice(0,2)+":"+digits.slice(2)};
- inp.addEventListener("focus",()=>{digits=inp.value.replace(/\D/g,"").slice(0,4);paint()});
- inp.addEventListener("keydown",e=>{
-   if(/^\d$/.test(e.key)){
-     e.preventDefault();
-     if(digits.length>=4)return;
-     digits+=e.key;paint();
-     if(digits.length===4){
-       const valid=hhmmToTime(digits);
-       if(!valid){digits="";paint();return}
-       inp.value=valid;
+ let lock=false;
+ inp.addEventListener("input",()=>{
+   if(lock)return;
+   lock=true;
+   let d=inp.value.replace(/\D/g,"").slice(0,4);
+   inp.value=d.length<=2?d:d.slice(0,2)+":"+d.slice(2);
+   if(d.length===4){
+     const v=hhmmToTime(d);
+     if(v){
+       inp.value=v;
        if(next)setTimeout(()=>next.focus(),0);
      }
-     return;
    }
-   if(e.key==="Backspace"){
+   lock=false;
+ });
+ inp.addEventListener("keydown",e=>{
+   if(e.key==="Backspace" && !inp.value && prev){
      e.preventDefault();
-     if(digits.length){
-       digits=digits.slice(0,-1);paint();
-     }else if(prev){
-       prev.focus();
-       let pd=prev.value.replace(/\D/g,"").slice(0,4);
-       pd=pd.slice(0,-1);
-       prev.value=pd.length<=2?pd:pd.slice(0,2)+":"+pd.slice(2);
-       setTimeout(()=>prev.setSelectionRange?.(prev.value.length,prev.value.length),0);
-     }
-     return;
+     let d=prev.value.replace(/\D/g,"").slice(0,4);
+     d=d.slice(0,-1);
+     prev.value=d.length<=2?d:d.slice(0,2)+":"+d.slice(2);
+     prev.focus();
+     setTimeout(()=>prev.setSelectionRange?.(prev.value.length,prev.value.length),0);
    }
  });
 }function roundTime5(v){
