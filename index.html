@@ -1571,6 +1571,64 @@ html,body,.wrap,.calendar-pager{
   font-weight:900 !important;
 }
 
+
+/* 修正版：実際の予定カレンダーDOMに合わせた2段レイアウト */
+#planPanel{
+  display:flex !important;
+  flex-direction:column !important;
+  height:100dvh !important;
+  overflow:hidden !important;
+  box-sizing:border-box !important;
+}
+#planPanel > h1{
+  flex:0 0 auto !important;
+}
+#planPanel > .calendar{
+  flex:1 1 0 !important;
+  min-height:0 !important;
+  height:auto !important;
+  max-height:none !important;
+  display:flex !important;
+  flex-direction:column !important;
+  overflow:hidden !important;
+}
+#planPanel > .calendar > .head,
+#planPanel > .calendar > .week{
+  flex:0 0 auto !important;
+}
+#planPanel #planGrid{
+  flex:1 1 0 !important;
+  min-height:0 !important;
+  height:auto !important;
+  display:grid !important;
+  grid-template-columns:repeat(7,minmax(0,1fr)) !important;
+  grid-auto-rows:minmax(0,1fr) !important;
+  overflow:hidden !important;
+}
+#planPanel #planGrid > .day,
+#planPanel #planGrid > .blank{
+  min-height:0 !important;
+  height:auto !important;
+  box-sizing:border-box !important;
+}
+#planPanel > #planDaySummary{
+  flex:0 0 27dvh !important;
+  display:block !important;
+  height:27dvh !important;
+  min-height:135px !important;
+  max-height:27dvh !important;
+  visibility:visible !important;
+  margin:6px 8px 8px !important;
+  box-sizing:border-box !important;
+}
+
+/* 今日のマスは背景色だけで確実に強調 */
+#planGrid > .day.today,
+#grid > .day.today{
+  background:#344154 !important;
+  box-shadow:none !important;
+}
+
 </style>
 </head>
 <body>
@@ -1586,6 +1644,12 @@ html,body,.wrap,.calendar-pager{
   </div>
   <div class="week"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>
   <div class="grid" id="planGrid"></div>
+</div>
+<div class="plan-day-summary" id="planDaySummary">
+  <div class="plan-day-summary-head" id="planDaySummaryDate">日付を選択</div>
+  <div class="plan-day-summary-body" id="planDaySummaryBody">
+    <div class="plan-day-summary-empty">日付を1回押すと、その日の予定をここに表示します</div>
+  </div>
 </div>
 </section>
 
@@ -1693,12 +1757,7 @@ html,body,.wrap,.calendar-pager{
 </div>
 
 
-<div class="plan-day-summary" id="planDaySummary">
-  <div class="plan-day-summary-head" id="planDaySummaryDate">日付を選択</div>
-  <div class="plan-day-summary-body" id="planDaySummaryBody">
-    <div class="plan-day-summary-empty">日付を1回押すと、その日の予定をここに表示します</div>
-  </div>
-</div>
+
 
 <div class="plan-modal-backdrop" id="planModalBackdrop" onclick="closePlanModalFromBackdrop(event)">
   <div class="plan-modal plan-detail-modal" role="dialog" aria-modal="true" aria-labelledby="planSelected">
