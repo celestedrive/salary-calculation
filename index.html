@@ -1387,309 +1387,7 @@ html,body,.wrap,.calendar-pager{
   box-sizing:border-box !important;
 }
 
-
-/* 今日を強く強調 */
-.day.today{
-  background:#29364a !important;
-  box-shadow:inset 0 0 0 3px #f8fafc !important;
-}
-.day.today .daynum{
-  background:#f8fafc !important;
-  color:#111827 !important;
-  font-weight:900 !important;
-  box-shadow:0 0 0 2px #111827,0 0 0 4px #f8fafc !important;
-}
-.day.today.selected-day{
-  background:#1d4ed8 !important;
-  box-shadow:inset 0 0 0 3px #f8fafc !important;
-}
-
-
-/* 予定カレンダー：上=月表示、下=選択日の予定 */
-#planPanel{
-  height:100dvh !important;
-  overflow:hidden !important;
-}
-#planPanel .calendar{
-  max-height:66dvh !important;
-}
-.plan-day-summary{
-  box-sizing:border-box;
-  height:29dvh;
-  min-height:150px;
-  margin:7px 8px 8px;
-  padding:10px 11px;
-  border:1px solid #374151;
-  border-radius:12px;
-  background:#111827;
-  overflow:hidden;
-}
-.plan-day-summary-head{
-  height:25px;
-  font-size:13px;
-  line-height:20px;
-  font-weight:900;
-  border-bottom:1px solid #374151;
-  margin-bottom:7px;
-}
-.plan-day-summary-body{
-  height:calc(100% - 32px);
-  overflow-y:auto;
-  overscroll-behavior:contain;
-  -webkit-overflow-scrolling:touch;
-}
-.plan-day-summary-item{
-  display:grid;
-  grid-template-columns:minmax(78px,auto) 1fr;
-  gap:8px;
-  align-items:start;
-  padding:6px 2px;
-  border-bottom:1px solid #263244;
-  font-size:12px;
-  line-height:1.35;
-}
-.plan-day-summary-time{
-  font-variant-numeric:tabular-nums;
-  color:#cbd5e1;
-  white-space:nowrap;
-}
-.plan-day-summary-name{
-  min-width:0;
-  overflow-wrap:anywhere;
-  font-weight:700;
-}
-.plan-day-summary-memo{
-  margin-top:8px;
-  padding:8px;
-  border-radius:8px;
-  background:#172033;
-  font-size:11px;
-  line-height:1.45;
-  white-space:pre-wrap;
-  overflow-wrap:anywhere;
-}
-.plan-day-summary-memo strong{
-  display:block;
-  margin-bottom:3px;
-  font-size:10px;
-  color:#cbd5e1;
-}
-.plan-day-summary-empty{
-  padding:12px 2px;
-  font-size:11px;
-  color:#9ca3af;
-}
-
-
-/* 今日：枠ではなくマスの背景色だけを少し変える */
-.day.today{
-  background:#202b3b !important;
-  box-shadow:none !important;
-}
-.day.today .daynum{
-  background:transparent !important;
-  box-shadow:none !important;
-  font-weight:900 !important;
-}
-/* 日曜・祝日・土曜の文字色はそのまま維持 */
-.day.today.holiday-date .daynum{ color:#ff5f67 !important; }
-.day.today.saturday-date .daynum{ color:#5aa7ff !important; }
-.day.today:not(.holiday-date):not(.saturday-date) .daynum{ color:inherit !important; }
-.day.today.selected-day{
-  background:#253752 !important;
-  box-shadow:none !important;
-}
-
-
-/* 予定画面を実際に「月カレンダー + 選択日詳細」の2段へ再配置 */
-#planPanel{
-  height:100dvh !important;
-  min-height:100dvh !important;
-  display:flex !important;
-  flex-direction:column !important;
-  overflow:hidden !important;
-  box-sizing:border-box !important;
-}
-
-/* ヘッダー類は通常サイズのまま */
-#planPanel > .topbar,
-#planPanel > .toolbar,
-#planPanel > .month-nav,
-#planPanel > h1{
-  flex:0 0 auto !important;
-}
-
-/* 月カレンダー自体を縮め、全週を上段内に必ず収める */
-#planPanel .calendar{
-  flex:1 1 0 !important;
-  height:auto !important;
-  min-height:0 !important;
-  max-height:none !important;
-  overflow:hidden !important;
-  box-sizing:border-box !important;
-}
-#planPanel .calendar .days,
-#planPanel .calendar-grid,
-#planPanel .days{
-  height:100% !important;
-  min-height:0 !important;
-  grid-auto-rows:minmax(0,1fr) !important;
-  box-sizing:border-box !important;
-}
-#planPanel .day{
-  min-height:0 !important;
-  height:auto !important;
-  overflow:hidden !important;
-}
-
-/* 下段は常に画面内に確保 */
-#planPanel .plan-day-summary{
-  flex:0 0 27dvh !important;
-  height:27dvh !important;
-  min-height:135px !important;
-  max-height:27dvh !important;
-  margin:6px 8px 8px !important;
-  box-sizing:border-box !important;
-  display:block !important;
-  visibility:visible !important;
-  overflow:hidden !important;
-}
-
-
-/* 今日のマス：両カレンダーで背景色だけ確実に変える */
-#planPanel .day.today,
-#salaryPanel .day.today,
-.day.today{
-  background:#344154 !important;
-  box-shadow:none !important;
-}
-#planPanel .day.today .daynum,
-#salaryPanel .day.today .daynum,
-.day.today .daynum{
-  background:transparent !important;
-  box-shadow:none !important;
-  font-weight:900 !important;
-}
-
-
-/* 修正版：実際の予定カレンダーDOMに合わせた2段レイアウト */
-#planPanel{
-  display:flex !important;
-  flex-direction:column !important;
-  height:100dvh !important;
-  overflow:hidden !important;
-  box-sizing:border-box !important;
-}
-#planPanel > h1{
-  flex:0 0 auto !important;
-}
-#planPanel > .calendar{
-  flex:1 1 0 !important;
-  min-height:0 !important;
-  height:auto !important;
-  max-height:none !important;
-  display:flex !important;
-  flex-direction:column !important;
-  overflow:hidden !important;
-}
-#planPanel > .calendar > .head,
-#planPanel > .calendar > .week{
-  flex:0 0 auto !important;
-}
-#planPanel #planGrid{
-  flex:1 1 0 !important;
-  min-height:0 !important;
-  height:auto !important;
-  display:grid !important;
-  grid-template-columns:repeat(7,minmax(0,1fr)) !important;
-  grid-auto-rows:minmax(0,1fr) !important;
-  overflow:hidden !important;
-}
-#planPanel #planGrid > .day,
-#planPanel #planGrid > .blank{
-  min-height:0 !important;
-  height:auto !important;
-  box-sizing:border-box !important;
-}
-#planPanel > #planDaySummary{
-  flex:0 0 27dvh !important;
-  display:block !important;
-  height:27dvh !important;
-  min-height:135px !important;
-  max-height:27dvh !important;
-  visibility:visible !important;
-  margin:6px 8px 8px !important;
-  box-sizing:border-box !important;
-}
-
-/* 今日のマスは背景色だけで確実に強調 */
-#planGrid > .day.today,
-#grid > .day.today{
-  background:#344154 !important;
-  box-shadow:none !important;
-}
-
-
-/* === PLAN LAYOUT FINAL OVERRIDE === */
-#planPanel{
-  display:grid !important;
-  grid-template-rows:auto minmax(0,1fr) 190px !important;
-  height:100dvh !important;
-  min-height:100dvh !important;
-  max-height:100dvh !important;
-  padding:0 4px 8px !important;
-  overflow:hidden !important;
-  box-sizing:border-box !important;
-}
-#planPanel > h1{
-  margin:4px 0 6px !important;
-}
-#planPanel > .calendar{
-  display:grid !important;
-  grid-template-rows:auto auto minmax(0,1fr) !important;
-  min-height:0 !important;
-  height:100% !important;
-  max-height:none !important;
-  overflow:hidden !important;
-}
-#planPanel #planGrid{
-  display:grid !important;
-  grid-template-columns:repeat(7,minmax(0,1fr)) !important;
-  grid-auto-rows:minmax(0,1fr) !important;
-  min-height:0 !important;
-  height:100% !important;
-  overflow:hidden !important;
-}
-#planPanel #planGrid > .day,
-#planPanel #planGrid > .blank{
-  height:auto !important;
-  min-height:0 !important;
-  max-height:none !important;
-  padding:20px 2px 2px !important;
-  overflow:hidden !important;
-}
-#planPanel > #planDaySummary{
-  display:block !important;
-  position:static !important;
-  width:auto !important;
-  height:auto !important;
-  min-height:0 !important;
-  max-height:none !important;
-  margin:6px 4px 0 !important;
-  padding:9px 10px !important;
-  visibility:visible !important;
-  overflow:hidden !important;
-}
-
-/* 今日：両方のカレンダーでマス背景のみ強調 */
-#planGrid > button.day.today,
-#grid > button.day.today{
-  background:#3b475a !important;
-  box-shadow:none !important;
-}
-
-
-/* === PLAN LAYOUT RECOVERY === */
+/* ===== 統合済み：予定画面レイアウト ===== */
 #planPanel{
   display:flex !important;
   flex-direction:column !important;
@@ -1705,91 +1403,44 @@ html,body,.wrap,.calendar-pager{
   margin:4px 0 6px !important;
 }
 #planPanel > .calendar{
-  display:block !important;
-  flex:0 0 calc(100dvh - 245px) !important;
+  display:flex !important;
+  flex-direction:column !important;
+  flex:1 1 auto !important;
   width:100% !important;
-  height:calc(100dvh - 245px) !important;
-  min-height:360px !important;
-  max-height:calc(100dvh - 245px) !important;
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
   overflow:hidden !important;
   box-sizing:border-box !important;
 }
 #planPanel > .calendar > .head,
 #planPanel > .calendar > .week{
-  display:grid !important;
+  flex:0 0 auto !important;
 }
 #planPanel #planGrid{
   display:grid !important;
+  flex:1 1 auto !important;
   grid-template-columns:repeat(7,minmax(0,1fr)) !important;
   grid-template-rows:repeat(6,minmax(0,1fr)) !important;
   grid-auto-rows:minmax(0,1fr) !important;
   width:100% !important;
-  height:calc(100% - 78px) !important;
+  height:auto !important;
   min-height:0 !important;
   overflow:hidden !important;
 }
 #planPanel #planGrid > .day,
 #planPanel #planGrid > .blank{
-  display:block !important;
   width:auto !important;
   height:auto !important;
   min-height:0 !important;
   max-height:none !important;
   box-sizing:border-box !important;
   overflow:hidden !important;
-}
-#planPanel > #planDaySummary{
-  display:block !important;
-  flex:1 1 auto !important;
-  position:static !important;
-  width:auto !important;
-  height:auto !important;
-  min-height:150px !important;
-  max-height:none !important;
-  margin:6px 4px 0 !important;
-  padding:9px 10px !important;
-  visibility:visible !important;
-  overflow:hidden !important;
-}
-
-
-/* === STABLE PLAN SCREEN === */
-#planPanel{
-  display:flex !important;
-  flex-direction:column !important;
-  height:100dvh !important;
-  max-height:100dvh !important;
-  padding:0 4px 8px !important;
-  overflow:hidden !important;
-  box-sizing:border-box !important;
-}
-#planPanel > h1{flex:0 0 auto !important;}
-#planPanel > .calendar{
-  display:block !important;
-  flex:1 1 auto !important;
-  width:100% !important;
-  height:auto !important;
-  min-height:0 !important;
-  max-height:none !important;
-  overflow:hidden !important;
-}
-#planPanel #planGrid{
-  display:grid !important;
-  grid-template-columns:repeat(7,minmax(0,1fr)) !important;
-  grid-template-rows:repeat(6,minmax(0,1fr)) !important;
-  width:100% !important;
-  height:calc(100% - 76px) !important;
-  min-height:0 !important;
-}
-#planPanel #planGrid > .day,
-#planPanel #planGrid > .blank{
-  min-height:0 !important;
-  height:auto !important;
-  max-height:none !important;
 }
 #planPanel > #planDaySummary{
   display:block !important;
   flex:0 0 150px !important;
+  position:static !important;
   width:auto !important;
   height:150px !important;
   min-height:150px !important;
@@ -1800,10 +1451,100 @@ html,body,.wrap,.calendar-pager{
   visibility:visible !important;
   box-sizing:border-box !important;
 }
+
+/* 選択日の下部表示 */
+.plan-day-summary{
+  background:#151b24;
+  border:1px solid #2b3442;
+  border-radius:10px;
+}
+.plan-day-summary-head{
+  font-size:13px;
+  font-weight:800;
+  margin-bottom:7px;
+}
+.plan-day-summary-body{font-size:12px;}
+.plan-day-summary-item{
+  display:flex;
+  gap:10px;
+  align-items:baseline;
+  padding:4px 0;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.plan-day-summary-time{
+  flex:0 0 auto;
+  font-variant-numeric:tabular-nums;
+  color:#cbd5e1;
+}
+.plan-day-summary-name{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-weight:700;
+}
+.plan-day-summary-memo{
+  margin-top:7px;
+  padding-top:7px;
+  border-top:1px solid rgba(255,255,255,.08);
+  white-space:pre-wrap;
+}
+.plan-day-summary-memo strong{
+  display:block;
+  margin-bottom:3px;
+}
+.plan-day-summary-empty{color:#94a3b8;}
+
+/* 今日：枠ではなくマス背景だけを強調 */
 #planGrid > .day.today,
 #grid > .day.today{
   background:#3b475a !important;
   box-shadow:none !important;
+}
+#planGrid > .day.today .daynum,
+#grid > .day.today .daynum{
+  background:transparent !important;
+  box-shadow:none !important;
+  font-weight:900 !important;
+}
+
+/* 曜日・祝日の色は今日でも維持 */
+#planPanel .day.holiday-date .daynum,
+#salaryPanel .day.holiday-date .daynum,
+.day.holiday-date .daynum{color:#ff5f67 !important;}
+#planPanel .day.saturday-date .daynum,
+#salaryPanel .day.saturday-date .daynum,
+.day.saturday-date .daynum{color:#5aa7ff !important;}
+
+/* 予定カレンダー：月移動ヘッダーを中央配置 */
+#planPanel .calendar > .head{
+  display:grid !important;
+  grid-template-columns:44px minmax(0,1fr) 44px !important;
+  align-items:center !important;
+  width:100% !important;
+  padding:9px 10px !important;
+  box-sizing:border-box !important;
+}
+#planPanel .calendar > .head > button:first-child,
+#planPanel .calendar > .head > button:last-child{
+  width:44px !important;
+  justify-self:center !important;
+}
+#planPanel #planMonthTitle{
+  width:auto !important;
+  justify-self:center !important;
+  text-align:center !important;
+}
+
+/* カレンダーと下部予定欄を自然に分離 */
+#planPanel > .calendar{
+  border-radius:10px !important;
+  margin-bottom:8px !important;
+}
+#planPanel > #planDaySummary{
+  margin:0 4px 0 !important;
+  border-radius:10px !important;
+  border:1px solid #2b3442 !important;
 }
 
 </style>
@@ -3101,15 +2842,6 @@ document.addEventListener("DOMContentLoaded",()=>{
 
 </script>
 
-<script>
-
-
-
-
-</script>
-<script>
-
-</script>
 <script>
 
 document.addEventListener("visibilitychange",()=>{
