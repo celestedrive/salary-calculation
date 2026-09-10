@@ -1,0 +1,9 @@
+{
+  "name":"カレンダー",
+  "short_name":"カレンダー",
+  "start_url":"./",
+  "display":"standalone",
+  "background_color":"#111827",
+  "theme_color":"#111827",
+  "icons":[{"src":"icon.png","sizes":"180x180","type":"image/png"}]
+}
