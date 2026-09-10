@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#111827">
-<meta name="calendar-build" content="1789061000">
+<meta name="calendar-build" content="1789061600">
 <title>カレンダー</title>
 <style>
 *{box-sizing:border-box}
@@ -522,10 +522,20 @@ async function requestCalendarNotifications(){
    const permission=await Notification.requestPermission();
    if(permission!=="granted")throw new Error("通知が許可されていません");
    let subscription=await registration.pushManager.getSubscription();
+   const wantedKey=urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+   if(subscription){
+     const currentKey=subscription.options?.applicationServerKey;
+     const sameKey=currentKey&&currentKey.byteLength===wantedKey.byteLength&&
+       new Uint8Array(currentKey).every((v,i)=>v===wantedKey[i]);
+     if(!sameKey){
+       await subscription.unsubscribe();
+       subscription=null;
+     }
+   }
    if(!subscription){
      subscription=await registration.pushManager.subscribe({
        userVisibleOnly:true,
-       applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+       applicationServerKey:wantedKey
      });
    }
    const settings=saveNotifySettings();
