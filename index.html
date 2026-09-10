@@ -1547,6 +1547,67 @@ html,body,.wrap,.calendar-pager{
   border:1px solid #2b3442 !important;
 }
 
+
+/* 月表示をカレンダー全幅のど真ん中に固定 */
+#planPanel .calendar > .head{
+  position:relative !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+}
+#planPanel #planMonthTitle{
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  transform:translate(-50%,-50%) !important;
+  margin:0 !important;
+  width:max-content !important;
+  max-width:none !important;
+  text-align:center !important;
+}
+#planPanel .calendar > .head > button:first-child{
+  margin-right:auto !important;
+}
+#planPanel .calendar > .head > button:last-child{
+  margin-left:auto !important;
+}
+
+
+/* 予定カレンダーも給与カレンダーと同じ角丸デザインに統一 */
+#planPanel > .calendar{
+  border-radius:16px !important;
+  overflow:hidden !important;
+}
+#planPanel > #planDaySummary{
+  border-radius:16px !important;
+  overflow:auto !important;
+}
+
+
+/* 横スワイプの各画面を実表示幅に固定し、右側の余分な横スクロールを除去 */
+.calendar-pager{
+  width:100vw !important;
+  max-width:100vw !important;
+  box-sizing:border-box !important;
+  scroll-padding:0 !important;
+}
+.calendar-pager > .app-panel{
+  flex:0 0 100% !important;
+  width:100% !important;
+  min-width:100% !important;
+  max-width:100% !important;
+  box-sizing:border-box !important;
+  scroll-snap-align:start !important;
+}
+#salaryPanel{
+  width:100% !important;
+  min-width:100% !important;
+  max-width:100% !important;
+  box-sizing:border-box !important;
+}
+
 </style>
 </head>
 <body>
