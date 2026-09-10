@@ -1681,6 +1681,7 @@ html,body{
 }
 
 </style>
+<meta name="calendar-build" content="1789038839">
 </head>
 <body>
 <div class="wrap">
@@ -2984,5 +2985,53 @@ document.addEventListener("visibilitychange",()=>{
 });
 
 </script>
+
+<script>
+(function(){
+  const UPDATE_CHECK_KEY = "calendar_last_update_check_v1";
+  const CHECK_INTERVAL = 15000;
+
+  async function checkForCalendarUpdate(force){
+    if(location.protocol !== "http:" && location.protocol !== "https:") return;
+    const now = Date.now();
+    const last = Number(sessionStorage.getItem(UPDATE_CHECK_KEY) || 0);
+    if(!force && now-last < CHECK_INTERVAL) return;
+    sessionStorage.setItem(UPDATE_CHECK_KEY, String(now));
+
+    try{
+      const clean = new URL(location.href);
+      clean.hash = "";
+      clean.searchParams.delete("_appv");
+
+      const probe = new URL(clean.href);
+      probe.searchParams.set("_appv", String(now));
+
+      const res = await fetch(probe.href, {
+        method:"GET",
+        cache:"no-store",
+        headers:{"Cache-Control":"no-cache"}
+      });
+      if(!res.ok) return;
+
+      const fresh = await res.text();
+      const marker = /<meta\s+name=["']calendar-build["']\s+content=["']([^"']+)["']/i;
+      const currentMatch = document.documentElement.innerHTML.match(marker);
+      const freshMatch = fresh.match(marker);
+
+      if(currentMatch && freshMatch && currentMatch[1] !== freshMatch[1]){
+        const target = new URL(clean.href);
+        target.searchParams.set("_appv", freshMatch[1]);
+        location.replace(target.href);
+      }
+    }catch(e){}
+  }
+
+  window.addEventListener("pageshow", ()=>checkForCalendarUpdate(true));
+  document.addEventListener("visibilitychange", ()=>{
+    if(document.visibilityState === "visible") checkForCalendarUpdate(true);
+  });
+})();
+</script>
+
 </body>
 </html>
