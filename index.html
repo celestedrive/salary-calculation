@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#111827">
-<meta name="calendar-build" content="1789044184">
+<meta name="calendar-build" content="1789044437">
 <title>カレンダー</title>
 <style>
 *{box-sizing:border-box}
@@ -419,7 +419,7 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 <div class="modal-head"><div class="modal-title" id="editorTitle">予定を追加</div><button class="close" data-close="eventEditor">×</button></div>
 <div class="form">
 <label>予定名<input id="eventName" type="text"></label>
-<div class="time-row"><label>開始<input id="eventStart" class="hhmm-input" type="text" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="1700"></label><label>終了<div class="end-time-wrap"><input id="eventEnd" class="hhmm-input" type="text" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="2130"><button type="button" id="unsetEnd">未定</button></div></label></div>
+<div class="time-row"><label>開始<input id="eventStart" class="hhmm-input" type="text" inputmode="numeric" maxlength="5" autocomplete="off"></label><label>終了<div class="end-time-wrap"><input id="eventEnd" class="hhmm-input" type="text" inputmode="numeric" maxlength="5" autocomplete="off"><button type="button" id="unsetEnd">未定</button></div></label></div>
 <label>メモ<textarea id="eventMemo" maxlength="120" placeholder="120文字まで"></textarea></label>
 <div class="actions"><button class="danger" id="deleteEvent">削除</button><button class="primary" id="saveEvent">保存</button></div>
 </div></div></div>
@@ -520,15 +520,24 @@ function hhmmToTime(v){
  if(h>23||m>59)return "";
  return `${pad(h)}:${pad(m)}`;
 }
-function timeToHHMM(v){return /^\d{2}:\d{2}$/.test(v)?v.replace(":",""):""}
-function setupHHMMInput(inp){
+function timeToHHMM(v){return /^\d{2}:\d{2}$/.test(v)?v:""}
+function setupHHMMInput(inp,next=null){
  inp.addEventListener("input",()=>{
    const digits=inp.value.replace(/\D/g,"").slice(0,4);
-   if(inp.value!==digits)inp.value=digits;
+   let shown=digits;
+   if(digits.length>=3)shown=digits.slice(0,2)+":"+digits.slice(2);
+   if(inp.value!==shown)inp.value=shown;
+   if(digits.length===4){
+     const valid=hhmmToTime(shown);
+     if(valid){
+       inp.value=valid;
+       if(next)requestAnimationFrame(()=>next.focus());
+     }
+   }
  });
  inp.addEventListener("blur",()=>{
    const v=hhmmToTime(inp.value);
-   if(v)inp.value=timeToHHMM(v);
+   if(v)inp.value=v;
  });
 }
 function roundTime5(v){
