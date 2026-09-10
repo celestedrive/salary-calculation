@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#111827">
-<meta name="calendar-build" content="1789050102">
+<meta name="calendar-build" content="1789050283">
 <title>カレンダー</title>
 <style>
 *{box-sizing:border-box}
@@ -376,13 +376,20 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
   letter-spacing:.4px!important;
 }
 
+.panel-title-row{position:relative;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.panel-title-row h1{margin:2px 0 6px}
+.gear{position:absolute;right:2px;top:0;width:32px;height:28px;border:0;border-radius:8px;background:transparent;color:#d1d5db;font-size:19px;font-weight:800;padding:0}
+.settings-section{padding:10px 0;border-bottom:1px solid #374151}
+.settings-section:last-child{border-bottom:0}
+.settings-heading{font-size:13px;font-weight:900;margin-bottom:8px}
+.settings-note{font-size:11px;color:#9ca3af}
 </style>
 <link rel="apple-touch-icon" href="icon.png">
 </head>
 <body>
 <div class="wrap"><main class="pager" id="pager">
 <section class="panel" id="planPanel">
-<h1>予定カレンダー</h1>
+<div class="panel-title-row"><h1>予定カレンダー</h1><button class="gear" id="planSettings" aria-label="設定">⚙︎</button></div>
 <div class="calendar card">
 <div class="cal-head"><button class="nav" id="planPrev">‹</button><button class="month" id="planMonth"></button><button class="nav" id="planNext">›</button></div>
 <div class="week"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>
@@ -392,7 +399,7 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 </section>
 
 <section class="panel" id="salaryPanel">
-<h1>給与カレンダー</h1>
+<div class="panel-title-row"><h1>給与カレンダー</h1><button class="gear" id="salarySettings" aria-label="設定">⚙︎</button></div>
 <div class="salary-calendar calendar card">
 <div class="cal-head"><button class="nav" id="salPrev">‹</button><button class="month" id="salMonth"></button><button class="nav" id="salNext">›</button></div>
 <div class="week"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>
@@ -409,7 +416,6 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 </div></div>
 <div class="preview"><small>この日の給与</small><strong id="dayPay">0円</strong></div>
 <div class="actions"><button class="secondary" id="clearDay">クリア</button><button class="primary" id="saveDay">保存</button></div>
-<div class="settings"><button id="openSettings">給与単価・バックアップ</button></div>
 </div>
 </section>
 </main></div>
@@ -438,9 +444,10 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 </div></div>
 
 <div class="backdrop" id="settingsModal"><div class="modal">
-<div class="modal-head"><div class="modal-title">給与単価の設定</div><button class="close" data-close="settingsModal">×</button></div>
-<div id="rateRows"></div><button class="secondary" id="addRate" style="width:100%">＋単価を追加</button>
-<div class="backup"><button id="exportBtn">バックアップ</button><label>復元<input type="file" id="importFile" accept=".json,application/json"></label></div>
+<div class="modal-head"><div class="modal-title">設定</div><button class="close" data-close="settingsModal">×</button></div>
+<div class="settings-section"><div class="settings-heading">今日の画像</div><div class="settings-note">画像設定は次の変更でここに追加できます。</div></div>
+<div class="settings-section"><div class="settings-heading">給与単価</div><div id="rateRows"></div><button class="secondary" id="addRate" style="width:100%">＋単価を追加</button></div>
+<div class="settings-section"><div class="settings-heading">バックアップ</div><div class="backup"><button id="exportBtn">バックアップ</button><label>復元<input type="file" id="importFile" accept=".json,application/json"></label></div></div>
 </div></div>
 
 <script>
@@ -653,7 +660,8 @@ studyHours.onchange=()=>{let n=Number(studyHours.value);if(Number.isFinite(n)&&n
 studyStart.oninput=updateStudyEnd;saveDay.onclick=saveSalary;clearDay.onclick=clearSalary;
 addEvent.onclick=()=>openEditor();saveEvent.onclick=saveEventFn;deleteEvent.onclick=deleteEventFn;
 unsetEnd.onclick=()=>{eventEnd.value="";};
-openSettings.onclick=()=>{renderRates();open("settingsModal")};addRate.onclick=()=>{rates.push({from:new Date().toISOString().slice(0,10),lesson:2026,daily:513,transport:420});save(RATE_KEY,rates);renderRates()};
+const openGeneralSettings=()=>{renderRates();open("settingsModal")};
+planSettings.onclick=openGeneralSettings;salarySettings.onclick=openGeneralSettings;addRate.onclick=()=>{rates.push({from:new Date().toISOString().slice(0,10),lesson:2026,daily:513,transport:420});save(RATE_KEY,rates);renderRates()};
 exportBtn.onclick=exportData;importFile.onchange=e=>e.target.files[0]&&importData(e.target.files[0]);
 document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>close(b.dataset.close));
 document.querySelectorAll(".backdrop").forEach(b=>b.addEventListener("click",e=>{if(e.target===b)close(b.id)}));
