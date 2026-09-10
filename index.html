@@ -1629,6 +1629,129 @@ html,body,.wrap,.calendar-pager{
   box-shadow:none !important;
 }
 
+
+/* === PLAN LAYOUT FINAL OVERRIDE === */
+#planPanel{
+  display:grid !important;
+  grid-template-rows:auto minmax(0,1fr) 190px !important;
+  height:100dvh !important;
+  min-height:100dvh !important;
+  max-height:100dvh !important;
+  padding:0 4px 8px !important;
+  overflow:hidden !important;
+  box-sizing:border-box !important;
+}
+#planPanel > h1{
+  margin:4px 0 6px !important;
+}
+#planPanel > .calendar{
+  display:grid !important;
+  grid-template-rows:auto auto minmax(0,1fr) !important;
+  min-height:0 !important;
+  height:100% !important;
+  max-height:none !important;
+  overflow:hidden !important;
+}
+#planPanel #planGrid{
+  display:grid !important;
+  grid-template-columns:repeat(7,minmax(0,1fr)) !important;
+  grid-auto-rows:minmax(0,1fr) !important;
+  min-height:0 !important;
+  height:100% !important;
+  overflow:hidden !important;
+}
+#planPanel #planGrid > .day,
+#planPanel #planGrid > .blank{
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  padding:20px 2px 2px !important;
+  overflow:hidden !important;
+}
+#planPanel > #planDaySummary{
+  display:block !important;
+  position:static !important;
+  width:auto !important;
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  margin:6px 4px 0 !important;
+  padding:9px 10px !important;
+  visibility:visible !important;
+  overflow:hidden !important;
+}
+
+/* 今日：両方のカレンダーでマス背景のみ強調 */
+#planGrid > button.day.today,
+#grid > button.day.today{
+  background:#3b475a !important;
+  box-shadow:none !important;
+}
+
+
+/* === PLAN LAYOUT RECOVERY === */
+#planPanel{
+  display:flex !important;
+  flex-direction:column !important;
+  height:100dvh !important;
+  min-height:100dvh !important;
+  max-height:100dvh !important;
+  padding:0 4px 8px !important;
+  overflow:hidden !important;
+  box-sizing:border-box !important;
+}
+#planPanel > h1{
+  flex:0 0 auto !important;
+  margin:4px 0 6px !important;
+}
+#planPanel > .calendar{
+  display:block !important;
+  flex:0 0 calc(100dvh - 245px) !important;
+  width:100% !important;
+  height:calc(100dvh - 245px) !important;
+  min-height:360px !important;
+  max-height:calc(100dvh - 245px) !important;
+  overflow:hidden !important;
+  box-sizing:border-box !important;
+}
+#planPanel > .calendar > .head,
+#planPanel > .calendar > .week{
+  display:grid !important;
+}
+#planPanel #planGrid{
+  display:grid !important;
+  grid-template-columns:repeat(7,minmax(0,1fr)) !important;
+  grid-template-rows:repeat(6,minmax(0,1fr)) !important;
+  grid-auto-rows:minmax(0,1fr) !important;
+  width:100% !important;
+  height:calc(100% - 78px) !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+}
+#planPanel #planGrid > .day,
+#planPanel #planGrid > .blank{
+  display:block !important;
+  width:auto !important;
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  box-sizing:border-box !important;
+  overflow:hidden !important;
+}
+#planPanel > #planDaySummary{
+  display:block !important;
+  flex:1 1 auto !important;
+  position:static !important;
+  width:auto !important;
+  height:auto !important;
+  min-height:150px !important;
+  max-height:none !important;
+  margin:6px 4px 0 !important;
+  padding:9px 10px !important;
+  visibility:visible !important;
+  overflow:hidden !important;
+}
+
 </style>
 </head>
 <body>
@@ -2971,35 +3094,7 @@ window.addEventListener("focus",checkForAppUpdate);
 </script>
 <script>
 
-function applyTodayHighlight(){
-  const now=new Date();
-  const todayKey=keyOf(now.getFullYear(),now.getMonth(),now.getDate());
 
-  document.querySelectorAll(".day.today").forEach(el=>el.classList.remove("today"));
-
-  document.querySelectorAll(".day").forEach(day=>{
-    const candidates=[
-      day.dataset.date,
-      day.dataset.key,
-      day.getAttribute("data-day"),
-      day.getAttribute("data-date")
-    ].filter(Boolean);
-    if(candidates.includes(todayKey)) day.classList.add("today");
-  });
-
-  // Fallback for calendars whose cells do not carry a date data attribute.
-  // Only mark the visible current month.
-  document.querySelectorAll("#planPanel, #salaryPanel").forEach(panel=>{
-    const title=(panel.querySelector(".month-title,.monthTitle,[id*='MonthTitle'],h1")?.textContent||"");
-    const currentMonth=now.getMonth()+1;
-    const currentYear=now.getFullYear();
-    if(!(title.includes(String(currentMonth)) && (!/\d{4}/.test(title)||title.includes(String(currentYear))))) return;
-    panel.querySelectorAll(".day").forEach(day=>{
-      const num=day.querySelector(".daynum");
-      if(num && Number(num.textContent.trim())===now.getDate()) day.classList.add("today");
-    });
-  });
-}
 window.addEventListener("pageshow",()=>requestAnimationFrame(applyTodayHighlight));
 document.addEventListener("visibilitychange",()=>{
   if(document.visibilityState==="visible") requestAnimationFrame(applyTodayHighlight);
@@ -3007,17 +3102,6 @@ document.addEventListener("visibilitychange",()=>{
 
 </script>
 <script>
-
-const todayHighlightObserver=new MutationObserver(()=>{
-  requestAnimationFrame(applyTodayHighlight);
-});
-window.addEventListener("DOMContentLoaded",()=>{
-  ["planPanel","salaryPanel"].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el) todayHighlightObserver.observe(el,{childList:true,subtree:true});
-  });
-  applyTodayHighlight();
-});
 
 </script>
 <script>
