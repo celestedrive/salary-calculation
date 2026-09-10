@@ -1680,6 +1680,34 @@ html,body{
   justify-self:end !important;
 }
 
+
+/* 予定カレンダー外周：最下段まで境界線を通し、四隅を明確に丸める */
+#planPanel > .calendar{
+  border:1px solid #374151 !important;
+  border-radius:16px !important;
+  overflow:hidden !important;
+  background:#1f2937 !important;
+  box-sizing:border-box !important;
+}
+#planPanel #planGrid{
+  border-radius:0 0 15px 15px !important;
+  overflow:hidden !important;
+  background:#111827 !important;
+}
+#planPanel #planGrid > .day,
+#planPanel #planGrid > .blank{
+  border-bottom:1px solid #374151 !important;
+  box-sizing:border-box !important;
+}
+/* 実際の最終行の下側は外周ボーダーに任せて二重線を防止 */
+#planPanel #planGrid > :nth-last-child(-n+7){
+  border-bottom:0 !important;
+}
+/* 月によって5週で終わっても下側に不自然な空白を作らない */
+#planPanel #planGrid{
+  align-content:stretch !important;
+}
+
 </style>
 <meta name="calendar-build" content="1789038839">
 </head>
