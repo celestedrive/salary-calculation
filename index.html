@@ -1387,6 +1387,23 @@ html,body,.wrap,.calendar-pager{
   box-sizing:border-box !important;
 }
 
+
+/* 今日を強く強調 */
+.day.today{
+  background:#29364a !important;
+  box-shadow:inset 0 0 0 3px #f8fafc !important;
+}
+.day.today .daynum{
+  background:#f8fafc !important;
+  color:#111827 !important;
+  font-weight:900 !important;
+  box-shadow:0 0 0 2px #111827,0 0 0 4px #f8fafc !important;
+}
+.day.today.selected-day{
+  background:#1d4ed8 !important;
+  box-shadow:inset 0 0 0 3px #f8fafc !important;
+}
+
 </style>
 </head>
 <body>
@@ -2305,7 +2322,10 @@ function renderPlanCalendar(){
     const entries=getCalendarItems(key).map(item=>`<span class="plan-entry"><span class="plan-name">${escapeHtml(item.name)}</span><span class="plan-time">${escapeHtml(item.time)}</span></span>`).join("");
     const memo=plan.memo?`<span class="memo-dot">●</span>`:"";
     btn.innerHTML=`${renderDayTimeline(key)}<span class="daynum">${d}</span>${memo}<span class="day-content">${entries}</span>`;
-    btn.addEventListener("click",()=>selectPlanDay(key));
+    btn.addEventListener("click",()=>{
+      if(planSelected===key) openSelectedPlanDay(key);
+      else { planSelected=key; renderPlanCalendar(); }
+    });
     grid.appendChild(btn);
   }
   const used=firstDay+lastDate, trailing=(7-(used%7))%7;
@@ -2329,7 +2349,7 @@ function renderPlanEventList(){
   list.querySelectorAll(".plan-event-edit").forEach(btn=>btn.addEventListener("click",()=>openPlanEditorForEdit(btn.dataset.id)));
 }
 
-function selectPlanDay(key){
+function openSelectedPlanDay(key){
   planSelected=key;
   const slots=getSlots(key), hours=getStudyHours(key), plan=getPlan(key);
   document.getElementById("planSelected").textContent=key.replaceAll("-","/");
@@ -2343,6 +2363,25 @@ function selectPlanDay(key){
   renderPlanEventList();
   renderPlanDetailTimeline();
   document.getElementById("planModalBackdrop").classList.add("open");
+}
+
+
+function roundTimeInputToFiveMinutes(input){
+  if(!input||!input.value)return;
+  const [h,m]=input.value.split(":").map(Number);
+  if(!Number.isFinite(h)||!Number.isFinite(m))return;
+  let total=Math.round((h*60+m)/5)*5;
+  if(total>=1440)total=1435;
+  input.value=`${pad(Math.floor(total/60))}:${pad(total%60)}`;
+}
+function enableFiveMinuteTimeInputs(){
+  document.querySelectorAll('input[type="time"]').forEach(input=>{
+    input.step="300";
+    if(input.dataset.fiveMinuteBound==="1")return;
+    input.dataset.fiveMinuteBound="1";
+    input.addEventListener("change",()=>roundTimeInputToFiveMinutes(input));
+    input.addEventListener("blur",()=>roundTimeInputToFiveMinutes(input));
+  });
 }
 
 function persistPlan(date, plan){
@@ -2617,6 +2656,32 @@ document.addEventListener("DOMContentLoaded",()=>{
     },80);
   },{passive:true});
 });
+
+</script>
+<script>
+
+async function checkForAppUpdate(){
+  if(!/^https?:$/.test(location.protocol))return;
+  try{
+    const base=location.origin+location.pathname;
+    const res=await fetch(base+"?update_check="+Date.now(),{cache:"no-store"});
+    if(!res.ok)return;
+    const html=await res.text();
+    let hash=2166136261;
+    for(let i=0;i<html.length;i++){hash^=html.charCodeAt(i);hash=Math.imul(hash,16777619);}
+    const sig=(hash>>>0).toString(16)+":"+html.length;
+    const k="calendar_app_deployed_signature_v1";
+    const prev=localStorage.getItem(k);
+    localStorage.setItem(k,sig);
+    if(prev&&prev!==sig&&!sessionStorage.getItem("calendar_app_reloading")){
+      sessionStorage.setItem("calendar_app_reloading","1");
+      location.replace(base+"?updated="+Date.now());
+    }
+  }catch(e){}
+}
+window.addEventListener("pageshow",()=>{enableFiveMinuteTimeInputs();checkForAppUpdate();});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")checkForAppUpdate();});
+window.addEventListener("focus",checkForAppUpdate);
 
 </script>
 </body>
