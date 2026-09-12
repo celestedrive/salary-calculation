@@ -485,9 +485,21 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
   z-index:0!important;
   filter:brightness(.72);
 }
-.day.today.has-custom-media > *:not(.today-media-visual){
+.day.today.has-custom-media > .entry,
+.day.today.has-custom-media > .day-pay{
   position:relative;
   z-index:1;
+}
+.day.today.has-custom-media > .daynum{
+  position:absolute;
+  left:5px;
+  top:5px;
+  z-index:2;
+}
+.day.today.has-custom-media > .weather-mini,
+.day.today.has-custom-media > .payday-badge,
+.day.today.has-custom-media > .payday-amount{
+  z-index:2;
 }
 .day.today.has-custom-image{
   background-image:none!important;
