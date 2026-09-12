@@ -426,13 +426,22 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 #notifyTime{width:110px;height:34px}
 #notifyStatus{margin-top:7px}
 .gear{right:2px!important;top:-4px!important;width:44px!important;height:38px!important;font-size:28px!important;line-height:38px!important}
-.today-image-preview{height:82px;border:1px solid #4b5563;border-radius:10px;background:#111827 center/cover no-repeat;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:12px;margin-bottom:8px;overflow:hidden}
 .today-image-preview{
   position:relative;
-  width:110px;
+  width:min(180px,100%);
   max-width:100%;
   aspect-ratio:1 / 1;
   height:auto!important;
+  border:1px solid #4b5563;
+  border-radius:10px;
+  background:#111827;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#9ca3af;
+  font-size:12px;
+  margin-bottom:8px;
+  overflow:hidden;
   cursor:grab;
   touch-action:none;
   user-select:none;
@@ -440,11 +449,12 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 }
 .today-image-preview.dragging{cursor:grabbing}
 .today-image-preview::after{
-  content:"ドラッグで位置調整";
+  content:"ドラッグ・ピンチで調整";
   position:absolute;
   left:5px;
   right:5px;
   bottom:5px;
+  z-index:4;
   padding:3px 5px;
   border-radius:5px;
   background:rgba(0,0,0,.58);
@@ -454,36 +464,61 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
   text-align:center;
   pointer-events:none;
 }
-.today-image-preview:empty::after{display:none}
+.today-image-preview.no-media::after{display:none}
 .today-image-preview img,
-.today-image-preview video{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  object-position:50% 50%;
-  pointer-events:none;
-  display:block;
-}
-.today-media-video{
+.today-image-preview video,
+.today-media-visual{
   position:absolute!important;
   inset:0!important;
   width:100%!important;
   height:100%!important;
   object-fit:cover!important;
-  filter:brightness(.72);
-  z-index:0!important;
   pointer-events:none!important;
+  display:block!important;
+  will-change:transform;
 }
-.day.today.has-custom-video > *:not(.today-media-video){
+.today-image-preview img,
+.today-image-preview video{
+  z-index:1;
+}
+.today-media-visual{
+  z-index:0!important;
+  filter:brightness(.72);
+}
+.day.today.has-custom-media > *:not(.today-media-visual){
   position:relative;
   z-index:1;
 }
-.today-image-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:7px}
+.day.today.has-custom-image{
+  background-image:none!important;
+}
+.today-zoom-row{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) 46px;
+  align-items:center;
+  gap:8px;
+  margin:0 0 8px;
+  font-size:11px;
+  font-weight:800;
+  color:#cbd5e1;
+}
+.today-zoom-row input[type="range"]{
+  width:100%;
+  accent-color:#e5e7eb;
+}
+.today-zoom-row strong{
+  text-align:right;
+  font-size:10px;
+  font-variant-numeric:tabular-nums;
+}
+.today-image-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-bottom:7px;
+}
 .image-pick{display:flex;align-items:center;justify-content:center;cursor:pointer}
 .image-pick input{display:none}
-.today.has-custom-image{background-position:var(--today-media-position,50% 50%)!important;background-size:cover!important;background-repeat:no-repeat!important}
 
 #planPanel .calendar,#salaryPanel .calendar{touch-action:none!important;overscroll-behavior-x:contain!important}
 /* 予定作成：日付・時間・補助ボタンの見た目を統一 */
@@ -820,8 +855,9 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 <div class="modal-head"><div class="modal-title">設定</div><button class="close" data-close="settingsModal">×</button></div>
 <div class="settings-section"><div class="settings-heading">今日の画像・動画</div>
 <div class="today-image-preview" id="todayImagePreview">画像・動画なし</div>
-<div class="today-image-actions"><label class="secondary image-pick">画像・動画を選択<input type="file" id="todayImageFile"></label><button class="danger" id="removeTodayImage">削除</button></div>
-<div class="settings-note">プレビューをドラッグすると、「今日」の枠に表示する位置を調整できます。動画も同じ位置で表示されます。</div></div>
+<div class="today-zoom-row"><span>ズーム</span><input type="range" id="todayMediaZoom" min="1" max="3" step="0.05" value="1"><strong id="todayMediaZoomValue">1.00×</strong></div>
+<div class="today-image-actions"><button class="danger" id="removeTodayImage">削除</button><label class="secondary image-pick">画像・動画を選択<input type="file" id="todayImageFile"></label></div>
+<div class="settings-note">このプレビューは開いたカレンダーの日付マスと同じ縦横比です。ドラッグで位置、ピンチまたはスライダーでズームを調整できます。</div></div>
 <div class="settings-section"><div class="settings-heading">給与単価</div><div id="rateRows"></div><button class="secondary" id="addRate" style="width:100%">＋単価を追加</button></div>
 <div class="settings-section"><div class="settings-heading">バックアップ</div><div class="backup"><button id="exportBtn">バックアップ</button><label>復元<input type="file" id="importFile" accept=".json,application/json"></label></div></div>
 </div></div>
@@ -834,6 +870,7 @@ const TODAY_MEDIA_TYPE_KEY="calendar_today_media_type_v1";
 const TODAY_GIF_KEY="calendar_today_gif_v1";
 const TODAY_MEDIA_POS_X_KEY="calendar_today_media_pos_x_v1";
 const TODAY_MEDIA_POS_Y_KEY="calendar_today_media_pos_y_v1";
+const TODAY_MEDIA_ZOOM_KEY="calendar_today_media_zoom_v1";
 const TODAY_MEDIA_DB="calendar_today_media_db_v1";
 const TODAY_MEDIA_STORE="media";
 let todayVideoObjectUrl="";
@@ -857,6 +894,39 @@ function setTodayMediaPosition(x,y){
 function todayMediaPositionCSS(){
  const p=getTodayMediaPosition();
  return `${p.x}% ${p.y}%`;
+}
+function clampTodayMediaZoom(v){return Math.max(1,Math.min(3,Number(v)||1))}
+function getTodayMediaZoom(){
+ const v=localStorage.getItem(TODAY_MEDIA_ZOOM_KEY);
+ return v==null?1:clampTodayMediaZoom(v);
+}
+function setTodayMediaZoom(v){
+ const z=clampTodayMediaZoom(v);
+ localStorage.setItem(TODAY_MEDIA_ZOOM_KEY,String(z));
+ return z;
+}
+function applyTodayMediaFramingToElement(el){
+ if(!el)return;
+ const p=getTodayMediaPosition();
+ const z=getTodayMediaZoom();
+ const pos=`${p.x}% ${p.y}%`;
+ el.style.objectPosition=pos;
+ el.style.transformOrigin=pos;
+ el.style.transform=`scale(${z})`;
+}
+function updateTodayZoomUI(){
+ const z=getTodayMediaZoom();
+ if(typeof todayMediaZoom!=="undefined"&&todayMediaZoom)todayMediaZoom.value=String(z);
+ if(typeof todayMediaZoomValue!=="undefined"&&todayMediaZoomValue)todayMediaZoomValue.textContent=`${z.toFixed(2)}×`;
+}
+let todayPreviewTarget="plan";
+function syncTodayPreviewAspect(target=todayPreviewTarget){
+ todayPreviewTarget=target==="salary"?"salary":"plan";
+ const panel=todayPreviewTarget==="salary"?salaryPanel:planPanel;
+ const cell=panel?.querySelector(".grid .day");
+ if(!cell||!todayImagePreview)return;
+ const r=cell.getBoundingClientRect();
+ if(r.width>0&&r.height>0)todayImagePreview.style.aspectRatio=`${r.width} / ${r.height}`;
 }
 
 function detectTodayMediaType(file){
@@ -1004,23 +1074,23 @@ function makeLoopVideo(src){
  video.setAttribute("playsinline","");
  video.setAttribute("webkit-playsinline","");
  video.preload="auto";
- video.style.objectPosition=todayMediaPositionCSS();
+ applyTodayMediaFramingToElement(video);
  video.addEventListener("canplay",()=>video.play().catch(()=>{}),{once:true});
  return video;
 }
 
 async function refreshTodayImagePreview(){
  todayImagePreview.innerHTML="";
+ todayImagePreview.classList.add("no-media");
  todayImagePreview.style.backgroundImage="";
- todayImagePreview.style.backgroundPosition="";
  const mediaType=localStorage.getItem(TODAY_MEDIA_TYPE_KEY)|| (getTodayImage()?"image":"");
- const pos=todayMediaPositionCSS();
+ updateTodayZoomUI();
 
  if(mediaType==="video"){
    const src=await getTodayVideoUrl();
    if(src){
      const video=makeLoopVideo(src);
-     video.style.objectPosition=pos;
+     todayImagePreview.classList.remove("no-media");
      todayImagePreview.appendChild(video);
      video.play().catch(()=>{});
      return;
@@ -1033,7 +1103,8 @@ async function refreshTodayImagePreview(){
      const img=document.createElement("img");
      img.alt="";
      img.src=src;
-     img.style.objectPosition=pos;
+     applyTodayMediaFramingToElement(img);
+     todayImagePreview.classList.remove("no-media");
      todayImagePreview.appendChild(img);
      return;
    }
@@ -1045,7 +1116,8 @@ async function refreshTodayImagePreview(){
      const img=document.createElement("img");
      img.alt="";
      img.src=src;
-     img.style.objectPosition=pos;
+     applyTodayMediaFramingToElement(img);
+     todayImagePreview.classList.remove("no-media");
      todayImagePreview.appendChild(img);
      return;
    }
@@ -1060,22 +1132,30 @@ async function applyTodayImage(){
  const videoSrc=mediaType==="video"?await getTodayVideoUrl():"";
 
  document.querySelectorAll(".day.today").forEach(el=>{
-   el.querySelectorAll(".today-media-video").forEach(v=>v.remove());
-   el.classList.toggle("has-custom-image",!!imageSrc||!!gifSrc);
-   el.classList.toggle("has-custom-video",!!videoSrc);
-   const bgSrc=imageSrc||gifSrc;
-   el.style.backgroundImage=bgSrc?`linear-gradient(rgba(0,0,0,.28),rgba(0,0,0,.28)),url("${bgSrc}")`:"";
-   el.style.setProperty("--today-media-position",todayMediaPositionCSS());
+   el.querySelectorAll(".today-media-visual").forEach(v=>v.remove());
+   el.classList.remove("has-custom-image","has-custom-video","has-custom-media");
+   el.style.backgroundImage="";
 
+   let media=null;
    if(videoSrc){
-     const video=makeLoopVideo(videoSrc);
-     video.className="today-media-video";
-     el.prepend(video);
-     video.play().catch(()=>{});
+     media=makeLoopVideo(videoSrc);
+     media.className="today-media-visual today-media-video";
+     el.classList.add("has-custom-video","has-custom-media");
+   }else if(imageSrc||gifSrc){
+     media=document.createElement("img");
+     media.src=imageSrc||gifSrc;
+     media.alt="";
+     media.className="today-media-visual today-media-image";
+     el.classList.add("has-custom-image","has-custom-media");
+   }
+
+   if(media){
+     applyTodayMediaFramingToElement(media);
+     el.prepend(media);
+     if(media.tagName==="VIDEO")media.play().catch(()=>{});
    }
  });
 }
-
 async function saveTodayMediaFile(file){
  if(!file)return;
  const mediaType=detectTodayMediaType(file);
@@ -1083,6 +1163,7 @@ async function saveTodayMediaFile(file){
  if(mediaType==="gif"){
    try{
      setTodayMediaPosition(50,50);
+     setTodayMediaZoom(1);
      await putTodayGifBlob(file);
      resetTodayGifObjectUrl();
      localStorage.removeItem(TODAY_GIF_KEY);
@@ -1102,6 +1183,7 @@ async function saveTodayMediaFile(file){
  if(mediaType==="video"){
    try{
      setTodayMediaPosition(50,50);
+     setTodayMediaZoom(1);
      await putTodayVideoBlob(file);
      resetTodayVideoObjectUrl();
      localStorage.removeItem(TODAY_IMAGE_KEY);
@@ -1120,6 +1202,7 @@ async function saveTodayMediaFile(file){
 
  if(mediaType==="image"){
    setTodayMediaPosition(50,50);
+     setTodayMediaZoom(1);
    const img=new Image(),url=URL.createObjectURL(file);
    img.onload=async()=>{
      const max=600,scale=Math.min(1,max/Math.max(img.width,img.height));
@@ -1155,57 +1238,93 @@ async function saveTodayMediaFile(file){
 }
 
 (function setupTodayMediaPositionEditor(){
- let dragging=false,startClientX=0,startClientY=0,startPosX=50,startPosY=50;
+ const pointers=new Map();
+ let dragBase=null,pinchBase=null;
 
  function hasTodayMedia(){
    return !!(localStorage.getItem(TODAY_MEDIA_TYPE_KEY)||getTodayImage());
  }
 
- function applyPositionLive(x,y){
-   setTodayMediaPosition(x,y);
-   const pos=todayMediaPositionCSS();
-   todayImagePreview.style.backgroundPosition=pos;
-   todayImagePreview.querySelectorAll("img,video").forEach(v=>v.style.objectPosition=pos);
-   document.querySelectorAll(".day.today").forEach(el=>{
-     el.style.setProperty("--today-media-position",pos);
-     el.querySelectorAll(".today-media-video").forEach(v=>v.style.objectPosition=pos);
-   });
+ function applyFramingLive(){
+   updateTodayZoomUI();
+   todayImagePreview.querySelectorAll("img,video").forEach(applyTodayMediaFramingToElement);
+   document.querySelectorAll(".day.today .today-media-visual").forEach(applyTodayMediaFramingToElement);
+ }
+
+ function beginSingle(pointer){
+   const p=getTodayMediaPosition();
+   dragBase={x:pointer.x,y:pointer.y,posX:p.x,posY:p.y};
+   pinchBase=null;
+ }
+
+ function beginPinch(){
+   if(pointers.size<2)return;
+   const a=[...pointers.values()].slice(0,2);
+   pinchBase={
+     distance:Math.hypot(a[1].x-a[0].x,a[1].y-a[0].y)||1,
+     zoom:getTodayMediaZoom()
+   };
+   dragBase=null;
  }
 
  todayImagePreview.addEventListener("pointerdown",e=>{
    if(!hasTodayMedia())return;
-   dragging=true;
-   todayImagePreview.classList.add("dragging");
-   const p=getTodayMediaPosition();
-   startPosX=p.x;
-   startPosY=p.y;
-   startClientX=e.clientX;
-   startClientY=e.clientY;
+   pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
    todayImagePreview.setPointerCapture?.(e.pointerId);
+   todayImagePreview.classList.add("dragging");
+   if(pointers.size===1)beginSingle({x:e.clientX,y:e.clientY});
+   else beginPinch();
    e.preventDefault();
  });
 
  todayImagePreview.addEventListener("pointermove",e=>{
-   if(!dragging)return;
-   const rect=todayImagePreview.getBoundingClientRect();
-   const dx=e.clientX-startClientX;
-   const dy=e.clientY-startClientY;
-   const x=startPosX-(dx/Math.max(1,rect.width))*100;
-   const y=startPosY-(dy/Math.max(1,rect.height))*100;
-   applyPositionLive(x,y);
-   e.preventDefault();
+   if(!pointers.has(e.pointerId))return;
+   pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+
+   if(pointers.size>=2){
+     if(!pinchBase)beginPinch();
+     const a=[...pointers.values()].slice(0,2);
+     const distance=Math.hypot(a[1].x-a[0].x,a[1].y-a[0].y)||1;
+     setTodayMediaZoom(pinchBase.zoom*(distance/pinchBase.distance));
+     applyFramingLive();
+     e.preventDefault();
+     return;
+   }
+
+   if(dragBase){
+     const rect=todayImagePreview.getBoundingClientRect();
+     const dx=e.clientX-dragBase.x;
+     const dy=e.clientY-dragBase.y;
+     const x=dragBase.posX-(dx/Math.max(1,rect.width))*100;
+     const y=dragBase.posY-(dy/Math.max(1,rect.height))*100;
+     setTodayMediaPosition(x,y);
+     applyFramingLive();
+     e.preventDefault();
+   }
  });
 
- function stopDrag(e){
-   if(!dragging)return;
-   dragging=false;
-   todayImagePreview.classList.remove("dragging");
+ function releasePointer(e){
+   pointers.delete(e.pointerId);
    try{todayImagePreview.releasePointerCapture?.(e.pointerId)}catch{}
+   if(pointers.size===1){
+     const one=[...pointers.values()][0];
+     beginSingle(one);
+   }else if(pointers.size===0){
+     dragBase=null;
+     pinchBase=null;
+     todayImagePreview.classList.remove("dragging");
+   }else{
+     beginPinch();
+   }
  }
- todayImagePreview.addEventListener("pointerup",stopDrag);
- todayImagePreview.addEventListener("pointercancel",stopDrag);
-})();
+ todayImagePreview.addEventListener("pointerup",releasePointer);
+ todayImagePreview.addEventListener("pointercancel",releasePointer);
 
+ todayMediaZoom.addEventListener("input",()=>{
+   setTodayMediaZoom(todayMediaZoom.value);
+   applyFramingLive();
+ });
+})();
 const KEY="juku_salary_slots_v1", RATE_KEY="juku_salary_rates_v1", STUDY_KEY="salary_calendar_study_v1", PLAN_KEY="salary_calendar_plans_v1";
 const SLOT_ORDER=["X","Y","Z","A","B","C","D"];
 const SLOT_TIMES={X:["09:00","10:30"],Y:["10:35","12:05"],Z:["12:10","13:40"],A:["14:55","16:25"],B:["16:30","18:00"],C:["18:05","19:35"],D:["19:40","21:10"]};
@@ -1778,8 +1897,16 @@ allDayToggle.onclick=()=>{
    setTimeout(syncEventEditorViewport,220);
  }
 };
-const openGeneralSettings=()=>{renderRates();refreshTodayImagePreview();open("settingsModal")};
-planSettings.onclick=openGeneralSettings;salarySettings.onclick=openGeneralSettings;addRate.onclick=()=>{rates.push({from:new Date().toISOString().slice(0,10),lesson:2026,daily:513,transport:420});save(RATE_KEY,rates);renderRates()};
+const openGeneralSettings=target=>{
+ renderRates();
+ todayPreviewTarget=target==="salary"?"salary":"plan";
+ syncTodayPreviewAspect(todayPreviewTarget);
+ refreshTodayImagePreview();
+ open("settingsModal");
+ requestAnimationFrame(()=>syncTodayPreviewAspect(todayPreviewTarget));
+};
+planSettings.onclick=()=>openGeneralSettings("plan");
+salarySettings.onclick=()=>openGeneralSettings("salary");addRate.onclick=()=>{rates.push({from:new Date().toISOString().slice(0,10),lesson:2026,daily:513,transport:420});save(RATE_KEY,rates);renderRates()};
 exportBtn.onclick=exportData;importFile.onchange=e=>e.target.files[0]&&importData(e.target.files[0]);
 document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>close(b.dataset.close));
 document.querySelectorAll(".backdrop").forEach(b=>b.addEventListener("click",e=>{if(e.target===b)close(b.id)}));
@@ -1902,6 +2029,7 @@ removeTodayImage.onclick=async()=>{
  localStorage.removeItem(TODAY_MEDIA_TYPE_KEY);
  localStorage.removeItem(TODAY_MEDIA_POS_X_KEY);
  localStorage.removeItem(TODAY_MEDIA_POS_Y_KEY);
+ localStorage.removeItem(TODAY_MEDIA_ZOOM_KEY);
  await deleteTodayVideoBlob();
  resetTodayVideoObjectUrl();
  await deleteTodayGifBlob();
