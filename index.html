@@ -507,6 +507,66 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 #eventEditor .form{
   overflow:visible!important;
 }
+
+/* 設定ボタンとカレンダー枠の間隔 */
+.panel-title-row{
+  margin-bottom:5px!important;
+}
+.gear{
+  top:-2px!important;
+  height:32px!important;
+  line-height:32px!important;
+  font-size:24px!important;
+}
+
+/* 予定カレンダー下部：2件を大きく見せる */
+#summary{
+  flex:0 0 145px!important;
+  height:145px!important;
+  min-height:145px!important;
+  max-height:145px!important;
+  padding:9px 10px!important;
+  overflow:hidden!important;
+}
+#summary .summary-title{
+  font-size:15px!important;
+  line-height:18px!important;
+  margin:0 0 5px!important;
+  padding:0!important;
+}
+#summary .summary-list{
+  height:108px!important;
+  max-height:108px!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  overscroll-behavior:contain!important;
+  -webkit-overflow-scrolling:touch;
+}
+#summary .summary-row{
+  min-height:52px!important;
+  padding:8px 2px!important;
+  gap:10px!important;
+  align-items:flex-start!important;
+  font-size:15px!important;
+  line-height:1.25!important;
+}
+#summary .summary-time{
+  min-width:92px!important;
+  font-size:14px!important;
+  line-height:1.25!important;
+  font-weight:800!important;
+}
+#summary .summary-name{
+  min-width:0!important;
+  font-size:15px!important;
+  line-height:1.25!important;
+  font-weight:800!important;
+  white-space:normal!important;
+}
+#summary .summary-name small{
+  font-size:12px!important;
+  line-height:1.2!important;
+}
 </style>
 <link rel="apple-touch-icon" href="icon.png">
 </head>
