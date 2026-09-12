@@ -690,7 +690,19 @@ function enableMonthSwipe(grid,kind){
  }
  viewport.addEventListener('pointerdown',event=>{
    if(busy||gesture||!event.isPrimary||event.button!==0)return;
-   gesture={id:event.pointerId,x:event.clientX,y:event.clientY,dx:0,started:false};
+
+   // 予定⇔給与の画面切替がまだ慣性/スナップ中でも、
+   // カレンダーを触った時点で外側 pager を現在のページへ即時確定する。
+   const page=Math.round(pager.scrollLeft/Math.max(1,pager.clientWidth));
+   const target=page*pager.clientWidth;
+   pager.style.scrollBehavior='auto';
+   pager.style.scrollSnapType='none';
+   pager.scrollLeft=target;
+
+   gesture={
+     id:event.pointerId,x:event.clientX,y:event.clientY,dx:0,started:false,
+     restorePager:true
+   };
  },{passive:true});
 
  window.addEventListener('pointermove',event=>{
@@ -706,9 +718,16 @@ function enableMonthSwipe(grid,kind){
    position(gesture.dx);
  },{passive:false});
 
+ function restorePager(){
+   requestAnimationFrame(()=>{
+     pager.style.scrollSnapType='';
+     pager.style.scrollBehavior='';
+   });
+ }
  function release(event,cancelled=false){
    if(!gesture||event.pointerId!==gesture.id)return;
    const current=gesture;gesture=null;
+   if(current.restorePager)restorePager();
    if(!current.started){cleanupPreviews();return}
    const threshold=Math.min(60,viewport.clientWidth*.16);
    const direction=!cancelled&&Math.abs(current.dx)>threshold?(current.dx<0?1:-1):0;
