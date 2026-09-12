@@ -478,6 +478,18 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 #eventEditor .event-control:disabled{
   opacity:.45!important;
 }
+#eventEditor{
+  overflow:hidden!important;
+  overscroll-behavior:none!important;
+}
+#eventEditor .modal{
+  overflow:hidden!important;
+  overscroll-behavior:none!important;
+  max-height:none!important;
+}
+#eventEditor .form{
+  overflow:visible!important;
+}
 </style>
 <link rel="apple-touch-icon" href="icon.png">
 </head>
@@ -841,7 +853,62 @@ function deleteEventById(id){
  save(PLAN_KEY,plans);close("eventEditor");renderPlan();openPlanDetail()
 }
 function deleteEventFn(){if(editingEvent)deleteEventById(editingEvent)}
-function open(id){document.getElementById(id).classList.add("open")}function close(id){document.getElementById(id).classList.remove("open")}
+
+function syncEventEditorViewport(){
+ const vv=window.visualViewport;
+ const editor=document.getElementById("eventEditor");
+ if(!editor||!editor.classList.contains("open"))return;
+
+ if(vv){
+   editor.style.top=`${vv.offsetTop}px`;
+   editor.style.left=`${vv.offsetLeft}px`;
+   editor.style.width=`${vv.width}px`;
+   editor.style.height=`${vv.height}px`;
+   editor.style.right="auto";
+   editor.style.bottom="auto";
+ }else{
+   editor.style.top="0";
+   editor.style.left="0";
+   editor.style.width="100%";
+   editor.style.height="100%";
+   editor.style.right="auto";
+   editor.style.bottom="auto";
+ }
+
+ const modal=editor.querySelector(".modal");
+ if(modal){
+   modal.scrollTop=0;
+ }
+}
+
+function resetEventEditorViewport(){
+ const editor=document.getElementById("eventEditor");
+ if(!editor)return;
+ editor.style.top="";
+ editor.style.left="";
+ editor.style.width="";
+ editor.style.height="";
+ editor.style.right="";
+ editor.style.bottom="";
+ const modal=editor.querySelector(".modal");
+ if(modal)modal.scrollTop=0;
+}
+
+function open(id){
+ document.getElementById(id).classList.add("open");
+ if(id==="eventEditor"){
+   requestAnimationFrame(syncEventEditorViewport);
+ }
+}
+function close(id){
+ document.getElementById(id).classList.remove("open");
+ if(id==="eventEditor")resetEventEditorViewport();
+}
+
+if(window.visualViewport){
+ visualViewport.addEventListener("resize",()=>requestAnimationFrame(syncEventEditorViewport));
+ visualViewport.addEventListener("scroll",()=>requestAnimationFrame(syncEventEditorViewport));
+}
 
 function openMonth(kind){pickerTarget=kind;let v=kind=="plan"?planView:salView;pickerYear=v.getFullYear();renderPicker();open("monthPicker")}
 function renderPicker(){pickerYearEl.textContent=pickerYear+"年";monthGrid.innerHTML="";for(let m=0;m<12;m++){let b=document.createElement("button");b.textContent=(m+1)+"月";b.onclick=()=>{if(pickerTarget=="plan")planView=new Date(pickerYear,m,1);else salView=new Date(pickerYear,m,1);close("monthPicker");renderPlan();renderSalary()};monthGrid.appendChild(b)}}
@@ -897,6 +964,9 @@ allDayToggle.onclick=()=>{
    eventStart.focus({preventScroll:true});
    const p=eventStart.value.length;
    eventStart.setSelectionRange?.(p,p);
+   requestAnimationFrame(syncEventEditorViewport);
+   setTimeout(syncEventEditorViewport,80);
+   setTimeout(syncEventEditorViewport,220);
  }
 };
 const openGeneralSettings=()=>{renderRates();open("settingsModal")};
@@ -904,6 +974,10 @@ planSettings.onclick=openGeneralSettings;salarySettings.onclick=openGeneralSetti
 exportBtn.onclick=exportData;importFile.onchange=e=>e.target.files[0]&&importData(e.target.files[0]);
 document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>close(b.dataset.close));
 document.querySelectorAll(".backdrop").forEach(b=>b.addEventListener("click",e=>{if(e.target===b)close(b.id)}));
+eventEditor.addEventListener("touchmove",e=>{
+ if(e.target.closest("textarea"))return;
+ e.preventDefault();
+},{passive:false});
 document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
 document.addEventListener("gesturechange",e=>e.preventDefault(),{passive:false});
 document.addEventListener("gestureend",e=>e.preventDefault(),{passive:false});
