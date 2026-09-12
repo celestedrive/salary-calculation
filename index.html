@@ -395,7 +395,24 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 .today.has-custom-image{background-position:center!important;background-size:cover!important;background-repeat:no-repeat!important}
 
 #planPanel .calendar,#salaryPanel .calendar{touch-action:pan-y!important;overscroll-behavior-x:contain!important}
-#eventStartDate,#eventEndDate{width:100%!important;min-width:0!important}
+/* 予定作成：日付・時間・補助ボタンの見た目を統一 */
+#eventEditor .event-date-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+#eventEditor .event-time-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+#eventEditor .event-date-row label,#eventEditor .event-time-row label{min-width:0}
+#eventEditor .event-control,#eventEditor .event-field-display,#eventEditor .event-option{
+  box-sizing:border-box!important;border:1px solid #4b5563!important;border-radius:8px!important;
+  background:#111827!important;color:#f9fafb!important;font-size:16px!important;
+}
+#eventEditor .event-control,#eventEditor .event-field-display{width:100%!important;min-width:0!important;height:36px!important;padding:6px 8px!important}
+#eventEditor .event-field-display{display:flex;align-items:center;color:#d1d5db!important}
+#eventEditor input[type="date"]{color-scheme:dark}
+#eventEditor .hhmm-input{max-width:none!important;letter-spacing:.6px!important;font-variant-numeric:tabular-nums}
+#eventEditor .end-time-wrap{display:grid!important;grid-template-columns:minmax(0,1fr) 54px!important;gap:5px!important}
+#eventEditor .event-option{height:36px!important;padding:0 8px!important;font-weight:800!important}
+#eventEditor .all-day-toggle{width:100%!important}
+#eventEditor .event-option.active{background:#4b5563!important;border-color:#6b7280!important}
+#eventEditor .event-control:disabled{opacity:.45!important}
+
 </style>
 <link rel="apple-touch-icon" href="icon.png">
 </head>
@@ -446,7 +463,9 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 <div class="modal-head"><div class="modal-title" id="editorTitle">予定を追加</div><button class="close" data-close="eventEditor">×</button></div>
 <div class="form">
 <label>予定名<input id="eventName" type="text" enterkeyhint="next"></label>
-<div class="time-row"><label>開始日<input id="eventStartDate" type="date"></label><label>終了日<input id="eventEndDate" type="date"></label></div><div class="time-row"><label>開始<input id="eventStart" class="hhmm-input" type="tel" inputmode="numeric" autocomplete="off" aria-label="開始時間"></label><label>終了<div class="end-time-wrap"><input id="eventEnd" class="hhmm-input" type="tel" inputmode="numeric" autocomplete="off" aria-label="終了時間"><button type="button" id="unsetEnd">未定</button></div></label></div>
+<div class="event-date-row"><label>開始日<div id="eventStartDateDisplay" class="event-field-display"></div></label><label>終了日<input id="eventEndDate" class="event-control" type="date"></label></div>
+<div class="event-time-row"><label>開始<input id="eventStart" class="event-control hhmm-input" type="tel" inputmode="numeric" autocomplete="off" aria-label="開始時間"></label><label>終了<div class="end-time-wrap"><input id="eventEnd" class="event-control hhmm-input" type="tel" inputmode="numeric" autocomplete="off" aria-label="終了時間"><button type="button" id="unsetEnd" class="event-option">未定</button></div></label></div>
+<button type="button" id="allDayToggle" class="event-option all-day-toggle">終日</button>
 <label>メモ<textarea id="eventMemo" maxlength="120" placeholder="120文字まで"></textarea></label>
 <div class="actions"><button class="danger" id="deleteEvent">削除</button><button class="primary" id="saveEvent">保存</button></div>
 </div></div></div>
@@ -681,10 +700,16 @@ function openEditor(id=null){
  let p=plan(selectedPlan),e=id?p.events.find(x=>x.id==id):null;
  editorTitle.textContent=e?"予定を変更":"予定を追加";
  eventName.value=e?.title||"";
- eventStartDate.value=e?.startDate||selectedPlan||"";
- eventEndDate.value=e?.endDate||e?.startDate||selectedPlan||"";
- eventStart.value=timeToHHMM(e?.start||"");
- eventEnd.value=timeToHHMM(e?.end||"");
+ const fixedStartDate=e?.startDate||selectedPlan||"";
+ eventStartDateDisplay.textContent=fixedStartDate;
+ eventEndDate.value=e?.endDate||fixedStartDate;
+ const isAllDay=!!e?.allDay || (!!e && !e.start && !e.end);
+ allDayToggle.classList.toggle("active",isAllDay);
+ eventStart.disabled=isAllDay;
+ eventEnd.disabled=isAllDay;
+ unsetEnd.disabled=isAllDay;
+ eventStart.value=isAllDay?"":timeToHHMM(e?.start||"");
+ eventEnd.value=isAllDay?"":timeToHHMM(e?.end||"");
  eventMemo.value=e?.memo||"";
  deleteEvent.style.visibility=e?"visible":"hidden";
  open("eventEditor");
@@ -692,12 +717,14 @@ function openEditor(id=null){
 }
 function saveEventFn(){
  if(!selectedPlan)return;
- const start=hhmmToTime(eventStart.value),end=eventEnd.value?hhmmToTime(eventEnd.value):"";
- const startDate=eventStartDate.value||selectedPlan,endDate=eventEndDate.value||startDate;
+ const allDay=allDayToggle.classList.contains("active");
+ const start=allDay?"":hhmmToTime(eventStart.value),end=allDay?"":(eventEnd.value?hhmmToTime(eventEnd.value):"");
+ const oldEvent=editingEvent?plan(selectedPlan).events.find(x=>x.id==editingEvent):null;
+ const startDate=oldEvent?.startDate||selectedPlan,endDate=eventEndDate.value||startDate;
  if(endDate<startDate){eventEndDate.focus();return}
- if(!start){eventStart.focus();return}
- if(eventEnd.value&&!end){eventEnd.focus();return}
- const old=editingEvent?plan(selectedPlan).events.find(x=>x.id==editingEvent):null;
+ if(!allDay&&!start){eventStart.focus();return}
+ if(!allDay&&eventEnd.value&&!end){eventEnd.focus();return}
+ const old=oldEvent;
  const groupId=old?.groupId||old?.id||`${Date.now()}`;
  if(editingEvent)removeEventGroup(groupId);
  const keys=dateKeysInclusive(startDate,endDate);
@@ -709,6 +736,7 @@ function saveEventFn(){
      title:eventName.value.trim()||"予定",
      start:idx===0?start:"",
      end:idx===keys.length-1?end:"",
+     allDay,
      startDate,endDate,
      memo:eventMemo.value.slice(0,120)
    });
@@ -762,6 +790,14 @@ studyHours.onchange=()=>{let n=Number(studyHours.value);if(Number.isFinite(n)&&n
 studyStart.oninput=updateStudyEnd;saveDay.onclick=saveSalary;clearDay.onclick=clearSalary;
 addEvent.onclick=()=>openEditor();saveEvent.onclick=saveEventFn;deleteEvent.onclick=deleteEventFn;
 unsetEnd.onclick=()=>{eventEnd.value="";};
+allDayToggle.onclick=()=>{
+ const on=!allDayToggle.classList.contains("active");
+ allDayToggle.classList.toggle("active",on);
+ eventStart.disabled=on;
+ eventEnd.disabled=on;
+ unsetEnd.disabled=on;
+ if(on){eventStart.value="";eventEnd.value=""}
+};
 const openGeneralSettings=()=>{renderRates();open("settingsModal")};
 planSettings.onclick=openGeneralSettings;salarySettings.onclick=openGeneralSettings;addRate.onclick=()=>{rates.push({from:new Date().toISOString().slice(0,10),lesson:2026,daily:513,transport:420});save(RATE_KEY,rates);renderRates()};
 exportBtn.onclick=exportData;importFile.onchange=e=>e.target.files[0]&&importData(e.target.files[0]);
@@ -831,19 +867,83 @@ function animateMonth(calendar,dir,move){
   });
 }
 
-/* カレンダー枠内：左右操作は月移動。枠外：既存のページ切替。 */
+/* カレンダー枠内：月移動。外側pagerのスワイプとは独立して処理する。 */
 (function(){
  function bind(el,move){
-   if(!el||el.dataset.monthSwipe)return; el.dataset.monthSwipe="1";
-   let sx=0,sy=0,active=false,acc=0,lock=false,timer=0;
-   el.addEventListener("touchstart",e=>{if(e.touches.length===1){sx=e.touches[0].clientX;sy=e.touches[0].clientY;active=true}}, {passive:true});
-   el.addEventListener("touchmove",e=>{if(!active)return;let dx=e.touches[0].clientX-sx,dy=e.touches[0].clientY-sy;if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>8){e.preventDefault();e.stopPropagation()}},{passive:false});
-   el.addEventListener("touchend",e=>{if(!active)return;active=false;let t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;if(Math.abs(dx)>=45&&Math.abs(dx)>Math.abs(dy)*1.15){e.preventDefault();e.stopPropagation();move(dx<0?1:-1)}},{passive:false});
-   el.addEventListener("wheel",e=>{if(Math.abs(e.deltaX)<=Math.abs(e.deltaY)||Math.abs(e.deltaX)<2)return;e.preventDefault();e.stopPropagation();if(lock)return;acc+=e.deltaX;clearTimeout(timer);timer=setTimeout(()=>{acc=0;lock=false},220);if(Math.abs(acc)>=35){let d=acc>0?1:-1;acc=0;lock=true;move(d);clearTimeout(timer);timer=setTimeout(()=>lock=false,260)}},{passive:false});
+   if(!el||el.dataset.monthSwipe)return;
+   el.dataset.monthSwipe="1";
+
+   let sx=0,sy=0,active=false,horizontal=false;
+   let wheelLocked=false,wheelUnlockTimer=0;
+
+   el.addEventListener("touchstart",e=>{
+     if(e.touches.length!==1)return;
+     sx=e.touches[0].clientX;
+     sy=e.touches[0].clientY;
+     active=true;
+     horizontal=false;
+   },{passive:true});
+
+   el.addEventListener("touchmove",e=>{
+     if(!active||e.touches.length!==1)return;
+     const dx=e.touches[0].clientX-sx;
+     const dy=e.touches[0].clientY-sy;
+
+     if(!horizontal && Math.abs(dx)>10 && Math.abs(dx)>Math.abs(dy)*1.15){
+       horizontal=true;
+     }
+     if(horizontal){
+       e.preventDefault();
+       e.stopPropagation();
+     }
+   },{passive:false});
+
+   el.addEventListener("touchend",e=>{
+     if(!active)return;
+     active=false;
+     const t=e.changedTouches[0];
+     const dx=t.clientX-sx;
+     const dy=t.clientY-sy;
+
+     if(horizontal && Math.abs(dx)>=45 && Math.abs(dx)>Math.abs(dy)*1.15){
+       e.preventDefault();
+       e.stopPropagation();
+       move(dx<0?1:-1);
+     }
+     horizontal=false;
+   },{passive:false});
+
+   el.addEventListener("touchcancel",()=>{
+     active=false;
+     horizontal=false;
+   },{passive:true});
+
+   el.addEventListener("wheel",e=>{
+     if(Math.abs(e.deltaX)<=Math.abs(e.deltaY)*1.1 || Math.abs(e.deltaX)<8)return;
+
+     e.preventDefault();
+     e.stopPropagation();
+
+     clearTimeout(wheelUnlockTimer);
+     wheelUnlockTimer=setTimeout(()=>{wheelLocked=false},420);
+
+     if(wheelLocked)return;
+     wheelLocked=true;
+     move(e.deltaX>0?1:-1);
+   },{passive:false});
  }
- const planCal=document.querySelector("#planPanel .calendar"), salaryCal=document.querySelector("#salaryPanel .calendar");
- bind(planCal,d=>animateMonth(planCal,d,()=>{planView=new Date(planView.getFullYear(),planView.getMonth()+d,1);renderPlan()}));
- bind(salaryCal,d=>animateMonth(salaryCal,d,()=>{salView=new Date(salView.getFullYear(),salView.getMonth()+d,1);renderSalary()}));
+
+ const planCal=document.querySelector("#planPanel .calendar");
+ const salaryCal=document.querySelector("#salaryPanel .calendar");
+
+ bind(planCal,d=>animateMonth(planCal,d,()=>{
+   planView=new Date(planView.getFullYear(),planView.getMonth()+d,1);
+   renderPlan();
+ }));
+ bind(salaryCal,d=>animateMonth(salaryCal,d,()=>{
+   salView=new Date(salView.getFullYear(),salView.getMonth()+d,1);
+   renderSalary();
+ }));
 })();
 
 </script>
