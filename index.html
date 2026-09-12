@@ -800,21 +800,31 @@ function animateMonth(calendar,dir,move){
   const out=dir>0?-1:1;
   const previousOverflow=calendar.style.overflow;
   calendar.style.overflow="hidden";
-  grid.animate(
+
+  const exitAnim=grid.animate(
     [{transform:"translateX(0)"},{transform:`translateX(${out*100}%)`}],
-    {duration:150,easing:"cubic-bezier(.4,0,.6,1)",fill:"forwards"}
-  ).finished.catch(()=>{}).then(()=>{
+    {duration:150,easing:"cubic-bezier(.4,0,.6,1)"}
+  );
+
+  exitAnim.finished.catch(()=>{}).then(()=>{
+    exitAnim.cancel();
     move();
+
     const nextGrid=calendar.querySelector(".grid");
     if(!nextGrid){
       calendar.style.overflow=previousOverflow;
       delete calendar.dataset.monthAnimating;
       return;
     }
-    nextGrid.animate(
+
+    const enterAnim=nextGrid.animate(
       [{transform:`translateX(${-out*100}%)`},{transform:"translateX(0)"}],
       {duration:190,easing:"cubic-bezier(.22,.75,.25,1)"}
-    ).finished.catch(()=>{}).then(()=>{
+    );
+
+    enterAnim.finished.catch(()=>{}).then(()=>{
+      enterAnim.cancel();
+      nextGrid.style.transform="";
       calendar.style.overflow=previousOverflow;
       delete calendar.dataset.monthAnimating;
     });
