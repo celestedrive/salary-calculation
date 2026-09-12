@@ -649,14 +649,14 @@ let outerPage=0,outerGesture=null,outerAnimating=false;
 
 function outerXFor(page){return -page*window.innerWidth}
 function setOuterX(x,animate=false){
-  pager.style.transition=animate?'transform 260ms cubic-bezier(.22,.61,.36,1)':'none';
+  pager.style.transition=animate?'transform 360ms cubic-bezier(.16,1,.3,1)':'none';
   pager.style.transform=`translate3d(${x}px,0,0)`;
 }
 function finishOuter(page,animate=true){
   outerPage=Math.max(0,Math.min(1,page));
   outerAnimating=animate;
   setOuterX(outerXFor(outerPage),animate);
-  if(animate)setTimeout(()=>{outerAnimating=false;pager.style.transition='none'},270);
+  if(animate)setTimeout(()=>{outerAnimating=false;pager.style.transition='none'},370);
 }
 function settleOuterToPanel(panel){
   const panels=[planPanel,salaryPanel];
@@ -699,7 +699,7 @@ function releaseOuter(e){
   if(!outerGesture||e.pointerId!==outerGesture.id)return;
   const g=outerGesture;outerGesture=null;
   if(!g.started){finishOuter(outerPage,true);return}
-  const threshold=Math.min(70,window.innerWidth*.18);
+  const threshold=Math.min(42,window.innerWidth*.10);
   let target=outerPage;
   if(Math.abs(g.dx)>threshold)target=g.dx<0?1:0;
   else{
