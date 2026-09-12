@@ -992,6 +992,14 @@ function animateMonth(calendar,dir,move,startPx=0){
    el.addEventListener("touchstart",e=>{
      if(e.touches.length!==1||el.dataset.monthAnimating)return;
      e.stopPropagation();
+
+     /* 直前の予定⇔給与スライドのsmooth移動をここで完全停止 */
+     const pageW=pager.clientWidth;
+     if(pageW){
+       pager.scrollTo({left:pageIndex*pageW,behavior:"auto"});
+       pager.scrollLeft=pageIndex*pageW;
+     }
+
      sx=e.touches[0].clientX;
      sy=e.touches[0].clientY;
      startAt=performance.now();
