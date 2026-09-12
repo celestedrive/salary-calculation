@@ -245,15 +245,19 @@ html,body{touch-action:pan-x !important;-webkit-text-size-adjust:100% !important
 }
 .detail-band strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .detail-band span{display:block;font-size:8px;white-space:nowrap}
+.detail-band{z-index:3}
 .detail-band-all-day{
-  left:4px!important;
-  right:4px!important;
-  width:auto!important;
-  height:26px!important;
-  min-height:26px!important;
-  z-index:4;
+  top:0!important;
+  height:100%!important;
+  min-height:100%!important;
+  z-index:1!important;
   border-left-color:#f9fafb!important;
-  background:#4b5563!important;
+  background:rgba(75,85,99,.38)!important;
+}
+.detail-band-all-day strong,
+.detail-band-all-day span{
+  position:relative;
+  z-index:2;
 }
 .rate-row{
   grid-template-columns:1.15fr .8fr .8fr .8fr auto !important;
@@ -419,7 +423,34 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 #notifyStatus{margin-top:7px}
 .gear{right:2px!important;top:-4px!important;width:44px!important;height:38px!important;font-size:28px!important;line-height:38px!important}
 .today-image-preview{height:82px;border:1px solid #4b5563;border-radius:10px;background:#111827 center/cover no-repeat;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:12px;margin-bottom:8px;overflow:hidden}
-.today-image-preview{position:relative}
+.today-image-preview{
+  position:relative;
+  width:110px;
+  max-width:100%;
+  aspect-ratio:1 / 1;
+  height:auto!important;
+  cursor:grab;
+  touch-action:none;
+  user-select:none;
+  -webkit-user-select:none;
+}
+.today-image-preview.dragging{cursor:grabbing}
+.today-image-preview::after{
+  content:"ドラッグで位置調整";
+  position:absolute;
+  left:5px;
+  right:5px;
+  bottom:5px;
+  padding:3px 5px;
+  border-radius:5px;
+  background:rgba(0,0,0,.58);
+  color:#fff;
+  font-size:9px;
+  font-weight:800;
+  text-align:center;
+  pointer-events:none;
+}
+.today-image-preview:empty::after{display:none}
 .today-image-preview video{
   position:absolute;
   inset:0;
@@ -445,7 +476,7 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 .today-image-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:7px}
 .image-pick{display:flex;align-items:center;justify-content:center;cursor:pointer}
 .image-pick input{display:none}
-.today.has-custom-image{background-position:center!important;background-size:cover!important;background-repeat:no-repeat!important}
+.today.has-custom-image{background-position:var(--today-media-position,50% 50%)!important;background-size:cover!important;background-repeat:no-repeat!important}
 
 #planPanel .calendar,#salaryPanel .calendar{touch-action:none!important;overscroll-behavior-x:contain!important}
 /* 予定作成：日付・時間・補助ボタンの見た目を統一 */
@@ -656,7 +687,7 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 <div class="settings-section"><div class="settings-heading">今日の画像・動画</div>
 <div class="today-image-preview" id="todayImagePreview">画像・動画なし</div>
 <div class="today-image-actions"><label class="secondary image-pick">画像・動画を選択<input type="file" id="todayImageFile"></label><button class="danger" id="removeTodayImage">削除</button></div>
-<div class="settings-note">画像は背景表示、動画はミュートで自動再生し、終了後は繰り返し再生します。</div></div>
+<div class="settings-note">プレビューをドラッグすると、「今日」の枠に表示する位置を調整できます。動画も同じ位置で表示されます。</div></div>
 <div class="settings-section"><div class="settings-heading">給与単価</div><div id="rateRows"></div><button class="secondary" id="addRate" style="width:100%">＋単価を追加</button></div>
 <div class="settings-section"><div class="settings-heading">バックアップ</div><div class="backup"><button id="exportBtn">バックアップ</button><label>復元<input type="file" id="importFile" accept=".json,application/json"></label></div></div>
 </div></div>
@@ -666,11 +697,30 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 
 const TODAY_IMAGE_KEY="calendar_today_image_v1";
 const TODAY_MEDIA_TYPE_KEY="calendar_today_media_type_v1";
+const TODAY_MEDIA_POS_X_KEY="calendar_today_media_pos_x_v1";
+const TODAY_MEDIA_POS_Y_KEY="calendar_today_media_pos_y_v1";
 const TODAY_MEDIA_DB="calendar_today_media_db_v1";
 const TODAY_MEDIA_STORE="media";
 let todayVideoObjectUrl="";
 
 function getTodayImage(){return localStorage.getItem(TODAY_IMAGE_KEY)||""}
+function clampTodayMediaPos(v){return Math.max(0,Math.min(100,Number(v)||0))}
+function getTodayMediaPosition(){
+ const x=localStorage.getItem(TODAY_MEDIA_POS_X_KEY);
+ const y=localStorage.getItem(TODAY_MEDIA_POS_Y_KEY);
+ return {
+   x:x==null?50:clampTodayMediaPos(x),
+   y:y==null?50:clampTodayMediaPos(y)
+ };
+}
+function setTodayMediaPosition(x,y){
+ localStorage.setItem(TODAY_MEDIA_POS_X_KEY,String(clampTodayMediaPos(x)));
+ localStorage.setItem(TODAY_MEDIA_POS_Y_KEY,String(clampTodayMediaPos(y)));
+}
+function todayMediaPositionCSS(){
+ const p=getTodayMediaPosition();
+ return `${p.x}% ${p.y}%`;
+}
 
 function detectTodayMediaType(file){
  const type=String(file?.type||"").toLowerCase();
@@ -760,6 +810,7 @@ function makeLoopVideo(src){
  video.setAttribute("playsinline","");
  video.setAttribute("webkit-playsinline","");
  video.preload="auto";
+ video.style.objectPosition=todayMediaPositionCSS();
  video.addEventListener("canplay",()=>video.play().catch(()=>{}),{once:true});
  return video;
 }
@@ -767,6 +818,7 @@ function makeLoopVideo(src){
 async function refreshTodayImagePreview(){
  todayImagePreview.innerHTML="";
  todayImagePreview.style.backgroundImage="";
+ todayImagePreview.style.backgroundPosition=todayMediaPositionCSS();
  const mediaType=localStorage.getItem(TODAY_MEDIA_TYPE_KEY)|| (getTodayImage()?"image":"");
 
  if(mediaType==="video"){
@@ -782,6 +834,7 @@ async function refreshTodayImagePreview(){
  const src=getTodayImage();
  if(src){
    todayImagePreview.style.backgroundImage=`linear-gradient(rgba(0,0,0,.15),rgba(0,0,0,.15)),url("${src}")`;
+   todayImagePreview.style.backgroundPosition=todayMediaPositionCSS();
    return;
  }
  todayImagePreview.textContent="画像・動画なし";
@@ -797,6 +850,7 @@ async function applyTodayImage(){
    el.classList.toggle("has-custom-image",!!imageSrc);
    el.classList.toggle("has-custom-video",!!videoSrc);
    el.style.backgroundImage=imageSrc?`linear-gradient(rgba(0,0,0,.28),rgba(0,0,0,.28)),url("${imageSrc}")`:"";
+   el.style.setProperty("--today-media-position",todayMediaPositionCSS());
 
    if(videoSrc){
      const video=makeLoopVideo(videoSrc);
@@ -813,6 +867,7 @@ async function saveTodayMediaFile(file){
 
  if(mediaType==="video"){
    try{
+     setTodayMediaPosition(50,50);
      await putTodayVideoBlob(file);
      resetTodayVideoObjectUrl();
      localStorage.removeItem(TODAY_IMAGE_KEY);
@@ -827,6 +882,7 @@ async function saveTodayMediaFile(file){
  }
 
  if(mediaType==="image"){
+   setTodayMediaPosition(50,50);
    const img=new Image(),url=URL.createObjectURL(file);
    img.onload=async()=>{
      const max=600,scale=Math.min(1,max/Math.max(img.width,img.height));
@@ -857,6 +913,59 @@ async function saveTodayMediaFile(file){
 
  alert("画像または動画ファイルを選んでください。");
 }
+
+(function setupTodayMediaPositionEditor(){
+ let dragging=false,startClientX=0,startClientY=0,startPosX=50,startPosY=50;
+
+ function hasTodayMedia(){
+   return !!(localStorage.getItem(TODAY_MEDIA_TYPE_KEY)||getTodayImage());
+ }
+
+ function applyPositionLive(x,y){
+   setTodayMediaPosition(x,y);
+   const pos=todayMediaPositionCSS();
+   todayImagePreview.style.backgroundPosition=pos;
+   todayImagePreview.querySelectorAll("video").forEach(v=>v.style.objectPosition=pos);
+   document.querySelectorAll(".day.today").forEach(el=>{
+     el.style.setProperty("--today-media-position",pos);
+     el.querySelectorAll(".today-media-video").forEach(v=>v.style.objectPosition=pos);
+   });
+ }
+
+ todayImagePreview.addEventListener("pointerdown",e=>{
+   if(!hasTodayMedia())return;
+   dragging=true;
+   todayImagePreview.classList.add("dragging");
+   const p=getTodayMediaPosition();
+   startPosX=p.x;
+   startPosY=p.y;
+   startClientX=e.clientX;
+   startClientY=e.clientY;
+   todayImagePreview.setPointerCapture?.(e.pointerId);
+   e.preventDefault();
+ });
+
+ todayImagePreview.addEventListener("pointermove",e=>{
+   if(!dragging)return;
+   const rect=todayImagePreview.getBoundingClientRect();
+   const dx=e.clientX-startClientX;
+   const dy=e.clientY-startClientY;
+   const x=startPosX-(dx/Math.max(1,rect.width))*100;
+   const y=startPosY-(dy/Math.max(1,rect.height))*100;
+   applyPositionLive(x,y);
+   e.preventDefault();
+ });
+
+ function stopDrag(e){
+   if(!dragging)return;
+   dragging=false;
+   todayImagePreview.classList.remove("dragging");
+   try{todayImagePreview.releasePointerCapture?.(e.pointerId)}catch{}
+ }
+ todayImagePreview.addEventListener("pointerup",stopDrag);
+ todayImagePreview.addEventListener("pointercancel",stopDrag);
+})();
+
 const KEY="juku_salary_slots_v1", RATE_KEY="juku_salary_rates_v1", STUDY_KEY="salary_calendar_study_v1", PLAN_KEY="salary_calendar_plans_v1";
 const SLOT_ORDER=["X","Y","Z","A","B","C","D"];
 const SLOT_TIMES={X:["09:00","10:30"],Y:["10:35","12:05"],Z:["12:10","13:40"],A:["14:55","16:25"],B:["16:30","18:00"],C:["18:05","19:35"],D:["19:40","21:10"]};
@@ -1019,10 +1128,90 @@ function renderDetailTimeline(k){
    const gap=3,width=`calc(${100/x._lanes}% - ${gap+4}px)`,left=`calc(${x._lane*(100/x._lanes)}% + ${4+x._lane*gap}px)`;
    return `<div class="detail-band" style="top:${top}%;height:${height}%;left:${left};width:${width}"><strong>${esc(x.name)}</strong><span>${esc(x.time)}</span>${x.memo?`<span>${esc(x.memo)}</span>`:""}</div>`
  }).join("");
- const allDayBands=allDayItems.map((x,i)=>`<div class="detail-band detail-band-all-day" style="top:${4+i*30}px"><strong>${esc(x.name)}</strong><span>終日</span>${x.memo?`<span>${esc(x.memo)}</span>`:""}</div>`).join("");
+ const allDayBands=allDayItems.map((x,i)=>{
+   const count=Math.max(1,allDayItems.length);
+   const width=`calc(${100/count}% - 6px)`;
+   const left=`calc(${i*(100/count)}% + 4px)`;
+   return `<div class="detail-band detail-band-all-day" style="left:${left};width:${width}"><strong>${esc(x.name)}</strong><span>終日</span>${x.memo?`<span>${esc(x.memo)}</span>`:""}</div>`;
+ }).join("");
  detailTimeline.innerHTML=hours+`<div class="detail-track">${allDayBands}${bands}</div>`
 }
-function openPlanDetail(){let k=selectedPlan,p=plan(k);detailDate.textContent=k.replaceAll("-","/");renderDetailTimeline(k);let sl=getSlots(k),st=study(k);autoInfo.innerHTML=`<div class="summary-row"><span>塾</span><span>${sl.length?esc(slotRange(sl)):"なし"}</span></div><div class="summary-row"><span>勉強会</span><span>${st.hours?esc(studyRange(k)||st.hours+"時間"):"なし"}</span></div>`;eventList.innerHTML=p.events.length?p.events.sort((a,b)=>(a.start||"99").localeCompare(b.start||"99")).map(e=>`<div class="event-item"><div class="event-text"><strong>${esc(e.title||"予定")}</strong><br>${esc(e.allDay?"終日":(e.start?`${e.start}-${e.end||"未定"}`:"時間未定"))}${e.memo?`<br><small>${esc(e.memo)}</small>`:""}</div><div class="event-actions"><button class="event-delete-inline" data-del="${esc(e.id)}">削除</button><button data-edit="${esc(e.id)}">変更</button></div></div>`).join(""):'<div class="summary-empty">登録済み予定なし</div>';eventList.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openEditor(b.dataset.edit));eventList.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deleteEventById(b.dataset.del));memoPreview.innerHTML="";open("planDetail")}
+function openPlanDetail(){let k=selectedPlan,p=plan(k);let [dy,dm,dd]=k.split("-").map(Number),dw=["日","月","火","水","木","金","土"][new Date(dy,dm-1,dd).getDay()];detailDate.textContent=`${k.replaceAll("-","/")}（${dw}）`;renderDetailTimeline(k);let sl=getSlots(k),st=study(k);autoInfo.innerHTML=`<div class="summary-row"><span>塾</span><span>${sl.length?esc(slotRange(sl)):"なし"}</span></div><div class="summary-row"><span>勉強会</span><span>${st.hours?esc(studyRange(k)||st.hours+"時間"):"なし"}</span></div>`;eventList.innerHTML=p.events.length?p.events.sort((a,b)=>(a.start||"99").localeCompare(b.start||"99")).map(e=>`<div class="event-item"><div class="event-text"><strong>${esc(e.title||"予定")}</strong><br>${esc(e.allDay?"終日":(e.start?`${e.start}-${e.end||"未定"}`:"時間未定"))}${e.memo?`<br><small>${esc(e.memo)}</small>`:""}</div><div class="event-actions"><button class="event-delete-inline" data-del="${esc(e.id)}">削除</button><button data-edit="${esc(e.id)}">変更</button></div></div>`).join(""):'<div class="summary-empty">登録済み予定なし</div>';eventList.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openEditor(b.dataset.edit));eventList.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deleteEventById(b.dataset.del));memoPreview.innerHTML="";open("planDetail")}
+function shiftPlanDetailDay(delta){
+ if(!selectedPlan)return;
+ const [y,m,d]=selectedPlan.split("-").map(Number);
+ const next=new Date(y,m-1,d+delta,12,0,0);
+ selectedPlan=keyOf(next.getFullYear(),next.getMonth(),next.getDate());
+ planView=new Date(next.getFullYear(),next.getMonth(),1);
+ renderPlan();
+ openPlanDetail();
+}
+
+(function setupPlanDetailSwipe(){
+ const modal=planDetail.querySelector(".modal");
+ if(!modal)return;
+
+ let active=false,horizontal=false,sx=0,sy=0,lastDx=0,startAt=0;
+
+ modal.addEventListener("touchstart",e=>{
+   if(e.touches.length!==1)return;
+   if(e.target.closest("button,input,textarea,select,a"))return;
+   active=true;
+   horizontal=false;
+   sx=e.touches[0].clientX;
+   sy=e.touches[0].clientY;
+   lastDx=0;
+   startAt=performance.now();
+   modal.style.transition="none";
+ },{passive:true});
+
+ modal.addEventListener("touchmove",e=>{
+   if(!active||e.touches.length!==1)return;
+   const dx=e.touches[0].clientX-sx;
+   const dy=e.touches[0].clientY-sy;
+
+   if(!horizontal){
+     if(Math.abs(dx)<8)return;
+     if(Math.abs(dx)<=Math.abs(dy)*1.15){
+       active=false;
+       modal.style.transform="";
+       return;
+     }
+     horizontal=true;
+   }
+
+   e.preventDefault();
+   lastDx=dx;
+   modal.style.transform=`translate3d(${dx}px,0,0)`;
+ },{passive:false});
+
+ function finish(){
+   if(!active)return;
+   active=false;
+   const elapsed=Math.max(1,performance.now()-startAt);
+   const speed=Math.abs(lastDx)/elapsed;
+   const go=Math.abs(lastDx)>=48||speed>=0.38;
+
+   modal.style.transition="transform 140ms ease";
+   modal.style.transform="translate3d(0,0,0)";
+   setTimeout(()=>{modal.style.transition="";modal.style.transform=""},150);
+
+   if(!horizontal||!go)return;
+   if(lastDx<0)shiftPlanDetailDay(1);
+   else shiftPlanDetailDay(-1);
+ }
+
+ modal.addEventListener("touchend",finish,{passive:true});
+ modal.addEventListener("touchcancel",()=>{
+   active=false;
+   horizontal=false;
+   lastDx=0;
+   modal.style.transition="transform 120ms ease";
+   modal.style.transform="translate3d(0,0,0)";
+   setTimeout(()=>{modal.style.transition="";modal.style.transform=""},130);
+ },{passive:true});
+})();
+
 function dateKeysInclusive(a,b){
  if(!a||!b||b<a)return [];
  const out=[],d=new Date(a+"T12:00:00"),last=new Date(b+"T12:00:00");
@@ -1363,6 +1552,8 @@ todayImageFile.onchange=async e=>{const f=e.target.files?.[0];if(f)await saveTod
 removeTodayImage.onclick=async()=>{
  localStorage.removeItem(TODAY_IMAGE_KEY);
  localStorage.removeItem(TODAY_MEDIA_TYPE_KEY);
+ localStorage.removeItem(TODAY_MEDIA_POS_X_KEY);
+ localStorage.removeItem(TODAY_MEDIA_POS_Y_KEY);
  await deleteTodayVideoBlob();
  resetTodayVideoObjectUrl();
  await refreshTodayImagePreview();
