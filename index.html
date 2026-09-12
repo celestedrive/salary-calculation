@@ -16,6 +16,9 @@ button{color:inherit}
 .pager::-webkit-scrollbar{display:none}
 .panel{flex:0 0 100%;width:100%;min-width:100%;height:100%;padding:4px 8px 8px;overflow:hidden;scroll-snap-align:start;display:flex;flex-direction:column}
 h1{font-size:17px;text-align:center;margin:2px 0 6px;flex:0 0 auto}
+.panel-title{position:relative;flex:0 0 auto}
+.panel-title h1{margin:2px 44px 6px}
+.top-settings{position:absolute;right:0;top:0;height:28px;border:0;border-radius:8px;background:#374151;padding:0 9px;font-size:11px;font-weight:800;z-index:5}
 .card{background:#1f2937;border:1px solid #374151;border-radius:16px;overflow:hidden}
 .calendar{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
 .cal-head{position:relative;display:grid;grid-template-columns:40px 1fr 40px;align-items:center;padding:7px 9px;border-bottom:1px solid #374151;flex:0 0 auto}
@@ -371,7 +374,7 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 
 /* Keep vertical lists usable while the month grid owns horizontal dragging. */
 html,body,.pager{touch-action:pan-x pan-y!important}
-.month-viewport{position:relative;flex:1 1 auto;min-height:0;overflow:hidden;touch-action:none!important}
+.month-viewport{position:relative;flex:1 1 auto;min-height:0;overflow:hidden;touch-action:none!important;overscroll-behavior:contain!important}
 .month-viewport .grid{height:100%;width:100%;touch-action:none!important}
 .month-viewport .day{touch-action:none!important}
 .month-preview{position:absolute!important;inset:0;pointer-events:none}
@@ -380,7 +383,7 @@ html,body,.pager{touch-action:pan-x pan-y!important}
 <body>
 <div class="wrap"><main class="pager" id="pager">
 <section class="panel" id="planPanel">
-<h1>予定カレンダー</h1>
+<div class="panel-title"><h1>予定カレンダー</h1><button class="top-settings" type="button">設定</button></div>
 <div class="calendar card">
 <div class="cal-head"><button class="nav" id="planPrev">‹</button><button class="month" id="planMonth"></button><button class="nav" id="planNext">›</button></div>
 <div class="week"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>
@@ -390,7 +393,7 @@ html,body,.pager{touch-action:pan-x pan-y!important}
 </section>
 
 <section class="panel" id="salaryPanel">
-<h1>給与カレンダー</h1>
+<div class="panel-title"><h1>給与カレンダー</h1><button class="top-settings" type="button">設定</button></div>
 <div class="salary-calendar calendar card">
 <div class="cal-head"><button class="nav" id="salPrev">‹</button><button class="month" id="salMonth"></button><button class="nav" id="salNext">›</button></div>
 <div class="week"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>
@@ -407,7 +410,6 @@ html,body,.pager{touch-action:pan-x pan-y!important}
 </div></div>
 <div class="preview"><small>この日の給与</small><strong id="dayPay">0円</strong></div>
 <div class="actions"><button class="secondary" id="clearDay">クリア</button><button class="primary" id="saveDay">保存</button></div>
-<div class="settings"><button id="openSettings">給与単価・バックアップ</button></div>
 </div>
 </section>
 </main></div>
@@ -635,7 +637,7 @@ studyHours.onchange=()=>{let n=Number(studyHours.value);if(Number.isFinite(n)&&n
 studyStart.oninput=updateStudyEnd;saveDay.onclick=saveSalary;clearDay.onclick=clearSalary;
 addEvent.onclick=()=>openEditor();saveEvent.onclick=saveEventFn;deleteEvent.onclick=deleteEventFn;
 unsetEnd.onclick=()=>{eventEnd.value="";};
-openSettings.onclick=()=>{renderRates();open("settingsModal")};addRate.onclick=()=>{rates.push({from:new Date().toISOString().slice(0,10),lesson:2026,daily:513,transport:420});save(RATE_KEY,rates);renderRates()};
+document.querySelectorAll(".top-settings").forEach(b=>b.onclick=()=>{renderRates();open("settingsModal")});addRate.onclick=()=>{rates.push({from:new Date().toISOString().slice(0,10),lesson:2026,daily:513,transport:420});save(RATE_KEY,rates);renderRates()};
 exportBtn.onclick=exportData;importFile.onchange=e=>e.target.files[0]&&importData(e.target.files[0]);
 document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>close(b.dataset.close));
 document.querySelectorAll(".backdrop").forEach(b=>b.addEventListener("click",e=>{if(e.target===b)close(b.id)}));
@@ -647,10 +649,16 @@ function enableMonthSwipe(grid,kind){
  const viewport=document.createElement('div');
  viewport.className='month-viewport';
  grid.before(viewport);viewport.append(grid);
- let gesture=null,previous=null,next=null,busy=false,suppressUntil=0,wheelTotal=0,wheelTimer,wheelLocked=false;
+ let gesture=null,previous=null,next=null,busy=false,suppressUntil=0,wheelTotal=0,wheelTimer=null,wheelLocked=false;
  const view=()=>kind==='plan'?planView:salView;
  const shifted=n=>new Date(view().getFullYear(),view().getMonth()+n,1);
+
+ function cleanupPreviews(){
+   previous?.remove();next?.remove();previous=next=null;
+   grid.style.transition='';grid.style.transform='';
+ }
  function prepare(){
+   if(previous||next)return;
    previous=document.createElement('div');next=document.createElement('div');
    for(const [preview,offset] of [[previous,-1],[next,1]]){
      preview.className='grid month-preview';preview.setAttribute('aria-hidden','true');
@@ -662,58 +670,70 @@ function enableMonthSwipe(grid,kind){
  function position(x,animate=false){
    const width=viewport.clientWidth;
    for(const [element,offset] of [[previous,-width],[grid,0],[next,width]]){
-     element.style.transition=animate?'transform 200ms ease-out':'none';
-     element.style.transform=`translateX(${x+offset}px)`;
+     if(!element)continue;
+     element.style.transition=animate?'transform 180ms ease-out':'none';
+     element.style.transform=`translate3d(${x+offset}px,0,0)`;
    }
  }
  function finish(direction){
-   busy=true;suppressUntil=Date.now()+350;
+   if(busy)return;
+   busy=true;suppressUntil=Date.now()+320;
+   if(!previous||!next)prepare();
    position(-direction*viewport.clientWidth,true);
    setTimeout(()=>{
      if(direction){
        const date=shifted(direction);
        if(kind==='plan'){planView=date;renderPlan()}else{salView=date;renderSalary()}
      }
-     previous.remove();next.remove();previous=next=null;
-     grid.style.transition='';grid.style.transform='';busy=false;
-   },210);
+     cleanupPreviews();busy=false;
+   },190);
  }
  viewport.addEventListener('pointerdown',event=>{
    if(busy||gesture||!event.isPrimary||event.button!==0)return;
    gesture={id:event.pointerId,x:event.clientX,y:event.clientY,dx:0,started:false};
- });
- viewport.addEventListener('pointermove',event=>{
+ },{passive:true});
+
+ window.addEventListener('pointermove',event=>{
    if(!gesture||event.pointerId!==gesture.id)return;
    const dx=event.clientX-gesture.x,dy=event.clientY-gesture.y;
    if(!gesture.started){
-     if(Math.max(Math.abs(dx),Math.abs(dy))<8)return;
-     if(Math.abs(dy)>Math.abs(dx)){gesture=null;return}
-     gesture.started=true;viewport.setPointerCapture(event.pointerId);prepare();
+     if(Math.max(Math.abs(dx),Math.abs(dy))<7)return;
+     if(Math.abs(dy)>Math.abs(dx)*1.15){gesture=null;return}
+     gesture.started=true;prepare();
    }
-   event.preventDefault();gesture.dx=Math.max(-viewport.clientWidth,Math.min(viewport.clientWidth,dx));
+   event.preventDefault();
+   gesture.dx=Math.max(-viewport.clientWidth,Math.min(viewport.clientWidth,dx));
    position(gesture.dx);
- });
+ },{passive:false});
+
  function release(event,cancelled=false){
    if(!gesture||event.pointerId!==gesture.id)return;
    const current=gesture;gesture=null;
-   if(viewport.hasPointerCapture(event.pointerId))viewport.releasePointerCapture(event.pointerId);
-   if(current.started)finish(!cancelled&&Math.abs(current.dx)>Math.min(70,viewport.clientWidth*.2)?(current.dx<0?1:-1):0);
+   if(!current.started){cleanupPreviews();return}
+   const threshold=Math.min(60,viewport.clientWidth*.16);
+   const direction=!cancelled&&Math.abs(current.dx)>threshold?(current.dx<0?1:-1):0;
+   finish(direction);
  }
- viewport.addEventListener('pointerup',event=>release(event));
- viewport.addEventListener('pointercancel',event=>release(event,true));
- viewport.addEventListener('lostpointercapture',event=>release(event,true));
+ window.addEventListener('pointerup',event=>release(event),{passive:true});
+ window.addEventListener('pointercancel',event=>release(event,false),{passive:true});
+
  viewport.addEventListener('click',event=>{
    if(Date.now()<suppressUntil){event.preventDefault();event.stopImmediatePropagation()}
  },true);
+
  viewport.addEventListener('wheel',event=>{
    if(event.ctrlKey||Math.abs(event.deltaX)<=Math.abs(event.deltaY))return;
    event.preventDefault();event.stopPropagation();
    clearTimeout(wheelTimer);wheelTimer=setTimeout(()=>{wheelTotal=0;wheelLocked=false},160);
    if(busy||gesture||wheelLocked)return;
    wheelTotal+=event.deltaX*(event.deltaMode===1?16:event.deltaMode===2?viewport.clientWidth:1);
-   if(Math.abs(wheelTotal)>45){const direction=wheelTotal>0?1:-1;wheelTotal=0;wheelLocked=true;prepare();position(0);viewport.offsetWidth;finish(direction)}
+   if(Math.abs(wheelTotal)>45){
+     const direction=wheelTotal>0?1:-1;
+     wheelTotal=0;wheelLocked=true;prepare();position(0);viewport.offsetWidth;finish(direction);
+   }
  },{passive:false});
 }
+
 enableMonthSwipe(planGrid,'plan');enableMonthSwipe(salGrid,'salary');
 renderPlan();renderSalary();
 </script>
