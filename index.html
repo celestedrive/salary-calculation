@@ -798,9 +798,26 @@ function animateMonth(calendar,dir,move){
   const grid=calendar.querySelector(".grid");
   if(!grid){move();delete calendar.dataset.monthAnimating;return}
   const out=dir>0?-1:1;
-  grid.animate([{transform:"translateX(0)",opacity:1},{transform:`translateX(${out*22}%)`,opacity:.25}],{duration:115,easing:"ease-in",fill:"forwards"}).finished.catch(()=>{}).then(()=>{
+  const previousOverflow=calendar.style.overflow;
+  calendar.style.overflow="hidden";
+  grid.animate(
+    [{transform:"translateX(0)"},{transform:`translateX(${out*100}%)`}],
+    {duration:150,easing:"cubic-bezier(.4,0,.6,1)",fill:"forwards"}
+  ).finished.catch(()=>{}).then(()=>{
     move();
-    grid.animate([{transform:`translateX(${-out*22}%)`,opacity:.25},{transform:"translateX(0)",opacity:1}],{duration:170,easing:"cubic-bezier(.22,.75,.25,1)"}).finished.catch(()=>{}).then(()=>delete calendar.dataset.monthAnimating);
+    const nextGrid=calendar.querySelector(".grid");
+    if(!nextGrid){
+      calendar.style.overflow=previousOverflow;
+      delete calendar.dataset.monthAnimating;
+      return;
+    }
+    nextGrid.animate(
+      [{transform:`translateX(${-out*100}%)`},{transform:"translateX(0)"}],
+      {duration:190,easing:"cubic-bezier(.22,.75,.25,1)"}
+    ).finished.catch(()=>{}).then(()=>{
+      calendar.style.overflow=previousOverflow;
+      delete calendar.dataset.monthAnimating;
+    });
   });
 }
 
