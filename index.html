@@ -629,27 +629,54 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 /* 東京の天気：予定カレンダー専用 */
 #planPanel .weather-mini{
   position:absolute;
-  top:3px;
-  right:4px;
+  top:2px;
+  right:3px;
   z-index:3;
   display:flex;
   align-items:center;
+  justify-content:flex-end;
   gap:2px;
-  max-width:calc(100% - 22px);
+  width:28px;
+  height:17px;
+  max-width:28px;
+  max-height:17px;
+  overflow:hidden;
   color:#cbd5e1;
-  font-size:7px;
+  font-size:6px;
   font-weight:800;
   line-height:1;
   white-space:nowrap;
   pointer-events:none;
 }
 #planPanel .weather-mini svg{
-  width:12px;
-  height:12px;
-  flex:0 0 12px;
+  width:10px;
+  height:10px;
+  flex:0 0 10px;
 }
 #planPanel .weather-mini-temp{
-  letter-spacing:-.2px;
+  display:grid;
+  grid-template-rows:1fr 1px 1fr;
+  align-items:center;
+  justify-items:center;
+  width:14px;
+  height:17px;
+  font-size:5.8px;
+  line-height:1;
+  letter-spacing:-.25px;
+}
+#planPanel .weather-temp-max,
+#planPanel .weather-temp-min{
+  display:block;
+  width:100%;
+  text-align:center;
+  overflow:hidden;
+}
+#planPanel .weather-temp-line{
+  display:block;
+  width:11px;
+  height:1px;
+  background:currentColor;
+  opacity:.45;
 }
 #planPanel .day.today .weather-mini,
 #planPanel .day.selected .weather-mini{
@@ -719,6 +746,11 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
   margin-top:1px!important;
   font-size:7px!important;
   line-height:1.05!important;
+}
+
+#planPanel .daynum{
+  max-width:calc(100% - 34px)!important;
+  overflow:hidden!important;
 }
 </style>
 <link rel="apple-touch-icon" href="icon.png">
@@ -1190,7 +1222,7 @@ async function loadTokyoWeather(){
 function miniWeatherHtml(k){
  const w=tokyoWeather[k];
  if(!w)return "";
- return `<span class="weather-mini">${weatherSvg(w.code)}<span class="weather-mini-temp">${roundWeather(w.max)}°/${roundWeather(w.min)}°</span></span>`;
+ return `<span class="weather-mini">${weatherSvg(w.code)}<span class="weather-mini-temp"><span class="weather-temp-max">${roundWeather(w.max)}°</span><span class="weather-temp-line"></span><span class="weather-temp-min">${roundWeather(w.min)}°</span></span></span>`;
 }
 
 function summaryWeatherHtml(k){
