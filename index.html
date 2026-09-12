@@ -1293,7 +1293,7 @@ function renderGrid(grid,view,kind){
    if(today.getFullYear()==y&&today.getMonth()==m&&today.getDate()==d)b.classList.add("today");
    if((kind=="plan"?selectedPlan:selectedSalary)==k)b.classList.add("selected");
    let content="";
-   if(kind=="plan"){content=miniWeatherHtml(k)+items(k).map(x=>`<span class="entry"><strong>${esc(x.name)}</strong><span class="entry-time">${esc(x.time)}</span>${x.memo?`<span class="entry-memo">${esc(x.memo)}</span>`:""}</span>`).join("")}
+   if(kind=="plan"){content=miniWeatherHtml(k)+items(k).map(x=>`<span class="entry"><strong>${esc(x.name)}</strong><span class="entry-time">${esc(x.time)}</span></span>`).join("")}
    else {
      let sl=getSlots(k),st=study(k),pay=dayPay(k);
      let paydayAmount="";
