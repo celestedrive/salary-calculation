@@ -188,6 +188,23 @@ html,body{touch-action:pan-x !important;-webkit-text-size-adjust:100% !important
   font-weight:900;
   color:#f9fafb;
 }
+.payday-amount{
+  display:block;
+  width:max-content;
+  max-width:100%;
+  margin-top:2px;
+  padding:2px 4px;
+  border:1px solid #059669;
+  border-radius:5px;
+  background:#064e3b;
+  color:#d1fae5;
+  font-size:8px;
+  font-weight:900;
+  line-height:1.15;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
 .study-end{
   font-size:11px;
   color:#cbd5e1;
@@ -639,7 +656,14 @@ function renderGrid(grid,view,kind){
    if(kind=="plan"){content=items(k).map(x=>`<span class="entry"><strong>${esc(x.name)}</strong><span class="entry-time">${esc(x.time)}</span>${x.memo?`<span class="entry-memo">${esc(x.memo)}</span>`:""}</span>`).join("")}
    else {
      let sl=getSlots(k),st=study(k),pay=dayPay(k);
+     let paydayAmount="";
+     if(d===15){
+       const prev=new Date(y,m,0);
+       const prevJuku=monthBreakdown(prev.getFullYear(),prev.getMonth()).juku;
+       paydayAmount=prevJuku>0?`<span class="payday-amount">+${Math.round(prevJuku).toLocaleString("ja-JP")}円</span>`:"";
+     }
      content=(d===15?'<span class="payday-badge">給料日</span>':"")+
+       paydayAmount+
        (sl.length?`<span class="entry"><strong>${esc(sl.join(""))}</strong></span>`:"")+
        (st.hours?'<span class="entry"><strong>勉強会</strong></span>':"")+
        (pay>0?`<span class="day-pay">${yen(pay)}</span>`:"");
