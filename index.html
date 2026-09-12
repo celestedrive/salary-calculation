@@ -12,7 +12,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#111827;col
 button,input,textarea,select{font:inherit}
 button{color:inherit}
 .wrap{width:100%;height:100dvh;overflow:hidden}
-.pager{display:flex;width:100%;height:100%;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-behavior:smooth;scrollbar-width:none;-webkit-overflow-scrolling:touch;touch-action:pan-x}
+.pager{display:flex;width:100%;height:100%;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-behavior:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;touch-action:pan-x}
 .pager::-webkit-scrollbar{display:none}
 .panel{flex:0 0 100%;width:100%;min-width:100%;height:100%;padding:4px 8px 8px;overflow:hidden;scroll-snap-align:start;display:flex;flex-direction:column}
 h1{font-size:17px;text-align:center;margin:2px 0 6px;flex:0 0 auto}
@@ -671,7 +671,7 @@ function enableMonthSwipe(grid,kind){
    const width=viewport.clientWidth;
    for(const [element,offset] of [[previous,-width],[grid,0],[next,width]]){
      if(!element)continue;
-     element.style.transition=animate?'transform 180ms ease-out':'none';
+     element.style.transition=animate?'transform 200ms ease-out':'none';
      element.style.transform=`translate3d(${x+offset}px,0,0)`;
    }
  }
@@ -686,18 +686,17 @@ function enableMonthSwipe(grid,kind){
        if(kind==='plan'){planView=date;renderPlan()}else{salView=date;renderSalary()}
      }
      cleanupPreviews();busy=false;
-   },190);
+   },210);
  }
  viewport.addEventListener('pointerdown',event=>{
    if(busy||gesture||!event.isPrimary||event.button!==0)return;
 
-   // 予定⇔給与の画面切替がまだ慣性/スナップ中でも、
-   // カレンダーを触った時点で外側 pager を現在のページへ即時確定する。
-   const page=Math.round(pager.scrollLeft/Math.max(1,pager.clientWidth));
-   const target=page*pager.clientWidth;
+   // 外側の予定⇔給与切替がまだスナップ中でも、その場で停止させる。
+   // 最寄りページへ強制ジャンプせず、現在の見えている位置を保持する。
+   const frozen=pager.scrollLeft;
    pager.style.scrollBehavior='auto';
    pager.style.scrollSnapType='none';
-   pager.scrollLeft=target;
+   pager.scrollLeft=frozen;
 
    gesture={
      id:event.pointerId,x:event.clientX,y:event.clientY,dx:0,started:false,
@@ -719,10 +718,10 @@ function enableMonthSwipe(grid,kind){
  },{passive:false});
 
  function restorePager(){
-   requestAnimationFrame(()=>{
+   setTimeout(()=>{
      pager.style.scrollSnapType='';
      pager.style.scrollBehavior='';
-   });
+   },230);
  }
  function release(event,cancelled=false){
    if(!gesture||event.pointerId!==gesture.id)return;
