@@ -18,9 +18,10 @@ button{color:inherit}
 h1{font-size:17px;text-align:center;margin:2px 0 6px;flex:0 0 auto}
 .card{background:#1f2937;border:1px solid #374151;border-radius:16px;overflow:hidden}
 .calendar{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
-.cal-head{position:relative;display:grid;grid-template-columns:40px 1fr 40px;align-items:center;padding:7px 9px;border-bottom:1px solid #374151;flex:0 0 auto}
+.cal-head{position:relative;display:grid;grid-template-columns:40px minmax(0,1fr) 46px 40px;align-items:center;gap:3px;padding:7px 9px;border-bottom:1px solid #374151;flex:0 0 auto}
 .nav{width:34px;height:30px;border:0;border-radius:9px;background:#374151;font-size:20px;font-weight:800}
 .month{width:100%;border:0;background:transparent;text-align:center;font-size:16px;font-weight:900;padding:4px 0}
+.today-jump{height:28px;border:1px solid #4b5563;border-radius:8px;background:#111827;color:#d1d5db;padding:0 6px;font-size:11px;font-weight:800}
 .week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-bottom:1px solid #374151;flex:0 0 25px}
 .week div{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;border-right:1px solid #374151;margin-bottom:-1px;padding-bottom:1px}
 .week div:last-child{border-right:0}
@@ -466,7 +467,7 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 <section class="panel" id="planPanel">
 <div class="panel-title-row"><h1>予定カレンダー</h1><button class="gear" id="planSettings" aria-label="設定">⚙︎</button></div>
 <div class="calendar card">
-<div class="cal-head"><button class="nav" id="planPrev">‹</button><button class="month" id="planMonth"></button><button class="nav" id="planNext">›</button></div>
+<div class="cal-head"><button class="nav" id="planPrev">‹</button><button class="month" id="planMonth"></button><button class="today-jump" id="planToday">今日</button><button class="nav" id="planNext">›</button></div>
 <div class="week"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>
 <div class="grid" id="planGrid"></div>
 </div>
@@ -476,7 +477,7 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 <section class="panel" id="salaryPanel">
 <div class="panel-title-row"><h1>給与カレンダー</h1><button class="gear" id="salarySettings" aria-label="設定">⚙︎</button></div>
 <div class="salary-calendar calendar card">
-<div class="cal-head"><button class="nav" id="salPrev">‹</button><button class="month" id="salMonth"></button><button class="nav" id="salNext">›</button></div>
+<div class="cal-head"><button class="nav" id="salPrev">‹</button><button class="month" id="salMonth"></button><button class="today-jump" id="salToday">今日</button><button class="nav" id="salNext">›</button></div>
 <div class="week"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>
 <div class="grid" id="salGrid"></div>
 <div class="month-total" id="monthTotal">月合計 0円</div>
@@ -575,7 +576,7 @@ function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&l
 function yen(n){return Math.round(n).toLocaleString("ja-JP")+"円"}
 function getSlots(k){return Array.isArray(shifts[k])?shifts[k]:[]}
 function study(k){let v=studies[k];if(typeof v==="number")return {hours:v,start:"",end:""};return v&&typeof v==="object"?{hours:Number(v.hours)||0,start:v.start||"",end:v.end||""}:{hours:0,start:"",end:""}}
-function plan(k){let v=plans[k];if(!v||typeof v!=="object")return {events:[]};let events=[];if(Array.isArray(v.events)){events=v.events.map((e,i)=>({id:String(e.id||`${k}-${i}`),groupId:String(e.groupId||e.id||`${k}-${i}`),title:String(e.title||""),start:String(e.start||""),end:String(e.end||""),startDate:String(e.startDate||k),endDate:String(e.endDate||e.startDate||k),memo:String(e.memo??(i===0?(v.memo||""):""))}))}else if(v.title||v.time){events=[{id:`${k}-legacy`,title:String(v.title||""),start:String(v.time||""),end:"",memo:String(v.memo||"")}]}return {events}}
+function plan(k){let v=plans[k];if(!v||typeof v!=="object")return {events:[]};let events=[];if(Array.isArray(v.events)){events=v.events.map((e,i)=>({id:String(e.id||`${k}-${i}`),groupId:String(e.groupId||e.id||`${k}-${i}`),title:String(e.title||""),start:String(e.start||""),end:String(e.end||""),allDay:e.allDay===true,startDate:String(e.startDate||k),endDate:String(e.endDate||e.startDate||k),memo:String(e.memo??(i===0?(v.memo||""):""))}))}else if(v.title||v.time){events=[{id:`${k}-legacy`,title:String(v.title||""),start:String(v.time||""),end:"",memo:String(v.memo||"")}]}return {events}}
 function mins(t){if(!/^\d{1,2}:\d{2}$/.test(t||""))return null;let [h,m]=t.split(":").map(Number);return h*60+m}
 function addMinutes(t,n){let m=mins(t);if(m==null)return "";m=Math.min(1439,m+n);return `${pad(Math.floor(m/60))}:${pad(m%60)}`}
 function slotRange(slots){if(!slots.length)return "";let s=[...slots].sort((a,b)=>mins(SLOT_TIMES[a]?.[0])-mins(SLOT_TIMES[b]?.[0]));return `${SLOT_TIMES[s[0]][0]}-${SLOT_TIMES[s.at(-1)][1]}`}
@@ -768,7 +769,7 @@ function openEditor(id=null){
  const fixedStartDate=e?.startDate||selectedPlan||"";
  eventEndDate.value=e?.endDate||fixedStartDate;
  const groupTimes=eventGroupTimes(e);
- const isAllDay=e?.allDay===true;
+ const isAllDay=e?e.allDay===true:true;
  allDayToggle.classList.toggle("active",isAllDay);
  eventStart.disabled=isAllDay;
  eventEnd.disabled=isAllDay;
@@ -844,7 +845,10 @@ async function importData(f){try{let j=JSON.parse(await f.text());if(j.shifts)sh
 const dayPayEl=document.getElementById("dayPay"),pickerYearEl=document.getElementById("pickerYear");
 SLOT_ORDER.forEach(s=>{let b=document.createElement("button");b.className="slot";b.dataset.slot=s;b.textContent=s;b.onclick=()=>{b.classList.toggle("active");if(selectedSalary)dayPayEl.textContent=yen(dayPay(selectedSalary))};slotGrid.appendChild(b)});
 planPrev.onclick=()=>animateMonth(document.querySelector("#planPanel .calendar"),-1,()=>{planView=new Date(planView.getFullYear(),planView.getMonth()-1,1);renderPlan()});planNext.onclick=()=>animateMonth(document.querySelector("#planPanel .calendar"),1,()=>{planView=new Date(planView.getFullYear(),planView.getMonth()+1,1);renderPlan()});salPrev.onclick=()=>animateMonth(document.querySelector("#salaryPanel .calendar"),-1,()=>{salView=new Date(salView.getFullYear(),salView.getMonth()-1,1);renderSalary()});salNext.onclick=()=>animateMonth(document.querySelector("#salaryPanel .calendar"),1,()=>{salView=new Date(salView.getFullYear(),salView.getMonth()+1,1);renderSalary()});
-planMonth.onclick=()=>openMonth("plan");salMonth.onclick=()=>openMonth("salary");yearPrev.onclick=()=>{pickerYear--;renderPicker()};yearNext.onclick=()=>{pickerYear++;renderPicker()};
+planMonth.onclick=()=>openMonth("plan");salMonth.onclick=()=>openMonth("salary");
+planToday.onclick=()=>{const d=new Date();planView=new Date(d.getFullYear(),d.getMonth(),1);renderPlan()};
+salToday.onclick=()=>{const d=new Date();salView=new Date(d.getFullYear(),d.getMonth(),1);renderSalary()};
+yearPrev.onclick=()=>{pickerYear--;renderPicker()};yearNext.onclick=()=>{pickerYear++;renderPicker()};
 studyToggle.onclick=()=>{studyToggle.classList.toggle("active");studyFields.classList.toggle("active",studyToggle.classList.contains("active"))};
 studyHours.oninput=()=>{
  let raw=studyHours.value.replace?.(/[^0-9.]/g,"") ?? studyHours.value;
@@ -861,7 +865,14 @@ allDayToggle.onclick=()=>{
  eventStart.disabled=on;
  eventEnd.disabled=on;
  unsetEnd.disabled=on;
- if(on){eventStart.value="";eventEnd.value=""}
+ if(on){
+   eventStart.value="";
+   eventEnd.value="";
+ }else{
+   eventStart.focus({preventScroll:true});
+   const p=eventStart.value.length;
+   eventStart.setSelectionRange?.(p,p);
+ }
 };
 const openGeneralSettings=()=>{renderRates();open("settingsModal")};
 planSettings.onclick=openGeneralSettings;salarySettings.onclick=openGeneralSettings;addRate.onclick=()=>{rates.push({from:new Date().toISOString().slice(0,10),lesson:2026,daily:513,transport:420});save(RATE_KEY,rates);renderRates()};
