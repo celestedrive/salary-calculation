@@ -802,6 +802,21 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
   max-width:calc(100% - 34px)!important;
   overflow:hidden!important;
 }
+
+/* iPhone 16: display corner radius 55pt - 8px horizontal inset ≒ 47px */
+:root{
+  --iphone-bottom-radius:47px;
+}
+#planPanel,
+#salaryPanel{
+  padding-bottom:max(8px,env(safe-area-inset-bottom));
+}
+#planPanel #summary{
+  border-radius:16px 16px var(--iphone-bottom-radius) var(--iphone-bottom-radius)!important;
+}
+#salaryPanel .controls{
+  border-radius:16px 16px var(--iphone-bottom-radius) var(--iphone-bottom-radius)!important;
+}
 </style>
 <link rel="apple-touch-icon" href="icon.png">
 </head>
