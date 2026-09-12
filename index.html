@@ -396,23 +396,68 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 
 #planPanel .calendar,#salaryPanel .calendar{touch-action:none!important;overscroll-behavior-x:contain!important}
 /* 予定作成：日付・時間・補助ボタンの見た目を統一 */
-#eventEditor .event-date-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
-#eventEditor .event-time-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
-#eventEditor .event-date-row label,#eventEditor .event-time-row label{min-width:0}
-#eventEditor .event-control,#eventEditor .event-field-display,#eventEditor .event-option{
-  box-sizing:border-box!important;border:1px solid #4b5563!important;border-radius:8px!important;
-  background:#111827!important;color:#f9fafb!important;font-size:16px!important;
+#eventEditor .event-date-row{
+  display:grid;
+  grid-template-columns:148px;
+  gap:8px;
 }
-#eventEditor .event-control,#eventEditor .event-field-display{width:100%!important;min-width:0!important;height:36px!important;padding:6px 8px!important}
-#eventEditor .event-field-display{display:flex;align-items:center;color:#d1d5db!important}
-#eventEditor input[type="date"]{color-scheme:dark}
-#eventEditor .hhmm-input{max-width:none!important;letter-spacing:.6px!important;font-variant-numeric:tabular-nums}
-#eventEditor .end-time-wrap{display:grid!important;grid-template-columns:minmax(0,1fr) 54px!important;gap:5px!important}
-#eventEditor .event-option{height:36px!important;padding:0 8px!important;font-weight:800!important}
-#eventEditor .all-day-toggle{width:100%!important}
-#eventEditor .event-option.active{background:#4b5563!important;border-color:#6b7280!important}
-#eventEditor .event-control:disabled{opacity:.45!important}
-
+#eventEditor .event-time-row{
+  display:grid;
+  grid-template-columns:118px 180px;
+  gap:8px;
+  align-items:end;
+}
+#eventEditor .event-date-row label,
+#eventEditor .event-time-row label{
+  min-width:0;
+}
+#eventEditor .event-control,
+#eventEditor .event-option{
+  box-sizing:border-box!important;
+  border:1px solid #4b5563!important;
+  border-radius:8px!important;
+  background:#111827!important;
+  color:#f9fafb!important;
+  font-size:16px!important;
+}
+#eventEditor .event-control{
+  height:36px!important;
+  padding:6px 8px!important;
+}
+#eventEditor #eventEndDate{
+  width:148px!important;
+  min-width:148px!important;
+  max-width:148px!important;
+  color-scheme:dark;
+}
+#eventEditor .hhmm-input{
+  width:118px!important;
+  min-width:118px!important;
+  max-width:118px!important;
+  letter-spacing:.6px!important;
+  font-variant-numeric:tabular-nums;
+}
+#eventEditor .end-time-wrap{
+  display:grid!important;
+  grid-template-columns:118px 54px!important;
+  gap:8px!important;
+  align-items:center!important;
+}
+#eventEditor .event-option{
+  height:36px!important;
+  padding:0 8px!important;
+  font-weight:800!important;
+}
+#eventEditor .all-day-toggle{
+  width:100%!important;
+}
+#eventEditor .event-option.active{
+  background:#4b5563!important;
+  border-color:#6b7280!important;
+}
+#eventEditor .event-control:disabled{
+  opacity:.45!important;
+}
 </style>
 <link rel="apple-touch-icon" href="icon.png">
 </head>
@@ -463,8 +508,8 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 <div class="modal-head"><div class="modal-title" id="editorTitle">予定を追加</div><button class="close" data-close="eventEditor">×</button></div>
 <div class="form">
 <label>予定名<input id="eventName" type="text" enterkeyhint="next"></label>
-<div class="event-date-row"><label>開始日<div id="eventStartDateDisplay" class="event-field-display"></div></label><label>終了日<input id="eventEndDate" class="event-control" type="date"></label></div>
-<div class="event-time-row"><label>開始<input id="eventStart" class="event-control hhmm-input" type="tel" inputmode="numeric" autocomplete="off" aria-label="開始時間"></label><label>終了<div class="end-time-wrap"><input id="eventEnd" class="event-control hhmm-input" type="tel" inputmode="numeric" autocomplete="off" aria-label="終了時間"><button type="button" id="unsetEnd" class="event-option">未定</button></div></label></div>
+<div class="event-date-row"><label>終了日<input id="eventEndDate" class="event-control" type="date"></label></div>
+<div class="event-time-row"><label>開始時間<input id="eventStart" class="event-control hhmm-input" type="tel" inputmode="numeric" autocomplete="off" aria-label="開始時間"></label><label>終了時間<div class="end-time-wrap"><input id="eventEnd" class="event-control hhmm-input" type="tel" inputmode="numeric" autocomplete="off" aria-label="終了時間"><button type="button" id="unsetEnd" class="event-option">未定</button></div></label></div>
 <button type="button" id="allDayToggle" class="event-option all-day-toggle">終日</button>
 <label>メモ<textarea id="eventMemo" maxlength="120" placeholder="120文字まで"></textarea></label>
 <div class="actions"><button class="danger" id="deleteEvent">削除</button><button class="primary" id="saveEvent">保存</button></div>
@@ -535,7 +580,7 @@ function mins(t){if(!/^\d{1,2}:\d{2}$/.test(t||""))return null;let [h,m]=t.split
 function addMinutes(t,n){let m=mins(t);if(m==null)return "";m=Math.min(1439,m+n);return `${pad(Math.floor(m/60))}:${pad(m%60)}`}
 function slotRange(slots){if(!slots.length)return "";let s=[...slots].sort((a,b)=>mins(SLOT_TIMES[a]?.[0])-mins(SLOT_TIMES[b]?.[0]));return `${SLOT_TIMES[s[0]][0]}-${SLOT_TIMES[s.at(-1)][1]}`}
 function studyRange(k){let s=study(k);if(!s.hours||!s.start)return "";return `${s.start}-${s.end||addMinutes(s.start,s.hours*60)}`}
-function items(k){let a=[],sl=getSlots(k);if(sl.length){let r=slotRange(sl);a.push({id:"auto-juku",name:"塾",time:r,start:r.split("-")[0],end:r.split("-")[1],memo:"",auto:true})}let st=study(k);if(st.hours){let r=studyRange(k)||`時間未定（${st.hours}h）`;a.push({id:"auto-study",name:"勉強会",time:r,start:st.start,end:st.end||addMinutes(st.start,st.hours*60),memo:"",auto:true})}for(let e of plan(k).events)a.push({id:e.id,name:e.title||"予定",time:e.start?`${e.start}-${e.end||"未定"}`:"時間未定",start:e.start,end:e.end,memo:e.memo||"",auto:false});return a.sort((x,y)=>(x.start||"99:99").localeCompare(y.start||"99:99"))}
+function items(k){let a=[],sl=getSlots(k);if(sl.length){let r=slotRange(sl);a.push({id:"auto-juku",name:"塾",time:r,start:r.split("-")[0],end:r.split("-")[1],memo:"",auto:true})}let st=study(k);if(st.hours){let r=studyRange(k)||`時間未定（${st.hours}h）`;a.push({id:"auto-study",name:"勉強会",time:r,start:st.start,end:st.end||addMinutes(st.start,st.hours*60),memo:"",auto:true})}for(let e of plan(k).events)a.push({id:e.id,name:e.title||"予定",time:e.allDay?"終日":(e.start?`${e.start}-${e.end||"未定"}`:"時間未定"),start:e.start,end:e.end,memo:e.memo||"",auto:false,allDay:!!e.allDay});return a.sort((x,y)=>(x.start||"99:99").localeCompare(y.start||"99:99"))}
 function rateFor(k){return [...rates].sort((a,b)=>String(a.from).localeCompare(String(b.from))).filter(r=>!r.from||r.from<=k).at(-1)||rates[0]}
 function dayPay(k){let r=rateFor(k),sl=getSlots(k),st=study(k);return sl.length*(Number(r.lesson)||0)+(sl.length?(Number(r.daily)||0)+(Number(r.transport)||0):0)+(st.hours?st.hours*1500+420:0)}
 function monthPay(y,m){let sum=0,last=new Date(y,m+1,0).getDate();for(let d=1;d<=last;d++)sum+=dayPay(keyOf(y,m,d));return sum}
@@ -671,7 +716,7 @@ function renderDetailTimeline(k){
  }).join("");
  detailTimeline.innerHTML=hours+`<div class="detail-track">${bands}</div>`
 }
-function openPlanDetail(){let k=selectedPlan,p=plan(k);detailDate.textContent=k.replaceAll("-","/");renderDetailTimeline(k);let sl=getSlots(k),st=study(k);autoInfo.innerHTML=`<div class="summary-row"><span>塾</span><span>${sl.length?esc(slotRange(sl)):"なし"}</span></div><div class="summary-row"><span>勉強会</span><span>${st.hours?esc(studyRange(k)||st.hours+"時間"):"なし"}</span></div>`;eventList.innerHTML=p.events.length?p.events.sort((a,b)=>(a.start||"99").localeCompare(b.start||"99")).map(e=>`<div class="event-item"><div class="event-text"><strong>${esc(e.title||"予定")}</strong><br>${esc(e.start?`${e.start}-${e.end||"未定"}`:"時間未定")}${e.memo?`<br><small>${esc(e.memo)}</small>`:""}</div><div class="event-actions"><button class="event-delete-inline" data-del="${esc(e.id)}">削除</button><button data-edit="${esc(e.id)}">変更</button></div></div>`).join(""):'<div class="summary-empty">登録済み予定なし</div>';eventList.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openEditor(b.dataset.edit));eventList.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deleteEventById(b.dataset.del));memoPreview.innerHTML="";open("planDetail")}
+function openPlanDetail(){let k=selectedPlan,p=plan(k);detailDate.textContent=k.replaceAll("-","/");renderDetailTimeline(k);let sl=getSlots(k),st=study(k);autoInfo.innerHTML=`<div class="summary-row"><span>塾</span><span>${sl.length?esc(slotRange(sl)):"なし"}</span></div><div class="summary-row"><span>勉強会</span><span>${st.hours?esc(studyRange(k)||st.hours+"時間"):"なし"}</span></div>`;eventList.innerHTML=p.events.length?p.events.sort((a,b)=>(a.start||"99").localeCompare(b.start||"99")).map(e=>`<div class="event-item"><div class="event-text"><strong>${esc(e.title||"予定")}</strong><br>${esc(e.allDay?"終日":(e.start?`${e.start}-${e.end||"未定"}`:"時間未定"))}${e.memo?`<br><small>${esc(e.memo)}</small>`:""}</div><div class="event-actions"><button class="event-delete-inline" data-del="${esc(e.id)}">削除</button><button data-edit="${esc(e.id)}">変更</button></div></div>`).join(""):'<div class="summary-empty">登録済み予定なし</div>';eventList.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openEditor(b.dataset.edit));eventList.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deleteEventById(b.dataset.del));memoPreview.innerHTML="";open("planDetail")}
 function dateKeysInclusive(a,b){
  if(!a||!b||b<a)return [];
  const out=[],d=new Date(a+"T12:00:00"),last=new Date(b+"T12:00:00");
@@ -695,21 +740,41 @@ function removeEventGroup(groupId){
    }
  }
 }
+function eventGroupParts(e){
+ if(!e)return [];
+ const gid=e.groupId||e.id;
+ const parts=[];
+ for(const k of Object.keys(plans)){
+   for(const x of plan(k).events){
+     if((x.groupId||x.id)==gid)parts.push({date:k,event:x});
+   }
+ }
+ return parts.sort((a,b)=>a.date.localeCompare(b.date));
+}
+function eventGroupTimes(e){
+ const parts=eventGroupParts(e);
+ const startPart=parts.find(x=>x.event.start);
+ const endPart=[...parts].reverse().find(x=>x.event.end);
+ return {
+   start:startPart?.event.start||e?.start||"",
+   end:endPart?.event.end||e?.end||""
+ };
+}
 function openEditor(id=null){
  editingEvent=id;
  let p=plan(selectedPlan),e=id?p.events.find(x=>x.id==id):null;
  editorTitle.textContent=e?"予定を変更":"予定を追加";
  eventName.value=e?.title||"";
  const fixedStartDate=e?.startDate||selectedPlan||"";
- eventStartDateDisplay.textContent=fixedStartDate;
  eventEndDate.value=e?.endDate||fixedStartDate;
- const isAllDay=!!e?.allDay || (!!e && !e.start && !e.end);
+ const groupTimes=eventGroupTimes(e);
+ const isAllDay=e?.allDay===true;
  allDayToggle.classList.toggle("active",isAllDay);
  eventStart.disabled=isAllDay;
  eventEnd.disabled=isAllDay;
  unsetEnd.disabled=isAllDay;
- eventStart.value=isAllDay?"":timeToHHMM(e?.start||"");
- eventEnd.value=isAllDay?"":timeToHHMM(e?.end||"");
+ eventStart.value=isAllDay?"":timeToHHMM(groupTimes.start);
+ eventEnd.value=isAllDay?"":timeToHHMM(groupTimes.end);
  eventMemo.value=e?.memo||"";
  deleteEvent.style.visibility=e?"visible":"hidden";
  open("eventEditor");
@@ -917,43 +982,74 @@ refreshTodayImagePreview();
 renderPlan();renderSalary();
 
 /* 月移動のスライドモーション */
+function finishMonthAnimation(calendar){
+  if(typeof calendar?._finishMonthAnimation==="function")calendar._finishMonthAnimation();
+}
 function animateMonth(calendar,dir,move,startPx=0){
-  if(!calendar||calendar.dataset.monthAnimating)return;
+  if(!calendar)return;
+
+  /* 連続スワイプ時は前の残りアニメーションを即完了して次を受け付ける */
+  finishMonthAnimation(calendar);
+
   calendar.dataset.monthAnimating="1";
   const grid=calendar.querySelector(".grid");
   if(!grid){move();delete calendar.dataset.monthAnimating;return}
+
   const width=Math.max(1,calendar.clientWidth||grid.clientWidth||1);
   const out=dir>0?-1:1;
   const previousOverflow=calendar.style.overflow;
   calendar.style.overflow="hidden";
 
-  const exitAnim=grid.animate(
+  let exitAnim=null,enterAnim=null,moved=false,done=false;
+
+  const cleanup=()=>{
+    const current=calendar.querySelector(".grid");
+    if(current)current.style.transform="";
+    grid.style.transform="";
+    calendar.style.overflow=previousOverflow;
+    delete calendar.dataset.monthAnimating;
+    calendar._finishMonthAnimation=null;
+  };
+
+  const forceFinish=()=>{
+    if(done)return;
+    done=true;
+    exitAnim?.cancel();
+    if(!moved){
+      grid.style.transform="";
+      move();
+      moved=true;
+    }
+    enterAnim?.cancel();
+    cleanup();
+  };
+  calendar._finishMonthAnimation=forceFinish;
+
+  exitAnim=grid.animate(
     [{transform:`translate3d(${startPx}px,0,0)`},{transform:`translate3d(${out*width}px,0,0)`}],
-    {duration:startPx?120:150,easing:"cubic-bezier(.4,0,.6,1)"}
+    {duration:startPx?105:135,easing:"cubic-bezier(.4,0,.6,1)"}
   );
 
   exitAnim.finished.catch(()=>{}).then(()=>{
+    if(done)return;
     exitAnim.cancel();
     grid.style.transform="";
     move();
+    moved=true;
 
     const nextGrid=calendar.querySelector(".grid");
-    if(!nextGrid){
-      calendar.style.overflow=previousOverflow;
-      delete calendar.dataset.monthAnimating;
-      return;
-    }
+    if(!nextGrid){done=true;cleanup();return}
 
-    const enterAnim=nextGrid.animate(
+    enterAnim=nextGrid.animate(
       [{transform:`translate3d(${-out*width}px,0,0)`},{transform:"translate3d(0,0,0)"}],
-      {duration:190,easing:"cubic-bezier(.22,.75,.25,1)"}
+      {duration:155,easing:"cubic-bezier(.22,.75,.25,1)"}
     );
 
     enterAnim.finished.catch(()=>{}).then(()=>{
+      if(done)return;
+      done=true;
       enterAnim.cancel();
-      nextGrid.style.transform="";
-      calendar.style.overflow=previousOverflow;
-      delete calendar.dataset.monthAnimating;
+      cleanup();
     });
   });
 }
@@ -990,7 +1086,10 @@ function animateMonth(calendar,dir,move,startPx=0){
    }
 
    el.addEventListener("touchstart",e=>{
-     if(e.touches.length!==1||el.dataset.monthAnimating)return;
+     if(e.touches.length!==1)return;
+
+     /* 前の月移動が残っていれば即完了して、次のスワイプを捨てない */
+     finishMonthAnimation(el);
      e.stopPropagation();
 
      /* 直前の予定⇔給与スライドのsmooth移動をここで完全停止 */
