@@ -18,16 +18,18 @@ button{color:inherit}
 h1{font-size:17px;text-align:center;margin:2px 0 6px;flex:0 0 auto}
 .card{background:#1f2937;border:1px solid #374151;border-radius:16px;overflow:hidden}
 .calendar{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
-.cal-head{position:relative;display:grid;grid-template-columns:40px minmax(0,1fr) 46px 40px;align-items:center;gap:3px;padding:7px 9px;border-bottom:1px solid #374151;flex:0 0 auto}
+.cal-head{position:relative;display:grid;grid-template-columns:40px minmax(0,1fr) 40px;align-items:center;padding:7px 9px;border-bottom:1px solid #374151;flex:0 0 auto}
 .nav{width:34px;height:30px;border:0;border-radius:9px;background:#374151;font-size:20px;font-weight:800}
 .month{width:100%;border:0;background:transparent;text-align:center;font-size:16px;font-weight:900;padding:4px 0}
-.today-jump{height:28px;border:1px solid #4b5563;border-radius:8px;background:#111827;color:#d1d5db;padding:0 6px;font-size:11px;font-weight:800}
+.today-jump{position:absolute;right:48px;top:50%;transform:translateY(-50%);width:46px;height:28px;border:1px solid #4b5563;border-radius:8px;background:#111827;color:#d1d5db;padding:0 6px;font-size:11px;font-weight:800;z-index:2}
 .week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-bottom:1px solid #374151;flex:0 0 25px}
-.week div{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;border-right:1px solid #374151;margin-bottom:-1px;padding-bottom:1px}
+.week div{display:flex;align-items:center;justify-content:center;height:100%;align-self:stretch;font-size:11px;font-weight:800;border-right:1px solid #374151;padding:0;box-sizing:border-box}
 .week div:last-child{border-right:0}
 .week div:first-child{color:#ff5f67}.week div:last-child{color:#5aa7ff}
 .grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-template-rows:repeat(6,minmax(0,1fr));flex:1 1 auto;min-height:0;background:#111827}
-.day,.blank{position:relative;min-width:0;min-height:0;border:0;border-right:1px solid #374151;border-bottom:1px solid #374151;background:#111827;overflow:hidden}
+.day,.blank{position:relative;min-width:0;min-height:0;border:0;border-right:1px solid #374151;border-bottom:1px solid #374151;overflow:hidden}
+.day{background:#111827}
+.blank{background:#182231}
 .grid>:nth-child(7n){border-right:0}
 .grid>:nth-last-child(-n+7){border-bottom:0}
 .day{padding:21px 3px 3px;text-align:left}
@@ -226,6 +228,16 @@ html,body{touch-action:pan-x !important;-webkit-text-size-adjust:100% !important
 }
 .detail-band strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .detail-band span{display:block;font-size:8px;white-space:nowrap}
+.detail-band-all-day{
+  left:4px!important;
+  right:4px!important;
+  width:auto!important;
+  height:26px!important;
+  min-height:26px!important;
+  z-index:4;
+  border-left-color:#f9fafb!important;
+  background:#4b5563!important;
+}
 .rate-row{
   grid-template-columns:1.15fr .8fr .8fr .8fr auto !important;
   align-items:end;
@@ -399,8 +411,9 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 /* 予定作成：日付・時間・補助ボタンの見た目を統一 */
 #eventEditor .event-date-row{
   display:grid;
-  grid-template-columns:148px;
+  grid-template-columns:54px 148px;
   gap:8px;
+  align-items:end;
 }
 #eventEditor .event-time-row{
   display:grid;
@@ -450,11 +463,17 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
   font-weight:800!important;
 }
 #eventEditor .all-day-toggle{
-  width:100%!important;
+  width:54px!important;
+  min-width:54px!important;
+  max-width:54px!important;
+  padding:0!important;
+  align-self:end!important;
 }
 #eventEditor .event-option.active{
-  background:#4b5563!important;
-  border-color:#6b7280!important;
+  background:#f9fafb!important;
+  color:#111827!important;
+  border-color:#f9fafb!important;
+  box-shadow:0 0 0 2px rgba(249,250,251,.18)!important;
 }
 #eventEditor .event-control:disabled{
   opacity:.45!important;
@@ -467,7 +486,7 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 <section class="panel" id="planPanel">
 <div class="panel-title-row"><h1>予定カレンダー</h1><button class="gear" id="planSettings" aria-label="設定">⚙︎</button></div>
 <div class="calendar card">
-<div class="cal-head"><button class="nav" id="planPrev">‹</button><button class="month" id="planMonth"></button><button class="today-jump" id="planToday">今日</button><button class="nav" id="planNext">›</button></div>
+<div class="cal-head"><button class="nav" id="planPrev">‹</button><button class="month" id="planMonth"></button><button class="nav" id="planNext">›</button><button class="today-jump" id="planToday">今日</button></div>
 <div class="week"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>
 <div class="grid" id="planGrid"></div>
 </div>
@@ -477,7 +496,7 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 <section class="panel" id="salaryPanel">
 <div class="panel-title-row"><h1>給与カレンダー</h1><button class="gear" id="salarySettings" aria-label="設定">⚙︎</button></div>
 <div class="salary-calendar calendar card">
-<div class="cal-head"><button class="nav" id="salPrev">‹</button><button class="month" id="salMonth"></button><button class="today-jump" id="salToday">今日</button><button class="nav" id="salNext">›</button></div>
+<div class="cal-head"><button class="nav" id="salPrev">‹</button><button class="month" id="salMonth"></button><button class="nav" id="salNext">›</button><button class="today-jump" id="salToday">今日</button></div>
 <div class="week"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>
 <div class="grid" id="salGrid"></div>
 <div class="month-total" id="monthTotal">月合計 0円</div>
@@ -509,9 +528,8 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 <div class="modal-head"><div class="modal-title" id="editorTitle">予定を追加</div><button class="close" data-close="eventEditor">×</button></div>
 <div class="form">
 <label>予定名<input id="eventName" type="text" enterkeyhint="next"></label>
-<div class="event-date-row"><label>終了日<input id="eventEndDate" class="event-control" type="date"></label></div>
+<div class="event-date-row"><button type="button" id="allDayToggle" class="event-option all-day-toggle" aria-pressed="false">終日</button><label>終了日<input id="eventEndDate" class="event-control" type="date"></label></div>
 <div class="event-time-row"><label>開始時間<input id="eventStart" class="event-control hhmm-input" type="tel" inputmode="numeric" autocomplete="off" aria-label="開始時間"></label><label>終了時間<div class="end-time-wrap"><input id="eventEnd" class="event-control hhmm-input" type="tel" inputmode="numeric" autocomplete="off" aria-label="終了時間"><button type="button" id="unsetEnd" class="event-option">未定</button></div></label></div>
-<button type="button" id="allDayToggle" class="event-option all-day-toggle">終日</button>
 <label>メモ<textarea id="eventMemo" maxlength="120" placeholder="120文字まで"></textarea></label>
 <div class="actions"><button class="danger" id="deleteEvent">削除</button><button class="primary" id="saveEvent">保存</button></div>
 </div></div></div>
@@ -695,7 +713,8 @@ function saveSalary(){if(!selectedSalary)return;let sl=[...document.querySelecto
 function clearSalary(){if(!selectedSalary)return;delete shifts[selectedSalary];delete studies[selectedSalary];save(KEY,shifts);save(STUDY_KEY,studies);renderSalary();renderPlan()}
 
 function renderDetailTimeline(k){
- const a=items(k).filter(x=>mins(x.start)!=null).map(x=>{
+ const allDayItems=items(k).filter(x=>x.allDay);
+ const a=items(k).filter(x=>!x.allDay&&mins(x.start)!=null).map(x=>{
    const s=mins(x.start);let e=mins(x.end);if(e==null||e<=s)e=Math.min(s+60,1440);
    return {...x,_s:s,_e:e,_lane:0,_lanes:1}
  }).sort((a,b)=>a._s-b._s||a._e-b._e);
@@ -715,7 +734,8 @@ function renderDetailTimeline(k){
    const gap=3,width=`calc(${100/x._lanes}% - ${gap+4}px)`,left=`calc(${x._lane*(100/x._lanes)}% + ${4+x._lane*gap}px)`;
    return `<div class="detail-band" style="top:${top}%;height:${height}%;left:${left};width:${width}"><strong>${esc(x.name)}</strong><span>${esc(x.time)}</span>${x.memo?`<span>${esc(x.memo)}</span>`:""}</div>`
  }).join("");
- detailTimeline.innerHTML=hours+`<div class="detail-track">${bands}</div>`
+ const allDayBands=allDayItems.map((x,i)=>`<div class="detail-band detail-band-all-day" style="top:${4+i*30}px"><strong>${esc(x.name)}</strong><span>終日</span>${x.memo?`<span>${esc(x.memo)}</span>`:""}</div>`).join("");
+ detailTimeline.innerHTML=hours+`<div class="detail-track">${allDayBands}${bands}</div>`
 }
 function openPlanDetail(){let k=selectedPlan,p=plan(k);detailDate.textContent=k.replaceAll("-","/");renderDetailTimeline(k);let sl=getSlots(k),st=study(k);autoInfo.innerHTML=`<div class="summary-row"><span>塾</span><span>${sl.length?esc(slotRange(sl)):"なし"}</span></div><div class="summary-row"><span>勉強会</span><span>${st.hours?esc(studyRange(k)||st.hours+"時間"):"なし"}</span></div>`;eventList.innerHTML=p.events.length?p.events.sort((a,b)=>(a.start||"99").localeCompare(b.start||"99")).map(e=>`<div class="event-item"><div class="event-text"><strong>${esc(e.title||"予定")}</strong><br>${esc(e.allDay?"終日":(e.start?`${e.start}-${e.end||"未定"}`:"時間未定"))}${e.memo?`<br><small>${esc(e.memo)}</small>`:""}</div><div class="event-actions"><button class="event-delete-inline" data-del="${esc(e.id)}">削除</button><button data-edit="${esc(e.id)}">変更</button></div></div>`).join(""):'<div class="summary-empty">登録済み予定なし</div>';eventList.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openEditor(b.dataset.edit));eventList.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deleteEventById(b.dataset.del));memoPreview.innerHTML="";open("planDetail")}
 function dateKeysInclusive(a,b){
@@ -761,6 +781,11 @@ function eventGroupTimes(e){
    end:endPart?.event.end||e?.end||""
  };
 }
+function syncAllDayToggle(on){
+ allDayToggle.classList.toggle("active",on);
+ allDayToggle.setAttribute("aria-pressed",on?"true":"false");
+ allDayToggle.textContent=on?"✓終日":"終日";
+}
 function openEditor(id=null){
  editingEvent=id;
  let p=plan(selectedPlan),e=id?p.events.find(x=>x.id==id):null;
@@ -770,7 +795,7 @@ function openEditor(id=null){
  eventEndDate.value=e?.endDate||fixedStartDate;
  const groupTimes=eventGroupTimes(e);
  const isAllDay=e?e.allDay===true:true;
- allDayToggle.classList.toggle("active",isAllDay);
+ syncAllDayToggle(isAllDay);
  eventStart.disabled=isAllDay;
  eventEnd.disabled=isAllDay;
  unsetEnd.disabled=isAllDay;
@@ -861,7 +886,7 @@ addEvent.onclick=()=>openEditor();saveEvent.onclick=saveEventFn;deleteEvent.oncl
 unsetEnd.onclick=()=>{eventEnd.value="";};
 allDayToggle.onclick=()=>{
  const on=!allDayToggle.classList.contains("active");
- allDayToggle.classList.toggle("active",on);
+ syncAllDayToggle(on);
  eventStart.disabled=on;
  eventEnd.disabled=on;
  unsetEnd.disabled=on;
