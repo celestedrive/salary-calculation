@@ -455,13 +455,16 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
   pointer-events:none;
 }
 .today-image-preview:empty::after{display:none}
+.today-image-preview img,
 .today-image-preview video{
   position:absolute;
   inset:0;
   width:100%;
   height:100%;
   object-fit:cover;
+  object-position:50% 50%;
   pointer-events:none;
+  display:block;
 }
 .today-media-video{
   position:absolute!important;
@@ -834,6 +837,7 @@ const TODAY_MEDIA_POS_Y_KEY="calendar_today_media_pos_y_v1";
 const TODAY_MEDIA_DB="calendar_today_media_db_v1";
 const TODAY_MEDIA_STORE="media";
 let todayVideoObjectUrl="";
+let todayGifObjectUrl="";
 
 function getTodayImage(){return localStorage.getItem(TODAY_IMAGE_KEY)||""}
 function getTodayGif(){return localStorage.getItem(TODAY_GIF_KEY)||""}
@@ -905,6 +909,61 @@ async function getTodayVideoBlob(){
  }catch{return null}
 }
 
+async function putTodayGifBlob(file){
+ const db=await openTodayMediaDB();
+ await new Promise((resolve,reject)=>{
+   const tx=db.transaction(TODAY_MEDIA_STORE,"readwrite");
+   tx.objectStore(TODAY_MEDIA_STORE).put(file,"today-gif");
+   tx.oncomplete=resolve;
+   tx.onerror=()=>reject(tx.error);
+   tx.onabort=()=>reject(tx.error);
+ });
+ db.close();
+}
+
+async function getTodayGifBlob(){
+ try{
+   const db=await openTodayMediaDB();
+   const blob=await new Promise((resolve,reject)=>{
+     const tx=db.transaction(TODAY_MEDIA_STORE,"readonly");
+     const req=tx.objectStore(TODAY_MEDIA_STORE).get("today-gif");
+     req.onsuccess=()=>resolve(req.result||null);
+     req.onerror=()=>reject(req.error);
+   });
+   db.close();
+   return blob;
+ }catch{return null}
+}
+
+async function deleteTodayGifBlob(){
+ try{
+   const db=await openTodayMediaDB();
+   await new Promise((resolve,reject)=>{
+     const tx=db.transaction(TODAY_MEDIA_STORE,"readwrite");
+     tx.objectStore(TODAY_MEDIA_STORE).delete("today-gif");
+     tx.oncomplete=resolve;
+     tx.onerror=()=>reject(tx.error);
+     tx.onabort=()=>reject(tx.error);
+   });
+   db.close();
+ }catch{}
+}
+
+function resetTodayGifObjectUrl(){
+ if(todayGifObjectUrl){
+   URL.revokeObjectURL(todayGifObjectUrl);
+   todayGifObjectUrl="";
+ }
+}
+
+async function getTodayGifUrl(){
+ if(todayGifObjectUrl)return todayGifObjectUrl;
+ const blob=await getTodayGifBlob();
+ if(!blob)return "";
+ todayGifObjectUrl=URL.createObjectURL(blob);
+ return todayGifObjectUrl;
+}
+
 async function deleteTodayVideoBlob(){
  try{
    const db=await openTodayMediaDB();
@@ -953,13 +1012,15 @@ function makeLoopVideo(src){
 async function refreshTodayImagePreview(){
  todayImagePreview.innerHTML="";
  todayImagePreview.style.backgroundImage="";
- todayImagePreview.style.backgroundPosition=todayMediaPositionCSS();
- const mediaType=localStorage.getItem(TODAY_MEDIA_TYPE_KEY)|| (getTodayGif()?"gif":(getTodayImage()?"image":""));
+ todayImagePreview.style.backgroundPosition="";
+ const mediaType=localStorage.getItem(TODAY_MEDIA_TYPE_KEY)|| (getTodayImage()?"image":"");
+ const pos=todayMediaPositionCSS();
 
  if(mediaType==="video"){
    const src=await getTodayVideoUrl();
    if(src){
      const video=makeLoopVideo(src);
+     video.style.objectPosition=pos;
      todayImagePreview.appendChild(video);
      video.play().catch(()=>{});
      return;
@@ -967,27 +1028,35 @@ async function refreshTodayImagePreview(){
  }
 
  if(mediaType==="gif"){
-   const gif=getTodayGif();
-   if(gif){
-     todayImagePreview.style.backgroundImage=`linear-gradient(rgba(0,0,0,.15),rgba(0,0,0,.15)),url("${gif}")`;
-     todayImagePreview.style.backgroundPosition=todayMediaPositionCSS();
+   const src=await getTodayGifUrl();
+   if(src){
+     const img=document.createElement("img");
+     img.alt="";
+     img.src=src;
+     img.style.objectPosition=pos;
+     todayImagePreview.appendChild(img);
      return;
    }
  }
 
- const src=getTodayImage();
- if(src){
-   todayImagePreview.style.backgroundImage=`linear-gradient(rgba(0,0,0,.15),rgba(0,0,0,.15)),url("${src}")`;
-   todayImagePreview.style.backgroundPosition=todayMediaPositionCSS();
-   return;
+ if(mediaType==="image"){
+   const src=getTodayImage();
+   if(src){
+     const img=document.createElement("img");
+     img.alt="";
+     img.src=src;
+     img.style.objectPosition=pos;
+     todayImagePreview.appendChild(img);
+     return;
+   }
  }
+
  todayImagePreview.textContent="画像・動画なし";
 }
-
 async function applyTodayImage(){
- const mediaType=localStorage.getItem(TODAY_MEDIA_TYPE_KEY)|| (getTodayGif()?"gif":(getTodayImage()?"image":""));
+ const mediaType=localStorage.getItem(TODAY_MEDIA_TYPE_KEY)|| (getTodayImage()?"image":"");
  const imageSrc=mediaType==="image"?getTodayImage():"";
- const gifSrc=mediaType==="gif"?getTodayGif():"";
+ const gifSrc=mediaType==="gif"?await getTodayGifUrl():"";
  const videoSrc=mediaType==="video"?await getTodayVideoUrl():"";
 
  document.querySelectorAll(".day.today").forEach(el=>{
@@ -1014,17 +1083,9 @@ async function saveTodayMediaFile(file){
  if(mediaType==="gif"){
    try{
      setTodayMediaPosition(50,50);
-     if(file.size>4.5*1024*1024){
-       alert("GIFの容量が大きすぎます。4.5MB以下のGIFを選んでください。");
-       return;
-     }
-     const dataUrl=await new Promise((resolve,reject)=>{
-       const reader=new FileReader();
-       reader.onload=()=>resolve(String(reader.result||""));
-       reader.onerror=()=>reject(reader.error);
-       reader.readAsDataURL(file);
-     });
-     localStorage.setItem(TODAY_GIF_KEY,dataUrl);
+     await putTodayGifBlob(file);
+     resetTodayGifObjectUrl();
+     localStorage.removeItem(TODAY_GIF_KEY);
      localStorage.removeItem(TODAY_IMAGE_KEY);
      localStorage.setItem(TODAY_MEDIA_TYPE_KEY,"gif");
      await deleteTodayVideoBlob();
@@ -1033,7 +1094,7 @@ async function saveTodayMediaFile(file){
      renderPlan();
      renderSalary();
    }catch(e){
-     alert("GIFを保存できませんでした。容量の小さいGIFで試してください。");
+     alert("GIFを保存できませんでした。端末の空き容量を確認してください。");
    }
    return;
  }
@@ -1045,6 +1106,8 @@ async function saveTodayMediaFile(file){
      resetTodayVideoObjectUrl();
      localStorage.removeItem(TODAY_IMAGE_KEY);
      localStorage.removeItem(TODAY_GIF_KEY);
+     await deleteTodayGifBlob();
+     resetTodayGifObjectUrl();
      localStorage.setItem(TODAY_MEDIA_TYPE_KEY,"video");
      await refreshTodayImagePreview();
      renderPlan();
@@ -1067,6 +1130,8 @@ async function saveTodayMediaFile(file){
      try{
        localStorage.setItem(TODAY_IMAGE_KEY,c.toDataURL("image/jpeg",.78));
        localStorage.removeItem(TODAY_GIF_KEY);
+       await deleteTodayGifBlob();
+       resetTodayGifObjectUrl();
        localStorage.setItem(TODAY_MEDIA_TYPE_KEY,"image");
        await deleteTodayVideoBlob();
        resetTodayVideoObjectUrl();
@@ -1093,14 +1158,14 @@ async function saveTodayMediaFile(file){
  let dragging=false,startClientX=0,startClientY=0,startPosX=50,startPosY=50;
 
  function hasTodayMedia(){
-   return !!(localStorage.getItem(TODAY_MEDIA_TYPE_KEY)||getTodayGif()||getTodayImage());
+   return !!(localStorage.getItem(TODAY_MEDIA_TYPE_KEY)||getTodayImage());
  }
 
  function applyPositionLive(x,y){
    setTodayMediaPosition(x,y);
    const pos=todayMediaPositionCSS();
    todayImagePreview.style.backgroundPosition=pos;
-   todayImagePreview.querySelectorAll("video").forEach(v=>v.style.objectPosition=pos);
+   todayImagePreview.querySelectorAll("img,video").forEach(v=>v.style.objectPosition=pos);
    document.querySelectorAll(".day.today").forEach(el=>{
      el.style.setProperty("--today-media-position",pos);
      el.querySelectorAll(".today-media-video").forEach(v=>v.style.objectPosition=pos);
@@ -1713,7 +1778,7 @@ allDayToggle.onclick=()=>{
    setTimeout(syncEventEditorViewport,220);
  }
 };
-const openGeneralSettings=()=>{renderRates();open("settingsModal")};
+const openGeneralSettings=()=>{renderRates();refreshTodayImagePreview();open("settingsModal")};
 planSettings.onclick=openGeneralSettings;salarySettings.onclick=openGeneralSettings;addRate.onclick=()=>{rates.push({from:new Date().toISOString().slice(0,10),lesson:2026,daily:513,transport:420});save(RATE_KEY,rates);renderRates()};
 exportBtn.onclick=exportData;importFile.onchange=e=>e.target.files[0]&&importData(e.target.files[0]);
 document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>close(b.dataset.close));
@@ -1839,6 +1904,8 @@ removeTodayImage.onclick=async()=>{
  localStorage.removeItem(TODAY_MEDIA_POS_Y_KEY);
  await deleteTodayVideoBlob();
  resetTodayVideoObjectUrl();
+ await deleteTodayGifBlob();
+ resetTodayGifObjectUrl();
  await refreshTodayImagePreview();
  renderPlan();
  renderSalary();
