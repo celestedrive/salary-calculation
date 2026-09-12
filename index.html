@@ -828,6 +828,7 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 
 const TODAY_IMAGE_KEY="calendar_today_image_v1";
 const TODAY_MEDIA_TYPE_KEY="calendar_today_media_type_v1";
+const TODAY_GIF_KEY="calendar_today_gif_v1";
 const TODAY_MEDIA_POS_X_KEY="calendar_today_media_pos_x_v1";
 const TODAY_MEDIA_POS_Y_KEY="calendar_today_media_pos_y_v1";
 const TODAY_MEDIA_DB="calendar_today_media_db_v1";
@@ -835,6 +836,7 @@ const TODAY_MEDIA_STORE="media";
 let todayVideoObjectUrl="";
 
 function getTodayImage(){return localStorage.getItem(TODAY_IMAGE_KEY)||""}
+function getTodayGif(){return localStorage.getItem(TODAY_GIF_KEY)||""}
 function clampTodayMediaPos(v){return Math.max(0,Math.min(100,Number(v)||0))}
 function getTodayMediaPosition(){
  const x=localStorage.getItem(TODAY_MEDIA_POS_X_KEY);
@@ -855,10 +857,12 @@ function todayMediaPositionCSS(){
 
 function detectTodayMediaType(file){
  const type=String(file?.type||"").toLowerCase();
+ if(type==="image/gif")return "gif";
  if(type.startsWith("image/"))return "image";
  if(type.startsWith("video/"))return "video";
  const ext=String(file?.name||"").split(".").pop().toLowerCase();
- if(["jpg","jpeg","png","gif","webp","heic","heif","avif","bmp"].includes(ext))return "image";
+ if(ext==="gif")return "gif";
+ if(["jpg","jpeg","png","webp","heic","heif","avif","bmp"].includes(ext))return "image";
  if(["mp4","mov","m4v","webm","avi","mpeg","mpg"].includes(ext))return "video";
  return "";
 }
@@ -950,7 +954,7 @@ async function refreshTodayImagePreview(){
  todayImagePreview.innerHTML="";
  todayImagePreview.style.backgroundImage="";
  todayImagePreview.style.backgroundPosition=todayMediaPositionCSS();
- const mediaType=localStorage.getItem(TODAY_MEDIA_TYPE_KEY)|| (getTodayImage()?"image":"");
+ const mediaType=localStorage.getItem(TODAY_MEDIA_TYPE_KEY)|| (getTodayGif()?"gif":(getTodayImage()?"image":""));
 
  if(mediaType==="video"){
    const src=await getTodayVideoUrl();
@@ -958,6 +962,15 @@ async function refreshTodayImagePreview(){
      const video=makeLoopVideo(src);
      todayImagePreview.appendChild(video);
      video.play().catch(()=>{});
+     return;
+   }
+ }
+
+ if(mediaType==="gif"){
+   const gif=getTodayGif();
+   if(gif){
+     todayImagePreview.style.backgroundImage=`linear-gradient(rgba(0,0,0,.15),rgba(0,0,0,.15)),url("${gif}")`;
+     todayImagePreview.style.backgroundPosition=todayMediaPositionCSS();
      return;
    }
  }
@@ -972,15 +985,17 @@ async function refreshTodayImagePreview(){
 }
 
 async function applyTodayImage(){
- const mediaType=localStorage.getItem(TODAY_MEDIA_TYPE_KEY)|| (getTodayImage()?"image":"");
+ const mediaType=localStorage.getItem(TODAY_MEDIA_TYPE_KEY)|| (getTodayGif()?"gif":(getTodayImage()?"image":""));
  const imageSrc=mediaType==="image"?getTodayImage():"";
+ const gifSrc=mediaType==="gif"?getTodayGif():"";
  const videoSrc=mediaType==="video"?await getTodayVideoUrl():"";
 
  document.querySelectorAll(".day.today").forEach(el=>{
    el.querySelectorAll(".today-media-video").forEach(v=>v.remove());
-   el.classList.toggle("has-custom-image",!!imageSrc);
+   el.classList.toggle("has-custom-image",!!imageSrc||!!gifSrc);
    el.classList.toggle("has-custom-video",!!videoSrc);
-   el.style.backgroundImage=imageSrc?`linear-gradient(rgba(0,0,0,.28),rgba(0,0,0,.28)),url("${imageSrc}")`:"";
+   const bgSrc=imageSrc||gifSrc;
+   el.style.backgroundImage=bgSrc?`linear-gradient(rgba(0,0,0,.28),rgba(0,0,0,.28)),url("${bgSrc}")`:"";
    el.style.setProperty("--today-media-position",todayMediaPositionCSS());
 
    if(videoSrc){
@@ -996,12 +1011,40 @@ async function saveTodayMediaFile(file){
  if(!file)return;
  const mediaType=detectTodayMediaType(file);
 
+ if(mediaType==="gif"){
+   try{
+     setTodayMediaPosition(50,50);
+     if(file.size>4.5*1024*1024){
+       alert("GIFの容量が大きすぎます。4.5MB以下のGIFを選んでください。");
+       return;
+     }
+     const dataUrl=await new Promise((resolve,reject)=>{
+       const reader=new FileReader();
+       reader.onload=()=>resolve(String(reader.result||""));
+       reader.onerror=()=>reject(reader.error);
+       reader.readAsDataURL(file);
+     });
+     localStorage.setItem(TODAY_GIF_KEY,dataUrl);
+     localStorage.removeItem(TODAY_IMAGE_KEY);
+     localStorage.setItem(TODAY_MEDIA_TYPE_KEY,"gif");
+     await deleteTodayVideoBlob();
+     resetTodayVideoObjectUrl();
+     await refreshTodayImagePreview();
+     renderPlan();
+     renderSalary();
+   }catch(e){
+     alert("GIFを保存できませんでした。容量の小さいGIFで試してください。");
+   }
+   return;
+ }
+
  if(mediaType==="video"){
    try{
      setTodayMediaPosition(50,50);
      await putTodayVideoBlob(file);
      resetTodayVideoObjectUrl();
      localStorage.removeItem(TODAY_IMAGE_KEY);
+     localStorage.removeItem(TODAY_GIF_KEY);
      localStorage.setItem(TODAY_MEDIA_TYPE_KEY,"video");
      await refreshTodayImagePreview();
      renderPlan();
@@ -1023,6 +1066,7 @@ async function saveTodayMediaFile(file){
      c.getContext("2d").drawImage(img,0,0,c.width,c.height);
      try{
        localStorage.setItem(TODAY_IMAGE_KEY,c.toDataURL("image/jpeg",.78));
+       localStorage.removeItem(TODAY_GIF_KEY);
        localStorage.setItem(TODAY_MEDIA_TYPE_KEY,"image");
        await deleteTodayVideoBlob();
        resetTodayVideoObjectUrl();
@@ -1049,7 +1093,7 @@ async function saveTodayMediaFile(file){
  let dragging=false,startClientX=0,startClientY=0,startPosX=50,startPosY=50;
 
  function hasTodayMedia(){
-   return !!(localStorage.getItem(TODAY_MEDIA_TYPE_KEY)||getTodayImage());
+   return !!(localStorage.getItem(TODAY_MEDIA_TYPE_KEY)||getTodayGif()||getTodayImage());
  }
 
  function applyPositionLive(x,y){
@@ -1789,6 +1833,7 @@ setupHHMMInput(eventStart,eventEnd,null);setupHHMMInput(eventEnd,null,eventStart
 todayImageFile.onchange=async e=>{const f=e.target.files?.[0];if(f)await saveTodayMediaFile(f);e.target.value=""};
 removeTodayImage.onclick=async()=>{
  localStorage.removeItem(TODAY_IMAGE_KEY);
+ localStorage.removeItem(TODAY_GIF_KEY);
  localStorage.removeItem(TODAY_MEDIA_TYPE_KEY);
  localStorage.removeItem(TODAY_MEDIA_POS_X_KEY);
  localStorage.removeItem(TODAY_MEDIA_POS_Y_KEY);
