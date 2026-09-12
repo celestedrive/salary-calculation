@@ -369,6 +369,12 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 .detail-band strong{font-size:clamp(9px,2.7vw,12px)!important;line-height:1.05!important}
 .detail-band span{font-size:clamp(8px,2.35vw,11px)!important;line-height:1.05!important}
 
+/* Keep vertical lists usable while the month grid owns horizontal dragging. */
+html,body,.pager{touch-action:pan-x pan-y!important}
+.month-viewport{position:relative;flex:1 1 auto;min-height:0;overflow:hidden;touch-action:none!important}
+.month-viewport .grid{height:100%;width:100%;touch-action:none!important}
+.month-viewport .day{touch-action:none!important}
+.month-preview{position:absolute!important;inset:0;pointer-events:none}
 </style>
 </head>
 <body>
@@ -637,6 +643,78 @@ document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
 document.addEventListener("gesturechange",e=>e.preventDefault(),{passive:false});
 document.addEventListener("gestureend",e=>e.preventDefault(),{passive:false});
 pager.addEventListener("scrollend",()=>{if(pager.scrollLeft<pager.clientWidth*.5){shifts=load(KEY,{});studies=load(STUDY_KEY,{});renderPlan()}},{passive:true});pager.addEventListener("scroll",()=>{let max=Math.max(0,pager.scrollWidth-pager.clientWidth);if(pager.scrollLeft<0)pager.scrollLeft=0;else if(pager.scrollLeft>max)pager.scrollLeft=max},{passive:true});
+function enableMonthSwipe(grid,kind){
+ const viewport=document.createElement('div');
+ viewport.className='month-viewport';
+ grid.before(viewport);viewport.append(grid);
+ let gesture=null,previous=null,next=null,busy=false,suppressUntil=0,wheelTotal=0,wheelTimer,wheelLocked=false;
+ const view=()=>kind==='plan'?planView:salView;
+ const shifted=n=>new Date(view().getFullYear(),view().getMonth()+n,1);
+ function prepare(){
+   previous=document.createElement('div');next=document.createElement('div');
+   for(const [preview,offset] of [[previous,-1],[next,1]]){
+     preview.className='grid month-preview';preview.setAttribute('aria-hidden','true');
+     renderGrid(preview,shifted(offset),kind);
+     preview.querySelectorAll('button').forEach(button=>button.tabIndex=-1);
+     viewport.append(preview);
+   }
+ }
+ function position(x,animate=false){
+   const width=viewport.clientWidth;
+   for(const [element,offset] of [[previous,-width],[grid,0],[next,width]]){
+     element.style.transition=animate?'transform 200ms ease-out':'none';
+     element.style.transform=`translateX(${x+offset}px)`;
+   }
+ }
+ function finish(direction){
+   busy=true;suppressUntil=Date.now()+350;
+   position(-direction*viewport.clientWidth,true);
+   setTimeout(()=>{
+     if(direction){
+       const date=shifted(direction);
+       if(kind==='plan'){planView=date;renderPlan()}else{salView=date;renderSalary()}
+     }
+     previous.remove();next.remove();previous=next=null;
+     grid.style.transition='';grid.style.transform='';busy=false;
+   },210);
+ }
+ viewport.addEventListener('pointerdown',event=>{
+   if(busy||gesture||!event.isPrimary||event.button!==0)return;
+   gesture={id:event.pointerId,x:event.clientX,y:event.clientY,dx:0,started:false};
+ });
+ viewport.addEventListener('pointermove',event=>{
+   if(!gesture||event.pointerId!==gesture.id)return;
+   const dx=event.clientX-gesture.x,dy=event.clientY-gesture.y;
+   if(!gesture.started){
+     if(Math.max(Math.abs(dx),Math.abs(dy))<8)return;
+     if(Math.abs(dy)>Math.abs(dx)){gesture=null;return}
+     gesture.started=true;viewport.setPointerCapture(event.pointerId);prepare();
+   }
+   event.preventDefault();gesture.dx=Math.max(-viewport.clientWidth,Math.min(viewport.clientWidth,dx));
+   position(gesture.dx);
+ });
+ function release(event,cancelled=false){
+   if(!gesture||event.pointerId!==gesture.id)return;
+   const current=gesture;gesture=null;
+   if(viewport.hasPointerCapture(event.pointerId))viewport.releasePointerCapture(event.pointerId);
+   if(current.started)finish(!cancelled&&Math.abs(current.dx)>Math.min(70,viewport.clientWidth*.2)?(current.dx<0?1:-1):0);
+ }
+ viewport.addEventListener('pointerup',event=>release(event));
+ viewport.addEventListener('pointercancel',event=>release(event,true));
+ viewport.addEventListener('lostpointercapture',event=>release(event,true));
+ viewport.addEventListener('click',event=>{
+   if(Date.now()<suppressUntil){event.preventDefault();event.stopImmediatePropagation()}
+ },true);
+ viewport.addEventListener('wheel',event=>{
+   if(event.ctrlKey||Math.abs(event.deltaX)<=Math.abs(event.deltaY))return;
+   event.preventDefault();event.stopPropagation();
+   clearTimeout(wheelTimer);wheelTimer=setTimeout(()=>{wheelTotal=0;wheelLocked=false},160);
+   if(busy||gesture||wheelLocked)return;
+   wheelTotal+=event.deltaX*(event.deltaMode===1?16:event.deltaMode===2?viewport.clientWidth:1);
+   if(Math.abs(wheelTotal)>45){const direction=wheelTotal>0?1:-1;wheelTotal=0;wheelLocked=true;prepare();position(0);viewport.offsetWidth;finish(direction)}
+ },{passive:false});
+}
+enableMonthSwipe(planGrid,'plan');enableMonthSwipe(salGrid,'salary');
 renderPlan();renderSalary();
 </script>
 </body></html>
