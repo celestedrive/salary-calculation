@@ -18,10 +18,10 @@ button{color:inherit}
 h1{font-size:17px;text-align:center;margin:2px 0 6px;flex:0 0 auto}
 .card{background:#1f2937;border:1px solid #374151;border-radius:16px;overflow:hidden}
 .calendar{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
-.cal-head{position:relative;display:grid;grid-template-columns:40px minmax(0,1fr) 40px;align-items:center;padding:7px 9px;border-bottom:1px solid #374151;flex:0 0 auto}
+.cal-head{position:relative;display:flex;align-items:center;justify-content:center;padding:7px 9px;border-bottom:1px solid #374151;flex:0 0 auto}
 .nav{width:34px;height:30px;border:0;border-radius:9px;background:#374151;font-size:20px;font-weight:800}
-.month{width:100%;border:0;background:transparent;text-align:center;font-size:16px;font-weight:900;padding:4px 0}
-.today-jump{position:absolute;right:48px;top:50%;transform:translateY(-50%);width:46px;height:28px;border:1px solid #4b5563;border-radius:8px;background:#111827;color:#d1d5db;padding:0 6px;font-size:11px;font-weight:800;z-index:2}
+.month{width:auto;min-width:128px;border:0;background:transparent;text-align:center;font-size:16px;font-weight:900;padding:4px 0}
+.today-jump{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:46px;height:28px;border:1px solid #4b5563;border-radius:8px;background:#111827;color:#d1d5db;padding:0 6px;font-size:11px;font-weight:800;z-index:2}
 .week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-bottom:1px solid #374151;flex:0 0 25px}
 .week div{display:flex;align-items:center;justify-content:center;height:100%;align-self:stretch;font-size:11px;font-weight:800;border-right:1px solid #374151;padding:0;box-sizing:border-box}
 .week div:last-child{border-right:0}
@@ -189,21 +189,25 @@ html,body{touch-action:pan-x !important;-webkit-text-size-adjust:100% !important
   color:#f9fafb;
 }
 .payday-amount{
+  position:absolute;
+  top:15px;
+  right:3px;
+  z-index:3;
   display:block;
-  width:max-content;
-  max-width:100%;
-  margin-top:2px;
-  padding:2px 4px;
-  border:1px solid #059669;
-  border-radius:5px;
-  background:#064e3b;
-  color:#d1fae5;
-  font-size:8px;
+  max-width:calc(100% - 6px);
+  padding:1px 2px;
+  border:0;
+  border-radius:3px;
+  background:rgba(6,78,59,.72);
+  color:#a7f3d0;
+  font-size:5.8px;
   font-weight:900;
-  line-height:1.15;
+  line-height:1.05;
+  letter-spacing:-.35px;
   white-space:nowrap;
   overflow:hidden;
-  text-overflow:ellipsis;
+  text-overflow:clip;
+  pointer-events:none;
 }
 .study-end{
   font-size:11px;
@@ -621,6 +625,101 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
   font-size:12px!important;
   line-height:1.2!important;
 }
+
+/* 東京の天気：予定カレンダー専用 */
+#planPanel .weather-mini{
+  position:absolute;
+  top:3px;
+  right:4px;
+  z-index:3;
+  display:flex;
+  align-items:center;
+  gap:2px;
+  max-width:calc(100% - 22px);
+  color:#cbd5e1;
+  font-size:7px;
+  font-weight:800;
+  line-height:1;
+  white-space:nowrap;
+  pointer-events:none;
+}
+#planPanel .weather-mini svg{
+  width:12px;
+  height:12px;
+  flex:0 0 12px;
+}
+#planPanel .weather-mini-temp{
+  letter-spacing:-.2px;
+}
+#planPanel .day.today .weather-mini,
+#planPanel .day.selected .weather-mini{
+  color:#f8fafc;
+}
+#planPanel .weather-svg{
+  display:block;
+  stroke:currentColor;
+  fill:none;
+  stroke-width:1.6;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+#summary .summary-head-row{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:5px;
+}
+#summary .summary-head-row .summary-title{
+  flex:0 0 auto;
+  margin:0!important;
+  padding:0!important;
+}
+#summary .summary-weather{
+  min-width:0;
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  color:#dbe5f2;
+  text-align:right;
+}
+#summary .summary-weather-icon{
+  width:24px;
+  height:24px;
+  flex:0 0 24px;
+  color:#dbe5f2;
+}
+#summary .summary-weather-icon svg{
+  width:24px;
+  height:24px;
+}
+#summary .summary-weather-main{
+  font-size:11px;
+  font-weight:900;
+  line-height:1.15;
+  white-space:nowrap;
+}
+#summary .summary-weather-sub{
+  margin-top:2px;
+  font-size:9px;
+  line-height:1.15;
+  color:#aebdce;
+  white-space:nowrap;
+}
+
+#salaryPanel .day{
+  padding-top:24px!important;
+}
+#salaryPanel .entry{
+  margin-top:0!important;
+  line-height:1.05!important;
+}
+#salaryPanel .day-pay{
+  margin-top:1px!important;
+  font-size:7px!important;
+  line-height:1.05!important;
+}
 </style>
 <link rel="apple-touch-icon" href="icon.png">
 </head>
@@ -629,7 +728,7 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 <section class="panel" id="planPanel">
 <div class="panel-title-row"><h1>予定カレンダー</h1><button class="gear" id="planSettings" aria-label="設定">⚙︎</button></div>
 <div class="calendar card">
-<div class="cal-head"><button class="nav" id="planPrev">‹</button><button class="month" id="planMonth"></button><button class="nav" id="planNext">›</button><button class="today-jump" id="planToday">今日</button></div>
+<div class="cal-head"><button class="month" id="planMonth"></button><button class="today-jump" id="planToday">今日</button></div>
 <div class="week"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>
 <div class="grid" id="planGrid"></div>
 </div>
@@ -639,7 +738,7 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 <section class="panel" id="salaryPanel">
 <div class="panel-title-row"><h1>給与カレンダー</h1><button class="gear" id="salarySettings" aria-label="設定">⚙︎</button></div>
 <div class="salary-calendar calendar card">
-<div class="cal-head"><button class="nav" id="salPrev">‹</button><button class="month" id="salMonth"></button><button class="nav" id="salNext">›</button><button class="today-jump" id="salToday">今日</button></div>
+<div class="cal-head"><button class="month" id="salMonth"></button><button class="today-jump" id="salToday">今日</button></div>
 <div class="week"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>
 <div class="grid" id="salGrid"></div>
 <div class="month-total" id="monthTotal">月合計 0円</div>
@@ -1002,6 +1101,113 @@ function holidaySet(y){
 }
 function dayClass(y,m,d){let dt=new Date(y,m,d),k=keyOf(y,m,d);if(dt.getDay()==0||holidaySet(y).has(k))return "holiday";if(dt.getDay()==6)return "saturday";return ""}
 
+
+const TOKYO_WEATHER_CACHE_KEY="tokyo_weather_cache_v1";
+let tokyoWeather={};
+
+function weatherLabel(code){
+ code=Number(code);
+ if(code===0)return "快晴";
+ if(code===1)return "晴れ";
+ if(code===2)return "晴れ時々曇り";
+ if(code===3)return "曇り";
+ if(code===45||code===48)return "霧";
+ if([51,53,55,56,57].includes(code))return "霧雨";
+ if([61,63,65,66,67,80,81,82].includes(code))return "雨";
+ if([71,73,75,77,85,86].includes(code))return "雪";
+ if([95,96,99].includes(code))return "雷雨";
+ return "天気";
+}
+
+function weatherIconType(code){
+ code=Number(code);
+ if(code<=1)return "sun";
+ if(code===2||code===3)return "cloud";
+ if(code===45||code===48)return "fog";
+ if([51,53,55,56,57,61,63,65,66,67,80,81,82].includes(code))return "rain";
+ if([71,73,75,77,85,86].includes(code))return "snow";
+ if([95,96,99].includes(code))return "storm";
+ return "cloud";
+}
+
+function weatherSvg(code){
+ const type=weatherIconType(code);
+ const common='class="weather-svg" viewBox="0 0 24 24" aria-hidden="true"';
+ if(type==="sun")return `<svg ${common}><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>`;
+ if(type==="fog")return `<svg ${common}><path d="M4 9h16M2 13h16M6 17h16"></path></svg>`;
+ if(type==="rain")return `<svg ${common}><path d="M7 15h10a4 4 0 0 0 .5-8 6 6 0 0 0-11-1A4.5 4.5 0 0 0 7 15Z"></path><path d="M8 18l-1 2M13 18l-1 2M18 18l-1 2"></path></svg>`;
+ if(type==="snow")return `<svg ${common}><path d="M7 14h10a4 4 0 0 0 .5-8 6 6 0 0 0-11-1A4.5 4.5 0 0 0 7 14Z"></path><path d="M8 18h.01M12 20h.01M16 18h.01"></path></svg>`;
+ if(type==="storm")return `<svg ${common}><path d="M7 14h10a4 4 0 0 0 .5-8 6 6 0 0 0-11-1A4.5 4.5 0 0 0 7 14Z"></path><path d="m13 15-3 5h3l-1 3 4-6h-3l1-2"></path></svg>`;
+ return `<svg ${common}><path d="M7 17h10a5 5 0 0 0 .6-10A7 7 0 0 0 5 6.2 5.5 5.5 0 0 0 7 17Z"></path></svg>`;
+}
+
+function roundWeather(v){
+ return Number.isFinite(Number(v))?Math.round(Number(v)):"-";
+}
+
+function buildTokyoWeatherMap(daily){
+ const map={};
+ if(!daily?.time)return map;
+ daily.time.forEach((date,i)=>{
+   map[date]={
+     code:daily.weather_code?.[i],
+     max:daily.temperature_2m_max?.[i],
+     min:daily.temperature_2m_min?.[i],
+     apparentMax:daily.apparent_temperature_max?.[i],
+     apparentMin:daily.apparent_temperature_min?.[i],
+     precipProb:daily.precipitation_probability_max?.[i],
+     precip:daily.precipitation_sum?.[i],
+     wind:daily.wind_speed_10m_max?.[i]
+   };
+ });
+ return map;
+}
+
+async function loadTokyoWeather(){
+ try{
+   const cached=JSON.parse(localStorage.getItem(TOKYO_WEATHER_CACHE_KEY)||"null");
+   const now=Date.now();
+   if(cached?.savedAt && now-cached.savedAt<30*60*1000 && cached.daily){
+     tokyoWeather=buildTokyoWeatherMap(cached.daily);
+     renderPlan();
+     return;
+   }
+
+   const url="https://api.open-meteo.com/v1/forecast?latitude=35.6762&longitude=139.6503&daily=weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max&timezone=Asia%2FTokyo&forecast_days=8";
+   const res=await fetch(url,{cache:"no-store"});
+   if(!res.ok)throw new Error(`weather ${res.status}`);
+   const data=await res.json();
+   tokyoWeather=buildTokyoWeatherMap(data.daily);
+   try{
+     localStorage.setItem(TOKYO_WEATHER_CACHE_KEY,JSON.stringify({savedAt:now,daily:data.daily}));
+   }catch{}
+   renderPlan();
+ }catch(e){
+   /* 天気取得失敗時はカレンダー本体をそのまま表示 */
+ }
+}
+
+function miniWeatherHtml(k){
+ const w=tokyoWeather[k];
+ if(!w)return "";
+ return `<span class="weather-mini">${weatherSvg(w.code)}<span class="weather-mini-temp">${roundWeather(w.max)}°/${roundWeather(w.min)}°</span></span>`;
+}
+
+function summaryWeatherHtml(k){
+ const w=tokyoWeather[k];
+ if(!w)return "";
+ const precip=Number.isFinite(Number(w.precipProb))?`${Math.round(Number(w.precipProb))}%`:"-";
+ const amount=Number.isFinite(Number(w.precip))?`${Number(w.precip).toFixed(1)}mm`:"-";
+ const wind=Number.isFinite(Number(w.wind))?`${Math.round(Number(w.wind))}km/h`:"-";
+ return `<div class="summary-weather">
+   <span class="summary-weather-icon">${weatherSvg(w.code)}</span>
+   <span>
+     <div class="summary-weather-main">${esc(weatherLabel(w.code))}　${roundWeather(w.max)}° / ${roundWeather(w.min)}°</div>
+     <div class="summary-weather-sub">降水 ${precip}・雨量 ${amount}・体感 ${roundWeather(w.apparentMax)}°/${roundWeather(w.apparentMin)}°・風 ${wind}</div>
+   </span>
+ </div>`;
+}
+
 function renderGrid(grid,view,kind){
  let y=view.getFullYear(),m=view.getMonth(),first=new Date(y,m,1).getDay(),last=new Date(y,m+1,0).getDate(),today=new Date();grid.innerHTML="";
  for(let i=0;i<42;i++){
@@ -1011,7 +1217,7 @@ function renderGrid(grid,view,kind){
    if(today.getFullYear()==y&&today.getMonth()==m&&today.getDate()==d)b.classList.add("today");
    if((kind=="plan"?selectedPlan:selectedSalary)==k)b.classList.add("selected");
    let content="";
-   if(kind=="plan"){content=items(k).map(x=>`<span class="entry"><strong>${esc(x.name)}</strong><span class="entry-time">${esc(x.time)}</span>${x.memo?`<span class="entry-memo">${esc(x.memo)}</span>`:""}</span>`).join("")}
+   if(kind=="plan"){content=miniWeatherHtml(k)+items(k).map(x=>`<span class="entry"><strong>${esc(x.name)}</strong><span class="entry-time">${esc(x.time)}</span>${x.memo?`<span class="entry-memo">${esc(x.memo)}</span>`:""}</span>`).join("")}
    else {
      let sl=getSlots(k),st=study(k),pay=dayPay(k);
      let paydayAmount="";
@@ -1041,7 +1247,8 @@ function renderSalary(){
 function renderSummary(){
  if(!selectedPlan){summary.innerHTML='<div class="summary-title">日付を選択</div><div class="summary-empty">日付を1回押すと、その日の予定を表示します</div>';return}
  let [y,m,d]=selectedPlan.split("-").map(Number),w=["日","月","火","水","木","金","土"][new Date(y,m-1,d).getDay()],a=items(selectedPlan);
- summary.innerHTML=`<div class="summary-title">${m}月${d}日（${w}）</div>${a.length?`<div class="summary-list">${a.map(x=>`<div class="summary-row"><span class="summary-time">${esc(x.time)}</span><span class="summary-name">${esc(x.name)}${x.memo?`<br><small>${esc(x.memo)}</small>`:""}</span></div>`).join("")}</div>`:'<div class="summary-empty">予定なし</div>'}`
+ const weather=summaryWeatherHtml(selectedPlan);
+ summary.innerHTML=`<div class="summary-head-row"><div class="summary-title">${m}月${d}日（${w}）</div>${weather}</div>${a.length?`<div class="summary-list">${a.map(x=>`<div class="summary-row"><span class="summary-time">${esc(x.time)}</span><span class="summary-name">${esc(x.name)}${x.memo?`<br><small>${esc(x.memo)}</small>`:""}</span></div>`).join("")}</div>`:'<div class="summary-empty">予定なし</div>'}`
 }
 function clickPlan(k){if(selectedPlan==k)openPlanDetail();else{selectedPlan=k;renderPlan()}}
 function clickSalary(k){selectedSalary=k;renderSalary()}
@@ -1398,7 +1605,6 @@ async function importData(f){try{let j=JSON.parse(await f.text());if(j.shifts)sh
 
 const dayPayEl=document.getElementById("dayPay"),pickerYearEl=document.getElementById("pickerYear");
 SLOT_ORDER.forEach(s=>{let b=document.createElement("button");b.className="slot";b.dataset.slot=s;b.textContent=s;b.onclick=()=>{b.classList.toggle("active");if(selectedSalary)dayPayEl.textContent=yen(dayPay(selectedSalary))};slotGrid.appendChild(b)});
-planPrev.onclick=()=>animateMonth(document.querySelector("#planPanel .calendar"),-1,()=>{planView=new Date(planView.getFullYear(),planView.getMonth()-1,1);renderPlan()});planNext.onclick=()=>animateMonth(document.querySelector("#planPanel .calendar"),1,()=>{planView=new Date(planView.getFullYear(),planView.getMonth()+1,1);renderPlan()});salPrev.onclick=()=>animateMonth(document.querySelector("#salaryPanel .calendar"),-1,()=>{salView=new Date(salView.getFullYear(),salView.getMonth()-1,1);renderSalary()});salNext.onclick=()=>animateMonth(document.querySelector("#salaryPanel .calendar"),1,()=>{salView=new Date(salView.getFullYear(),salView.getMonth()+1,1);renderSalary()});
 planMonth.onclick=()=>openMonth("plan");salMonth.onclick=()=>openMonth("salary");
 planToday.onclick=()=>{const d=new Date();planView=new Date(d.getFullYear(),d.getMonth(),1);renderPlan()};
 salToday.onclick=()=>{const d=new Date();salView=new Date(d.getFullYear(),d.getMonth(),1);renderSalary()};
@@ -1562,6 +1768,7 @@ removeTodayImage.onclick=async()=>{
 };
 refreshTodayImagePreview();
 renderPlan();renderSalary();
+loadTokyoWeather();
 
 /* 月移動のスライドモーション */
 function finishMonthAnimation(calendar){
