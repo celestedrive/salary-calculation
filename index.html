@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#111827">
-<meta name="calendar-build" content="1789063574">
+<meta name="calendar-build" content="1789044184">
 <title>カレンダー</title>
 <style>
 *{box-sizing:border-box}
@@ -12,7 +12,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#111827;col
 button,input,textarea,select{font:inherit}
 button{color:inherit}
 .wrap{width:100%;height:100dvh;overflow:hidden}
-.pager{display:flex;width:100%;height:100%;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;touch-action:pan-x}
+.pager{display:flex;width:100%;height:100%;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-behavior:smooth;scrollbar-width:none;-webkit-overflow-scrolling:touch;touch-action:pan-x}
 .pager::-webkit-scrollbar{display:none}
 .panel{flex:0 0 100%;width:100%;min-width:100%;height:100%;padding:4px 8px 8px;overflow:hidden;scroll-snap-align:start;display:flex;flex-direction:column}
 h1{font-size:17px;text-align:center;margin:2px 0 6px;flex:0 0 auto}
@@ -22,7 +22,7 @@ h1{font-size:17px;text-align:center;margin:2px 0 6px;flex:0 0 auto}
 .nav{width:34px;height:30px;border:0;border-radius:9px;background:#374151;font-size:20px;font-weight:800}
 .month{width:100%;border:0;background:transparent;text-align:center;font-size:16px;font-weight:900;padding:4px 0}
 .week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-bottom:1px solid #374151;flex:0 0 25px}
-.week div{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;border-right:1px solid #374151;margin-bottom:-1px;padding-bottom:1px}
+.week div{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;border-right:1px solid #374151}
 .week div:last-child{border-right:0}
 .week div:first-child{color:#ff5f67}.week div:last-child{color:#5aa7ff}
 .grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-template-rows:repeat(6,minmax(0,1fr));flex:1 1 auto;min-height:0;background:#111827}
@@ -124,7 +124,7 @@ html,body{touch-action:pan-x !important;-webkit-text-size-adjust:100% !important
   min-height:27px !important;
   margin:2px 0 0 !important;
   padding:3px 4px !important;
-  border-left:0 !important;
+  border-left:2px solid #7dd3fc !important;
   border-radius:4px !important;
   background:#365b86 !important;
   color:#fff !important;
@@ -251,7 +251,7 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 
 /* calendar event band */
 #planPanel .day{padding:18px 3px 2px!important}
-#planPanel .entry{height:auto!important;min-height:0!important;padding:3px 1px!important;border-left:0!important;overflow:hidden!important}
+#planPanel .entry{height:auto!important;min-height:0!important;padding:3px!important;overflow:hidden!important}
 #planPanel .entry-time{font-size:6.3px!important;line-height:1.05!important;letter-spacing:-.35px!important;transform:none!important;width:100%!important;overflow:visible!important}
 #planPanel .entry-memo{display:block!important;margin-top:2px!important;padding-top:2px!important;border-top:1px solid rgba(255,255,255,.2);font-size:6.2px!important;line-height:1.1!important;white-space:normal!important;overflow-wrap:anywhere!important;color:#e5e7eb!important}
 
@@ -369,40 +369,12 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 .detail-band strong{font-size:clamp(9px,2.7vw,12px)!important;line-height:1.05!important}
 .detail-band span{font-size:clamp(8px,2.35vw,11px)!important;line-height:1.05!important}
 
-
-#eventStart,#eventEnd{
-  width:86px!important;max-width:86px!important;
-  font-variant-numeric:tabular-nums!important;
-  letter-spacing:.4px!important;
-}
-
-.panel-title-row{position:relative;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
-.panel-title-row h1{margin:2px 0 6px}
-.gear{position:absolute;right:2px;top:0;width:32px;height:28px;border:0;border-radius:8px;background:transparent;color:#d1d5db;font-size:19px;font-weight:800;padding:0}
-.settings-section{padding:10px 0;border-bottom:1px solid #374151}
-.settings-section:last-child{border-bottom:0}
-.settings-heading{font-size:13px;font-weight:900;margin-bottom:8px}
-.settings-note{font-size:11px;color:#9ca3af}
-.notify-row{display:grid;grid-template-columns:1fr 110px;gap:8px;align-items:center}
-.notify-switch{font-size:13px;font-weight:800;color:#f3f4f6}
-#notifyTime{width:110px;height:34px}
-#notifyStatus{margin-top:7px}
-.gear{right:2px!important;top:-4px!important;width:44px!important;height:38px!important;font-size:28px!important;line-height:38px!important}
-.today-image-preview{height:82px;border:1px solid #4b5563;border-radius:10px;background:#111827 center/cover no-repeat;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:12px;margin-bottom:8px;overflow:hidden}
-.today-image-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:7px}
-.image-pick{display:flex;align-items:center;justify-content:center;cursor:pointer}
-.image-pick input{display:none}
-.today.has-custom-image{background-position:center!important;background-size:cover!important;background-repeat:no-repeat!important}
-
-#planPanel .calendar,#salaryPanel .calendar{touch-action:pan-y!important;overscroll-behavior-x:contain!important}
-#eventStartDate,#eventEndDate{width:100%!important;min-width:0!important}
 </style>
-<link rel="apple-touch-icon" href="icon.png">
 </head>
 <body>
 <div class="wrap"><main class="pager" id="pager">
 <section class="panel" id="planPanel">
-<div class="panel-title-row"><h1>予定カレンダー</h1><button class="gear" id="planSettings" aria-label="設定">⚙︎</button></div>
+<h1>予定カレンダー</h1>
 <div class="calendar card">
 <div class="cal-head"><button class="nav" id="planPrev">‹</button><button class="month" id="planMonth"></button><button class="nav" id="planNext">›</button></div>
 <div class="week"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>
@@ -412,7 +384,7 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 </section>
 
 <section class="panel" id="salaryPanel">
-<div class="panel-title-row"><h1>給与カレンダー</h1><button class="gear" id="salarySettings" aria-label="設定">⚙︎</button></div>
+<h1>給与カレンダー</h1>
 <div class="salary-calendar calendar card">
 <div class="cal-head"><button class="nav" id="salPrev">‹</button><button class="month" id="salMonth"></button><button class="nav" id="salNext">›</button></div>
 <div class="week"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>
@@ -429,6 +401,7 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 </div></div>
 <div class="preview"><small>この日の給与</small><strong id="dayPay">0円</strong></div>
 <div class="actions"><button class="secondary" id="clearDay">クリア</button><button class="primary" id="saveDay">保存</button></div>
+<div class="settings"><button id="openSettings">給与単価・バックアップ</button></div>
 </div>
 </section>
 </main></div>
@@ -445,8 +418,8 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 <div class="backdrop" id="eventEditor"><div class="modal">
 <div class="modal-head"><div class="modal-title" id="editorTitle">予定を追加</div><button class="close" data-close="eventEditor">×</button></div>
 <div class="form">
-<label>予定名<input id="eventName" type="text" enterkeyhint="next"></label>
-<div class="time-row"><label>開始日<input id="eventStartDate" type="date"></label><label>終了日<input id="eventEndDate" type="date"></label></div><div class="time-row"><label>開始<input id="eventStart" class="hhmm-input" type="tel" inputmode="numeric" autocomplete="off" aria-label="開始時間"></label><label>終了<div class="end-time-wrap"><input id="eventEnd" class="hhmm-input" type="tel" inputmode="numeric" autocomplete="off" aria-label="終了時間"><button type="button" id="unsetEnd">未定</button></div></label></div>
+<label>予定名<input id="eventName" type="text"></label>
+<div class="time-row"><label>開始<input id="eventStart" class="hhmm-input" type="text" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="1700"></label><label>終了<div class="end-time-wrap"><input id="eventEnd" class="hhmm-input" type="text" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="2130"><button type="button" id="unsetEnd">未定</button></div></label></div>
 <label>メモ<textarea id="eventMemo" maxlength="120" placeholder="120文字まで"></textarea></label>
 <div class="actions"><button class="danger" id="deleteEvent">削除</button><button class="primary" id="saveEvent">保存</button></div>
 </div></div></div>
@@ -457,45 +430,12 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 </div></div>
 
 <div class="backdrop" id="settingsModal"><div class="modal">
-<div class="modal-head"><div class="modal-title">設定</div><button class="close" data-close="settingsModal">×</button></div>
-<div class="settings-section"><div class="settings-heading">今日の画像</div>
-<div class="today-image-preview" id="todayImagePreview">画像なし</div>
-<div class="today-image-actions"><label class="secondary image-pick">画像を選択<input type="file" id="todayImageFile" accept="image/*"></label><button class="danger" id="removeTodayImage">画像を削除</button></div>
-<div class="settings-note">選んだ画像を「今日」の日付マスに表示します。</div></div>
-<div class="settings-section"><div class="settings-heading">給与単価</div><div id="rateRows"></div><button class="secondary" id="addRate" style="width:100%">＋単価を追加</button></div>
-<div class="settings-section"><div class="settings-heading">バックアップ</div><div class="backup"><button id="exportBtn">バックアップ</button><label>復元<input type="file" id="importFile" accept=".json,application/json"></label></div></div>
+<div class="modal-head"><div class="modal-title">給与単価の設定</div><button class="close" data-close="settingsModal">×</button></div>
+<div id="rateRows"></div><button class="secondary" id="addRate" style="width:100%">＋単価を追加</button>
+<div class="backup"><button id="exportBtn">バックアップ</button><label>復元<input type="file" id="importFile" accept=".json,application/json"></label></div>
 </div></div>
 
 <script>
-
-
-const TODAY_IMAGE_KEY="calendar_today_image_v1";
-function getTodayImage(){return localStorage.getItem(TODAY_IMAGE_KEY)||""}
-function refreshTodayImagePreview(){
- const src=getTodayImage();
- todayImagePreview.style.backgroundImage=src?`linear-gradient(rgba(0,0,0,.15),rgba(0,0,0,.15)),url("${src}")`:"";
- todayImagePreview.textContent=src?"":"画像なし";
-}
-function applyTodayImage(){
- const src=getTodayImage();
- document.querySelectorAll(".day.today").forEach(el=>{
-   el.classList.toggle("has-custom-image",!!src);
-   el.style.backgroundImage=src?`linear-gradient(rgba(0,0,0,.28),rgba(0,0,0,.28)),url("${src}")`:"";
- });
-}
-async function saveTodayImageFile(file){
- if(!file)return;
- const img=new Image(),url=URL.createObjectURL(file);
- img.onload=()=>{
-   const max=600,scale=Math.min(1,max/Math.max(img.width,img.height));
-   const c=document.createElement("canvas");c.width=Math.max(1,Math.round(img.width*scale));c.height=Math.max(1,Math.round(img.height*scale));
-   c.getContext("2d").drawImage(img,0,0,c.width,c.height);
-   try{localStorage.setItem(TODAY_IMAGE_KEY,c.toDataURL("image/jpeg",.78));refreshTodayImagePreview();renderPlan();renderSalary()}
-   catch(e){alert("画像を保存できませんでした。別の画像を選んでください。")}
-   URL.revokeObjectURL(url)
- };
- img.src=url
-}
 const KEY="juku_salary_slots_v1", RATE_KEY="juku_salary_rates_v1", STUDY_KEY="salary_calendar_study_v1", PLAN_KEY="salary_calendar_plans_v1";
 const SLOT_ORDER=["X","Y","Z","A","B","C","D"];
 const SLOT_TIMES={X:["09:00","10:30"],Y:["10:35","12:05"],Z:["12:10","13:40"],A:["14:55","16:25"],B:["16:30","18:00"],C:["18:05","19:35"],D:["19:40","21:10"]};
@@ -511,7 +451,7 @@ function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&l
 function yen(n){return Math.round(n).toLocaleString("ja-JP")+"円"}
 function getSlots(k){return Array.isArray(shifts[k])?shifts[k]:[]}
 function study(k){let v=studies[k];if(typeof v==="number")return {hours:v,start:"",end:""};return v&&typeof v==="object"?{hours:Number(v.hours)||0,start:v.start||"",end:v.end||""}:{hours:0,start:"",end:""}}
-function plan(k){let v=plans[k];if(!v||typeof v!=="object")return {events:[]};let events=[];if(Array.isArray(v.events)){events=v.events.map((e,i)=>({id:String(e.id||`${k}-${i}`),groupId:String(e.groupId||e.id||`${k}-${i}`),title:String(e.title||""),start:String(e.start||""),end:String(e.end||""),startDate:String(e.startDate||k),endDate:String(e.endDate||e.startDate||k),memo:String(e.memo??(i===0?(v.memo||""):""))}))}else if(v.title||v.time){events=[{id:`${k}-legacy`,title:String(v.title||""),start:String(v.time||""),end:"",memo:String(v.memo||"")}]}return {events}}
+function plan(k){let v=plans[k];if(!v||typeof v!=="object")return {events:[]};let events=[];if(Array.isArray(v.events)){events=v.events.map((e,i)=>({id:String(e.id||`${k}-${i}`),title:String(e.title||""),start:String(e.start||""),end:String(e.end||""),memo:String(e.memo??(i===0?(v.memo||""):""))}))}else if(v.title||v.time){events=[{id:`${k}-legacy`,title:String(v.title||""),start:String(v.time||""),end:"",memo:String(v.memo||"")}]}return {events}}
 function mins(t){if(!/^\d{1,2}:\d{2}$/.test(t||""))return null;let [h,m]=t.split(":").map(Number);return h*60+m}
 function addMinutes(t,n){let m=mins(t);if(m==null)return "";m=Math.min(1439,m+n);return `${pad(Math.floor(m/60))}:${pad(m%60)}`}
 function slotRange(slots){if(!slots.length)return "";let s=[...slots].sort((a,b)=>mins(SLOT_TIMES[a]?.[0])-mins(SLOT_TIMES[b]?.[0]));return `${SLOT_TIMES[s[0]][0]}-${SLOT_TIMES[s.at(-1)][1]}`}
@@ -552,7 +492,7 @@ function renderGrid(grid,view,kind){
    b.innerHTML=`<span class="daynum">${d}</span>${content}`;
    b.onclick=()=>kind=="plan"?clickPlan(k):clickSalary(k);grid.appendChild(b)
  }
-;applyTodayImage()}
+}
 function renderPlan(){planMonth.textContent=`${planView.getFullYear()}年${planView.getMonth()+1}月`;renderGrid(planGrid,planView,"plan");renderSummary()}
 function monthBreakdown(y,m){let juku=0,studyPay=0,last=new Date(y,m+1,0).getDate();for(let d=1;d<=last;d++){let k=keyOf(y,m,d),r=rateFor(k),sl=getSlots(k),st=study(k);if(sl.length)juku+=sl.length*(Number(r.lesson)||0)+(Number(r.daily)||0)+(Number(r.transport)||0);if(st.hours)studyPay+=st.hours*1500+420}return {juku,study:studyPay,total:juku+studyPay}}
 function renderSalary(){
@@ -574,40 +514,24 @@ updateStudyEnd();
 dayPayEl.textContent=yen(dayPay(selectedSalary))}
 
 function hhmmToTime(v){
- const d=String(v||"").replace(/\D/g,"").slice(0,4);
- if(d.length!==4)return "";
- const h=+d.slice(0,2),m=+d.slice(2,4);
+ const s=String(v||"").replace(/\D/g,"").slice(0,4);
+ if(s.length!==4)return "";
+ const h=Number(s.slice(0,2)),m=Number(s.slice(2));
  if(h>23||m>59)return "";
  return `${pad(h)}:${pad(m)}`;
 }
-function timeToHHMM(v){return /^\d{2}:\d{2}$/.test(v)?v:""}
-function setupHHMMInput(inp,next=null,prev=null){
- let lock=false;
+function timeToHHMM(v){return /^\d{2}:\d{2}$/.test(v)?v.replace(":",""):""}
+function setupHHMMInput(inp){
  inp.addEventListener("input",()=>{
-   if(lock)return;
-   lock=true;
-   let d=inp.value.replace(/\D/g,"").slice(0,4);
-   inp.value=d.length<=2?d:d.slice(0,2)+":"+d.slice(2);
-   if(d.length===4){
-     const v=hhmmToTime(d);
-     if(v){
-       inp.value=v;
-       if(next)setTimeout(()=>next.focus(),0);
-     }
-   }
-   lock=false;
+   const digits=inp.value.replace(/\D/g,"").slice(0,4);
+   if(inp.value!==digits)inp.value=digits;
  });
- inp.addEventListener("keydown",e=>{
-   if(e.key==="Backspace" && !inp.value && prev){
-     e.preventDefault();
-     let d=prev.value.replace(/\D/g,"").slice(0,4);
-     d=d.slice(0,-1);
-     prev.value=d.length<=2?d:d.slice(0,2)+":"+d.slice(2);
-     prev.focus();
-     setTimeout(()=>prev.setSelectionRange?.(prev.value.length,prev.value.length),0);
-   }
+ inp.addEventListener("blur",()=>{
+   const v=hhmmToTime(inp.value);
+   if(v)inp.value=timeToHHMM(v);
  });
-}function roundTime5(v){
+}
+function roundTime5(v){
  if(!v||!/^\d{2}:\d{2}$/.test(v))return v;
  let [h,m]=v.split(":").map(Number),total=h*60+m;
  total=Math.round(total/5)*5;
@@ -653,74 +577,17 @@ function renderDetailTimeline(k){
  detailTimeline.innerHTML=hours+`<div class="detail-track">${bands}</div>`
 }
 function openPlanDetail(){let k=selectedPlan,p=plan(k);detailDate.textContent=k.replaceAll("-","/");renderDetailTimeline(k);let sl=getSlots(k),st=study(k);autoInfo.innerHTML=`<div class="summary-row"><span>塾</span><span>${sl.length?esc(slotRange(sl)):"なし"}</span></div><div class="summary-row"><span>勉強会</span><span>${st.hours?esc(studyRange(k)||st.hours+"時間"):"なし"}</span></div>`;eventList.innerHTML=p.events.length?p.events.sort((a,b)=>(a.start||"99").localeCompare(b.start||"99")).map(e=>`<div class="event-item"><div class="event-text"><strong>${esc(e.title||"予定")}</strong><br>${esc(e.start?`${e.start}-${e.end||"未定"}`:"時間未定")}${e.memo?`<br><small>${esc(e.memo)}</small>`:""}</div><div class="event-actions"><button class="event-delete-inline" data-del="${esc(e.id)}">削除</button><button data-edit="${esc(e.id)}">変更</button></div></div>`).join(""):'<div class="summary-empty">登録済み予定なし</div>';eventList.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openEditor(b.dataset.edit));eventList.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deleteEventById(b.dataset.del));memoPreview.innerHTML="";open("planDetail")}
-function dateKeysInclusive(a,b){
- if(!a||!b||b<a)return [];
- const out=[],d=new Date(a+"T12:00:00"),last=new Date(b+"T12:00:00");
- while(d<=last){out.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`);d.setDate(d.getDate()+1)}
- return out
-}
-function findEventById(id){
- for(const [k,v] of Object.entries(plans)){
-   const e=plan(k).events.find(x=>x.id==id);
-   if(e)return {date:k,event:e}
- }
- return null
-}
-function removeEventGroup(groupId){
- for(const k of Object.keys(plans)){
-   const p=plan(k);
-   const before=p.events.length;
-   p.events=p.events.filter(x=>(x.groupId||x.id)!=groupId);
-   if(p.events.length!==before){
-     if(p.events.length)plans[k]=p;else delete plans[k]
-   }
- }
-}
-function openEditor(id=null){
- editingEvent=id;
- let p=plan(selectedPlan),e=id?p.events.find(x=>x.id==id):null;
- editorTitle.textContent=e?"予定を変更":"予定を追加";
- eventName.value=e?.title||"";
- eventStartDate.value=e?.startDate||selectedPlan||"";
- eventEndDate.value=e?.endDate||e?.startDate||selectedPlan||"";
- eventStart.value=timeToHHMM(e?.start||"");
- eventEnd.value=timeToHHMM(e?.end||"");
- eventMemo.value=e?.memo||"";
- deleteEvent.style.visibility=e?"visible":"hidden";
- open("eventEditor");
- if(!e){eventName.focus({preventScroll:true});eventName.setSelectionRange?.(eventName.value.length,eventName.value.length)}
-}
+function openEditor(id=null){editingEvent=id;let p=plan(selectedPlan),e=id?p.events.find(x=>x.id==id):null;editorTitle.textContent=e?"予定を変更":"予定を追加";eventName.value=e?.title||"";eventStart.value=timeToHHMM(e?.start||"");eventEnd.value=timeToHHMM(e?.end||"");eventMemo.value=e?.memo||"";deleteEvent.style.visibility=e?"visible":"hidden";open("eventEditor")}
 function saveEventFn(){
  if(!selectedPlan)return;
  const start=hhmmToTime(eventStart.value),end=eventEnd.value?hhmmToTime(eventEnd.value):"";
- const startDate=eventStartDate.value||selectedPlan,endDate=eventEndDate.value||startDate;
- if(endDate<startDate){eventEndDate.focus();return}
  if(!start){eventStart.focus();return}
  if(eventEnd.value&&!end){eventEnd.focus();return}
- const old=editingEvent?plan(selectedPlan).events.find(x=>x.id==editingEvent):null;
- const groupId=old?.groupId||old?.id||`${Date.now()}`;
- if(editingEvent)removeEventGroup(groupId);
- const keys=dateKeysInclusive(startDate,endDate);
- keys.forEach((k,idx)=>{
-   const p=plan(k);
-   p.events.push({
-     id:`${groupId}-${k}`,
-     groupId,
-     title:eventName.value.trim()||"予定",
-     start:idx===0?start:"",
-     end:idx===keys.length-1?end:"",
-     startDate,endDate,
-     memo:eventMemo.value.slice(0,120)
-   });
-   plans[k]=p
- });
- save(PLAN_KEY,plans);close("eventEditor");renderPlan();openPlanDetail()
+ let p=plan(selectedPlan),e={id:editingEvent||`${Date.now()}`,title:eventName.value.trim()||"予定",start,end,memo:eventMemo.value.slice(0,120)};
+ if(editingEvent){let i=p.events.findIndex(x=>x.id==editingEvent);if(i>=0)p.events[i]=e}else p.events.push(e);
+ plans[selectedPlan]=p;save(PLAN_KEY,plans);close("eventEditor");renderPlan();openPlanDetail()
 }
-function deleteEventById(id){
- const e=plan(selectedPlan).events.find(x=>x.id==id);
- if(e)removeEventGroup(e.groupId||e.id);
- save(PLAN_KEY,plans);close("eventEditor");renderPlan();openPlanDetail()
-}
+function deleteEventById(id){let p=plan(selectedPlan);p.events=p.events.filter(x=>x.id!=id);plans[selectedPlan]=p;save(PLAN_KEY,plans);close("eventEditor");renderPlan();openPlanDetail()}
 function deleteEventFn(){if(editingEvent)deleteEventById(editingEvent)}
 function open(id){document.getElementById(id).classList.add("open")}function close(id){document.getElementById(id).classList.remove("open")}
 
@@ -762,36 +629,14 @@ studyHours.onchange=()=>{let n=Number(studyHours.value);if(Number.isFinite(n)&&n
 studyStart.oninput=updateStudyEnd;saveDay.onclick=saveSalary;clearDay.onclick=clearSalary;
 addEvent.onclick=()=>openEditor();saveEvent.onclick=saveEventFn;deleteEvent.onclick=deleteEventFn;
 unsetEnd.onclick=()=>{eventEnd.value="";};
-const openGeneralSettings=()=>{renderRates();open("settingsModal")};
-planSettings.onclick=openGeneralSettings;salarySettings.onclick=openGeneralSettings;addRate.onclick=()=>{rates.push({from:new Date().toISOString().slice(0,10),lesson:2026,daily:513,transport:420});save(RATE_KEY,rates);renderRates()};
+openSettings.onclick=()=>{renderRates();open("settingsModal")};addRate.onclick=()=>{rates.push({from:new Date().toISOString().slice(0,10),lesson:2026,daily:513,transport:420});save(RATE_KEY,rates);renderRates()};
 exportBtn.onclick=exportData;importFile.onchange=e=>e.target.files[0]&&importData(e.target.files[0]);
 document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>close(b.dataset.close));
 document.querySelectorAll(".backdrop").forEach(b=>b.addEventListener("click",e=>{if(e.target===b)close(b.id)}));
 document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
 document.addEventListener("gesturechange",e=>e.preventDefault(),{passive:false});
 document.addEventListener("gestureend",e=>e.preventDefault(),{passive:false});
-pager.addEventListener("scroll",()=>{if(pager.scrollLeft<pager.clientWidth*.5){shifts=load(KEY,{});studies=load(STUDY_KEY,{});renderPlan()}},{passive:true});pager.addEventListener("scroll",()=>{let max=Math.max(0,pager.scrollWidth-pager.clientWidth);if(pager.scrollLeft<0)pager.scrollLeft=0;else if(pager.scrollLeft>max)pager.scrollLeft=max},{passive:true});
-
-eventName.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();eventStart.focus()}});
-setupHHMMInput(eventStart,eventEnd,null);setupHHMMInput(eventEnd,null,eventStart);
-todayImageFile.onchange=e=>{const f=e.target.files?.[0];if(f)saveTodayImageFile(f);e.target.value=""};
-removeTodayImage.onclick=()=>{localStorage.removeItem(TODAY_IMAGE_KEY);refreshTodayImagePreview();renderPlan();renderSalary()};
-refreshTodayImagePreview();
+pager.addEventListener("scrollend",()=>{if(pager.scrollLeft<pager.clientWidth*.5){shifts=load(KEY,{});studies=load(STUDY_KEY,{});renderPlan()}},{passive:true});pager.addEventListener("scroll",()=>{let max=Math.max(0,pager.scrollWidth-pager.clientWidth);if(pager.scrollLeft<0)pager.scrollLeft=0;else if(pager.scrollLeft>max)pager.scrollLeft=max},{passive:true});
 renderPlan();renderSalary();
-
-/* カレンダー枠内：左右操作は月移動。枠外：既存のページ切替。 */
-(function(){
- function bind(el,move){
-   if(!el||el.dataset.monthSwipe)return; el.dataset.monthSwipe="1";
-   let sx=0,sy=0,active=false,acc=0,lock=false,timer=0;
-   el.addEventListener("touchstart",e=>{if(e.touches.length===1){sx=e.touches[0].clientX;sy=e.touches[0].clientY;active=true}}, {passive:true});
-   el.addEventListener("touchmove",e=>{if(!active)return;let dx=e.touches[0].clientX-sx,dy=e.touches[0].clientY-sy;if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>8){e.preventDefault();e.stopPropagation()}},{passive:false});
-   el.addEventListener("touchend",e=>{if(!active)return;active=false;let t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;if(Math.abs(dx)>=45&&Math.abs(dx)>Math.abs(dy)*1.15){e.preventDefault();e.stopPropagation();move(dx<0?1:-1)}},{passive:false});
-   el.addEventListener("wheel",e=>{if(Math.abs(e.deltaX)<=Math.abs(e.deltaY)||Math.abs(e.deltaX)<2)return;e.preventDefault();e.stopPropagation();if(lock)return;acc+=e.deltaX;clearTimeout(timer);timer=setTimeout(()=>{acc=0;lock=false},220);if(Math.abs(acc)>=35){let d=acc>0?1:-1;acc=0;lock=true;move(d);clearTimeout(timer);timer=setTimeout(()=>lock=false,260)}},{passive:false});
- }
- bind(document.querySelector("#planPanel .calendar"),d=>{planView=new Date(planView.getFullYear(),planView.getMonth()+d,1);renderPlan()});
- bind(document.querySelector("#salaryPanel .calendar"),d=>{salView=new Date(salView.getFullYear(),salView.getMonth()+d,1);renderSalary()});
-})();
-
 </script>
 </body></html>
