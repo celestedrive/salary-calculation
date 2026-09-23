@@ -827,21 +827,25 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 }
 
 /* 給与カレンダー由来のバイト予定は別色 */
-#planPanel .entry.entry-juku{
+#planPanel .entry.entry-juku,
+#planPanel .entry.entry-study{
   background:#3f6656!important;
 }
-#summary .summary-row.summary-row-juku{
+#summary .summary-row.summary-row-juku,
+#summary .summary-row.summary-row-study{
   margin:2px 0;
   padding-left:6px!important;
   border-left:3px solid #7fb49b;
   border-radius:5px;
   background:rgba(63,102,86,.24);
 }
-.detail-band.detail-band-juku{
+.detail-band.detail-band-juku,
+.detail-band.detail-band-study{
   background:#3f6656!important;
   border-left-color:#8bc4a7!important;
 }
-#autoInfo .summary-row.auto-juku-row{
+#autoInfo .summary-row.auto-juku-row,
+#autoInfo .summary-row.auto-study-row{
   padding-left:6px;
   border-left:3px solid #7fb49b;
   border-radius:5px;
@@ -1536,7 +1540,7 @@ function renderGrid(grid,view,kind){
    if(today.getFullYear()==y&&today.getMonth()==m&&today.getDate()==d)b.classList.add("today");
    if((kind=="plan"?selectedPlan:selectedSalary)==k)b.classList.add("selected");
    let content="";
-   if(kind=="plan"){content=miniWeatherHtml(k)+items(k).map(x=>`<span class="entry${x.kind==="juku"?" entry-juku":""}"><strong>${esc(x.name)}</strong><span class="entry-time">${esc(x.time)}</span></span>`).join("")}
+   if(kind=="plan"){content=miniWeatherHtml(k)+items(k).map(x=>`<span class="entry${x.kind==="juku"?" entry-juku":x.kind==="study"?" entry-study":""}"><strong>${esc(x.name)}</strong><span class="entry-time">${esc(x.time)}</span></span>`).join("")}
    else {
      let sl=getSlots(k),st=study(k),pay=dayPay(k);
      let paydayAmount="";
@@ -1567,7 +1571,7 @@ function renderSummary(){
  if(!selectedPlan){summary.innerHTML='<div class="summary-title">日付を選択</div><div class="summary-empty">日付を1回押すと、その日の予定を表示します</div>';return}
  let [y,m,d]=selectedPlan.split("-").map(Number),w=["日","月","火","水","木","金","土"][new Date(y,m-1,d).getDay()],a=items(selectedPlan);
  const weather=summaryWeatherHtml(selectedPlan);
- summary.innerHTML=`<div class="summary-head-row"><div class="summary-title">${m}月${d}日（${w}）</div>${weather}</div>${a.length?`<div class="summary-list">${a.map(x=>`<div class="summary-row${x.kind==="juku"?" summary-row-juku":""}"><span class="summary-time">${esc(x.time)}</span><span class="summary-name">${esc(x.name)}${x.memo?`<br><small>${esc(x.memo)}</small>`:""}</span></div>`).join("")}</div>`:'<div class="summary-empty">予定なし</div>'}`
+ summary.innerHTML=`<div class="summary-head-row"><div class="summary-title">${m}月${d}日（${w}）</div>${weather}</div>${a.length?`<div class="summary-list">${a.map(x=>`<div class="summary-row${x.kind==="juku"?" summary-row-juku":x.kind==="study"?" summary-row-study":""}"><span class="summary-time">${esc(x.time)}</span><span class="summary-name">${esc(x.name)}${x.memo?`<br><small>${esc(x.memo)}</small>`:""}</span></div>`).join("")}</div>`:'<div class="summary-empty">予定なし</div>'}`
 }
 function clickPlan(k){if(selectedPlan==k)openPlanDetail();else{selectedPlan=k;renderPlan()}}
 function clickSalary(k){selectedSalary=k;renderSalary()}
@@ -1653,7 +1657,7 @@ function renderDetailTimeline(k){
  let bands=a.map(x=>{
    const top=(x._s/1440)*100,height=Math.max(((x._e-x._s)/1440)*100,1.5);
    const gap=3,width=`calc(${100/x._lanes}% - ${gap+4}px)`,left=`calc(${x._lane*(100/x._lanes)}% + ${4+x._lane*gap}px)`;
-   return `<div class="detail-band${x.kind==="juku"?" detail-band-juku":""}" style="top:${top}%;height:${height}%;left:${left};width:${width}"><strong>${esc(x.name)}</strong><span>${esc(x.time)}</span>${x.memo?`<span>${esc(x.memo)}</span>`:""}</div>`
+   return `<div class="detail-band${x.kind==="juku"?" detail-band-juku":x.kind==="study"?" detail-band-study":""}" style="top:${top}%;height:${height}%;left:${left};width:${width}"><strong>${esc(x.name)}</strong><span>${esc(x.time)}</span>${x.memo?`<span>${esc(x.memo)}</span>`:""}</div>`
  }).join("");
  const allDayBands=allDayItems.map((x,i)=>{
    const count=Math.max(1,allDayItems.length);
@@ -1663,7 +1667,7 @@ function renderDetailTimeline(k){
  }).join("");
  detailTimeline.innerHTML=hours+`<div class="detail-track">${allDayBands}${bands}</div>`
 }
-function openPlanDetail(){let k=selectedPlan,p=plan(k);let [dy,dm,dd]=k.split("-").map(Number),dw=["日","月","火","水","木","金","土"][new Date(dy,dm-1,dd).getDay()];detailDate.textContent=`${k.replaceAll("-","/")}（${dw}）`;renderDetailTimeline(k);let sl=getSlots(k),st=study(k),sm=getShiftMemo(k);autoInfo.innerHTML=`<div class="summary-row auto-juku-row"><span>塾</span><span>${sl.length?esc(slotRange(sl)):"なし"}${sl.length&&sm?`<br><small>${esc(sm)}</small>`:""}</span></div><div class="summary-row"><span>勉強会</span><span>${st.hours?esc(studyRange(k)||st.hours+"時間"):"なし"}</span></div>`;eventList.innerHTML=p.events.length?p.events.sort((a,b)=>(a.start||"99").localeCompare(b.start||"99")).map(e=>`<div class="event-item"><div class="event-text"><strong>${esc(e.title||"予定")}</strong><br>${esc(e.allDay?"終日":(e.start?`${e.start}-${e.end||"未定"}`:"時間未定"))}${e.memo?`<br><small>${esc(e.memo)}</small>`:""}</div><div class="event-actions"><button class="event-delete-inline" data-del="${esc(e.id)}">削除</button><button data-edit="${esc(e.id)}">変更</button></div></div>`).join(""):'<div class="summary-empty">登録済み予定なし</div>';eventList.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openEditor(b.dataset.edit));eventList.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deleteEventById(b.dataset.del));memoPreview.innerHTML="";open("planDetail")}
+function openPlanDetail(){let k=selectedPlan,p=plan(k);let [dy,dm,dd]=k.split("-").map(Number),dw=["日","月","火","水","木","金","土"][new Date(dy,dm-1,dd).getDay()];detailDate.textContent=`${k.replaceAll("-","/")}（${dw}）`;renderDetailTimeline(k);let sl=getSlots(k),st=study(k),sm=getShiftMemo(k);autoInfo.innerHTML=`<div class="summary-row auto-juku-row"><span>塾</span><span>${sl.length?esc(slotRange(sl)):"なし"}${sl.length&&sm?`<br><small>${esc(sm)}</small>`:""}</span></div><div class="summary-row auto-study-row"><span>勉強会</span><span>${st.hours?esc(studyRange(k)||st.hours+"時間"):"なし"}</span></div>`;eventList.innerHTML=p.events.length?p.events.sort((a,b)=>(a.start||"99").localeCompare(b.start||"99")).map(e=>`<div class="event-item"><div class="event-text"><strong>${esc(e.title||"予定")}</strong><br>${esc(e.allDay?"終日":(e.start?`${e.start}-${e.end||"未定"}`:"時間未定"))}${e.memo?`<br><small>${esc(e.memo)}</small>`:""}</div><div class="event-actions"><button class="event-delete-inline" data-del="${esc(e.id)}">削除</button><button data-edit="${esc(e.id)}">変更</button></div></div>`).join(""):'<div class="summary-empty">登録済み予定なし</div>';eventList.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openEditor(b.dataset.edit));eventList.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deleteEventById(b.dataset.del));memoPreview.innerHTML="";open("planDetail")}
 function shiftPlanDetailDay(delta){
  if(!selectedPlan)return;
  const [y,m,d]=selectedPlan.split("-").map(Number);
