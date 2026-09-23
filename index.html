@@ -879,8 +879,8 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 <div class="slot-grid" id="slotGrid"></div>
 <input id="shiftMemoInput" class="shift-memo-input" type="text" maxlength="80" placeholder="シフトメモ">
 <div class="study-row"><button class="study-toggle" id="studyToggle">勉強会</button><div class="study-fields" id="studyFields">
-<input id="studyHours" type="number" inputmode="decimal" min="0.5" step="0.5" placeholder="時間">
-<input id="studyStart" type="time" step="300">
+<input id="studyHours" type="number" inputmode="decimal" min="0.5" step="0.5" placeholder="時間" enterkeyhint="next">
+<input id="studyStart" type="tel" inputmode="numeric" autocomplete="off" enterkeyhint="done" maxlength="5" placeholder="開始時間" aria-label="勉強会開始時間">
 <div class="study-end" id="studyEnd">終了 --:--</div>
 </div></div>
 <div class="preview"><small>この日の給与</small><strong id="dayPay">0円</strong></div>
@@ -1940,7 +1940,19 @@ studyHours.oninput=()=>{
  updateStudyEnd();if(selectedSalary)dayPayEl.textContent=yen(dayPay(selectedSalary))
 };
 studyHours.onchange=()=>{let n=Number(studyHours.value);if(Number.isFinite(n)&&n>0)studyHours.value=(Math.round(n*2)/2).toString();updateStudyEnd()};
-studyStart.oninput=updateStudyEnd;saveDay.onclick=saveSalary;clearDay.onclick=clearSalary;
+studyHours.addEventListener("keydown",e=>{
+ if(e.key==="Enter"){
+   e.preventDefault();
+   let n=Number(studyHours.value);
+   if(Number.isFinite(n)&&n>0)studyHours.value=(Math.round(n*2)/2).toString();
+   updateStudyEnd();
+   studyStart.focus();
+ }
+});
+setupHHMMInput(studyStart,null,null);
+studyStart.addEventListener("input",updateStudyEnd);
+studyStart.addEventListener("change",updateStudyEnd);
+saveDay.onclick=saveSalary;clearDay.onclick=clearSalary;
 addEvent.onclick=()=>openEditor();saveEvent.onclick=saveEventFn;deleteEvent.onclick=deleteEventFn;
 unsetEnd.onclick=()=>{eventEnd.value="";};
 allDayToggle.onclick=()=>{
