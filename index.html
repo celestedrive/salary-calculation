@@ -817,6 +817,36 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 #salaryPanel .controls{
   border-radius:16px 16px var(--iphone-bottom-radius) var(--iphone-bottom-radius)!important;
 }
+
+/* シフトメモ */
+.shift-memo-input{
+  margin-top:7px!important;
+  height:34px!important;
+  padding:6px 8px!important;
+  font-size:13px!important;
+}
+
+/* 給与カレンダー由来のバイト予定は別色 */
+#planPanel .entry.entry-juku{
+  background:#3f6656!important;
+}
+#summary .summary-row.summary-row-juku{
+  margin:2px 0;
+  padding-left:6px!important;
+  border-left:3px solid #7fb49b;
+  border-radius:5px;
+  background:rgba(63,102,86,.24);
+}
+.detail-band.detail-band-juku{
+  background:#3f6656!important;
+  border-left-color:#8bc4a7!important;
+}
+#autoInfo .summary-row.auto-juku-row{
+  padding-left:6px;
+  border-left:3px solid #7fb49b;
+  border-radius:5px;
+  background:rgba(63,102,86,.20);
+}
 </style>
 <link rel="apple-touch-icon" href="icon.png">
 </head>
@@ -843,6 +873,7 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 <div class="controls card">
 <div class="selected-date" id="selectedDate">日付を選択</div>
 <div class="slot-grid" id="slotGrid"></div>
+<input id="shiftMemoInput" class="shift-memo-input" type="text" maxlength="80" placeholder="シフトメモ">
 <div class="study-row"><button class="study-toggle" id="studyToggle">勉強会</button><div class="study-fields" id="studyFields">
 <input id="studyHours" type="number" inputmode="decimal" min="0.5" step="0.5" placeholder="時間">
 <input id="studyStart" type="time" step="300">
@@ -1352,10 +1383,10 @@ async function saveTodayMediaFile(file){
    applyFramingLive();
  });
 })();
-const KEY="juku_salary_slots_v1", RATE_KEY="juku_salary_rates_v1", STUDY_KEY="salary_calendar_study_v1", PLAN_KEY="salary_calendar_plans_v1";
+const KEY="juku_salary_slots_v1", RATE_KEY="juku_salary_rates_v1", STUDY_KEY="salary_calendar_study_v1", PLAN_KEY="salary_calendar_plans_v1", SHIFT_MEMO_KEY="salary_calendar_shift_memo_v1";
 const SLOT_ORDER=["X","Y","Z","A","B","C","D"];
 const SLOT_TIMES={X:["09:00","10:30"],Y:["10:35","12:05"],Z:["12:10","13:40"],A:["14:55","16:25"],B:["16:30","18:00"],C:["18:05","19:35"],D:["19:40","21:10"]};
-let shifts=load(KEY,{}), studies=load(STUDY_KEY,{}), plans=load(PLAN_KEY,{}), rates=load(RATE_KEY,[]);
+let shifts=load(KEY,{}), studies=load(STUDY_KEY,{}), plans=load(PLAN_KEY,{}), shiftMemos=load(SHIFT_MEMO_KEY,{}), rates=load(RATE_KEY,[]);
 if(!Array.isArray(rates)||!rates.length) rates=[{from:"2000-01-01",lesson:2026,daily:513,transport:420}];
 let planView=new Date(), salView=new Date(), selectedPlan="", selectedSalary="", editingEvent=null, pickerTarget="plan", pickerYear=new Date().getFullYear();
 
@@ -1366,13 +1397,14 @@ function keyOf(y,m,d){return `${y}-${pad(m+1)}-${pad(d)}`}
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function yen(n){return Math.round(n).toLocaleString("ja-JP")+"円"}
 function getSlots(k){return Array.isArray(shifts[k])?shifts[k]:[]}
+function getShiftMemo(k){return String(shiftMemos[k]||"")}
 function study(k){let v=studies[k];if(typeof v==="number")return {hours:v,start:"",end:""};return v&&typeof v==="object"?{hours:Number(v.hours)||0,start:v.start||"",end:v.end||""}:{hours:0,start:"",end:""}}
 function plan(k){let v=plans[k];if(!v||typeof v!=="object")return {events:[]};let events=[];if(Array.isArray(v.events)){events=v.events.map((e,i)=>({id:String(e.id||`${k}-${i}`),groupId:String(e.groupId||e.id||`${k}-${i}`),title:String(e.title||""),start:String(e.start||""),end:String(e.end||""),allDay:e.allDay===true,startDate:String(e.startDate||k),endDate:String(e.endDate||e.startDate||k),memo:String(e.memo??(i===0?(v.memo||""):""))}))}else if(v.title||v.time){events=[{id:`${k}-legacy`,title:String(v.title||""),start:String(v.time||""),end:"",memo:String(v.memo||"")}]}return {events}}
 function mins(t){if(!/^\d{1,2}:\d{2}$/.test(t||""))return null;let [h,m]=t.split(":").map(Number);return h*60+m}
 function addMinutes(t,n){let m=mins(t);if(m==null)return "";m=Math.min(1439,m+n);return `${pad(Math.floor(m/60))}:${pad(m%60)}`}
 function slotRange(slots){if(!slots.length)return "";let s=[...slots].sort((a,b)=>mins(SLOT_TIMES[a]?.[0])-mins(SLOT_TIMES[b]?.[0]));return `${SLOT_TIMES[s[0]][0]}-${SLOT_TIMES[s.at(-1)][1]}`}
 function studyRange(k){let s=study(k);if(!s.hours||!s.start)return "";return `${s.start}-${s.end||addMinutes(s.start,s.hours*60)}`}
-function items(k){let a=[],sl=getSlots(k);if(sl.length){let r=slotRange(sl);a.push({id:"auto-juku",name:"塾",time:r,start:r.split("-")[0],end:r.split("-")[1],memo:"",auto:true})}let st=study(k);if(st.hours){let r=studyRange(k)||`時間未定（${st.hours}h）`;a.push({id:"auto-study",name:"勉強会",time:r,start:st.start,end:st.end||addMinutes(st.start,st.hours*60),memo:"",auto:true})}for(let e of plan(k).events)a.push({id:e.id,name:e.title||"予定",time:e.allDay?"終日":(e.start?`${e.start}-${e.end||"未定"}`:"時間未定"),start:e.start,end:e.end,memo:e.memo||"",auto:false,allDay:!!e.allDay});return a.sort((x,y)=>(x.start||"99:99").localeCompare(y.start||"99:99"))}
+function items(k){let a=[],sl=getSlots(k);if(sl.length){let r=slotRange(sl);a.push({id:"auto-juku",name:"塾",time:r,start:r.split("-")[0],end:r.split("-")[1],memo:getShiftMemo(k),auto:true,kind:"juku"})}let st=study(k);if(st.hours){let r=studyRange(k)||`時間未定（${st.hours}h）`;a.push({id:"auto-study",name:"勉強会",time:r,start:st.start,end:st.end||addMinutes(st.start,st.hours*60),memo:"",auto:true,kind:"study"})}for(let e of plan(k).events)a.push({id:e.id,name:e.title||"予定",time:e.allDay?"終日":(e.start?`${e.start}-${e.end||"未定"}`:"時間未定"),start:e.start,end:e.end,memo:e.memo||"",auto:false,allDay:!!e.allDay,kind:"plan"});return a.sort((x,y)=>(x.start||"99:99").localeCompare(y.start||"99:99"))}
 function rateFor(k){return [...rates].sort((a,b)=>String(a.from).localeCompare(String(b.from))).filter(r=>!r.from||r.from<=k).at(-1)||rates[0]}
 function dayPay(k){let r=rateFor(k),sl=getSlots(k),st=study(k);return sl.length*(Number(r.lesson)||0)+(sl.length?(Number(r.daily)||0)+(Number(r.transport)||0):0)+(st.hours?st.hours*1500+420:0)}
 function monthPay(y,m){let sum=0,last=new Date(y,m+1,0).getDate();for(let d=1;d<=last;d++)sum+=dayPay(keyOf(y,m,d));return sum}
@@ -1504,14 +1536,14 @@ function renderGrid(grid,view,kind){
    if(today.getFullYear()==y&&today.getMonth()==m&&today.getDate()==d)b.classList.add("today");
    if((kind=="plan"?selectedPlan:selectedSalary)==k)b.classList.add("selected");
    let content="";
-   if(kind=="plan"){content=miniWeatherHtml(k)+items(k).map(x=>`<span class="entry"><strong>${esc(x.name)}</strong><span class="entry-time">${esc(x.time)}</span></span>`).join("")}
+   if(kind=="plan"){content=miniWeatherHtml(k)+items(k).map(x=>`<span class="entry${x.kind==="juku"?" entry-juku":""}"><strong>${esc(x.name)}</strong><span class="entry-time">${esc(x.time)}</span></span>`).join("")}
    else {
      let sl=getSlots(k),st=study(k),pay=dayPay(k);
      let paydayAmount="";
      if(d===15){
        const prev=new Date(y,m,0);
-       const prevJuku=monthBreakdown(prev.getFullYear(),prev.getMonth()).juku;
-       paydayAmount=prevJuku>0?`<span class="payday-amount">+${Math.round(prevJuku).toLocaleString("ja-JP")}円</span>`:"";
+       const prevTotal=monthBreakdown(prev.getFullYear(),prev.getMonth()).total;
+       paydayAmount=prevTotal>0?`<span class="payday-amount">+${Math.round(prevTotal).toLocaleString("ja-JP")}円</span>`:"";
      }
      content=(d===15?'<span class="payday-badge">給料日</span>':"")+
        paydayAmount+
@@ -1535,12 +1567,13 @@ function renderSummary(){
  if(!selectedPlan){summary.innerHTML='<div class="summary-title">日付を選択</div><div class="summary-empty">日付を1回押すと、その日の予定を表示します</div>';return}
  let [y,m,d]=selectedPlan.split("-").map(Number),w=["日","月","火","水","木","金","土"][new Date(y,m-1,d).getDay()],a=items(selectedPlan);
  const weather=summaryWeatherHtml(selectedPlan);
- summary.innerHTML=`<div class="summary-head-row"><div class="summary-title">${m}月${d}日（${w}）</div>${weather}</div>${a.length?`<div class="summary-list">${a.map(x=>`<div class="summary-row"><span class="summary-time">${esc(x.time)}</span><span class="summary-name">${esc(x.name)}${x.memo?`<br><small>${esc(x.memo)}</small>`:""}</span></div>`).join("")}</div>`:'<div class="summary-empty">予定なし</div>'}`
+ summary.innerHTML=`<div class="summary-head-row"><div class="summary-title">${m}月${d}日（${w}）</div>${weather}</div>${a.length?`<div class="summary-list">${a.map(x=>`<div class="summary-row${x.kind==="juku"?" summary-row-juku":""}"><span class="summary-time">${esc(x.time)}</span><span class="summary-name">${esc(x.name)}${x.memo?`<br><small>${esc(x.memo)}</small>`:""}</span></div>`).join("")}</div>`:'<div class="summary-empty">予定なし</div>'}`
 }
 function clickPlan(k){if(selectedPlan==k)openPlanDetail();else{selectedPlan=k;renderPlan()}}
 function clickSalary(k){selectedSalary=k;renderSalary()}
 function loadSalaryDay(){selectedDate.textContent=selectedSalary.replaceAll("-","/");let sl=getSlots(selectedSalary);document.querySelectorAll(".slot").forEach(b=>b.classList.toggle("active",sl.includes(b.dataset.slot)));let st=study(selectedSalary);studyToggle.classList.toggle("active",st.hours>0);studyFields.classList.toggle("active",st.hours>0);studyHours.value=st.hours||"";
 studyStart.value=st.start||"";
+shiftMemoEl.value=getShiftMemo(selectedSalary);
 updateStudyEnd();
 dayPayEl.textContent=yen(dayPay(selectedSalary))}
 
@@ -1597,8 +1630,8 @@ function updateStudyEnd(){
  const h=Number(studyHours.value)||0,start=studyStart.value||"";
  studyEnd.textContent=`終了 ${h>0&&start?addMinutes(start,h*60):"--:--"}`;
 }
-function saveSalary(){if(!selectedSalary)return;let sl=[...document.querySelectorAll(".slot.active")].map(b=>b.dataset.slot);if(sl.length)shifts[selectedSalary]=sl;else delete shifts[selectedSalary];let h=Number(studyHours.value)||0;if(studyToggle.classList.contains("active")&&h>0){let start=studyStart.value||"";studies[selectedSalary]={hours:h,start,end:start?addMinutes(start,h*60):""}}else delete studies[selectedSalary];save(KEY,shifts);save(STUDY_KEY,studies);renderSalary();renderPlan()}
-function clearSalary(){if(!selectedSalary)return;delete shifts[selectedSalary];delete studies[selectedSalary];save(KEY,shifts);save(STUDY_KEY,studies);renderSalary();renderPlan()}
+function saveSalary(){if(!selectedSalary)return;let sl=[...document.querySelectorAll(".slot.active")].map(b=>b.dataset.slot);if(sl.length)shifts[selectedSalary]=sl;else delete shifts[selectedSalary];let sm=shiftMemoEl.value.trim();if(sl.length&&sm)shiftMemos[selectedSalary]=sm;else delete shiftMemos[selectedSalary];let h=Number(studyHours.value)||0;if(studyToggle.classList.contains("active")&&h>0){let start=studyStart.value||"";studies[selectedSalary]={hours:h,start,end:start?addMinutes(start,h*60):""}}else delete studies[selectedSalary];save(KEY,shifts);save(SHIFT_MEMO_KEY,shiftMemos);save(STUDY_KEY,studies);renderSalary();renderPlan()}
+function clearSalary(){if(!selectedSalary)return;delete shifts[selectedSalary];delete shiftMemos[selectedSalary];delete studies[selectedSalary];save(KEY,shifts);save(SHIFT_MEMO_KEY,shiftMemos);save(STUDY_KEY,studies);shiftMemoEl.value="";renderSalary();renderPlan()}
 
 function renderDetailTimeline(k){
  const allDayItems=items(k).filter(x=>x.allDay);
@@ -1620,7 +1653,7 @@ function renderDetailTimeline(k){
  let bands=a.map(x=>{
    const top=(x._s/1440)*100,height=Math.max(((x._e-x._s)/1440)*100,1.5);
    const gap=3,width=`calc(${100/x._lanes}% - ${gap+4}px)`,left=`calc(${x._lane*(100/x._lanes)}% + ${4+x._lane*gap}px)`;
-   return `<div class="detail-band" style="top:${top}%;height:${height}%;left:${left};width:${width}"><strong>${esc(x.name)}</strong><span>${esc(x.time)}</span>${x.memo?`<span>${esc(x.memo)}</span>`:""}</div>`
+   return `<div class="detail-band${x.kind==="juku"?" detail-band-juku":""}" style="top:${top}%;height:${height}%;left:${left};width:${width}"><strong>${esc(x.name)}</strong><span>${esc(x.time)}</span>${x.memo?`<span>${esc(x.memo)}</span>`:""}</div>`
  }).join("");
  const allDayBands=allDayItems.map((x,i)=>{
    const count=Math.max(1,allDayItems.length);
@@ -1630,7 +1663,7 @@ function renderDetailTimeline(k){
  }).join("");
  detailTimeline.innerHTML=hours+`<div class="detail-track">${allDayBands}${bands}</div>`
 }
-function openPlanDetail(){let k=selectedPlan,p=plan(k);let [dy,dm,dd]=k.split("-").map(Number),dw=["日","月","火","水","木","金","土"][new Date(dy,dm-1,dd).getDay()];detailDate.textContent=`${k.replaceAll("-","/")}（${dw}）`;renderDetailTimeline(k);let sl=getSlots(k),st=study(k);autoInfo.innerHTML=`<div class="summary-row"><span>塾</span><span>${sl.length?esc(slotRange(sl)):"なし"}</span></div><div class="summary-row"><span>勉強会</span><span>${st.hours?esc(studyRange(k)||st.hours+"時間"):"なし"}</span></div>`;eventList.innerHTML=p.events.length?p.events.sort((a,b)=>(a.start||"99").localeCompare(b.start||"99")).map(e=>`<div class="event-item"><div class="event-text"><strong>${esc(e.title||"予定")}</strong><br>${esc(e.allDay?"終日":(e.start?`${e.start}-${e.end||"未定"}`:"時間未定"))}${e.memo?`<br><small>${esc(e.memo)}</small>`:""}</div><div class="event-actions"><button class="event-delete-inline" data-del="${esc(e.id)}">削除</button><button data-edit="${esc(e.id)}">変更</button></div></div>`).join(""):'<div class="summary-empty">登録済み予定なし</div>';eventList.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openEditor(b.dataset.edit));eventList.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deleteEventById(b.dataset.del));memoPreview.innerHTML="";open("planDetail")}
+function openPlanDetail(){let k=selectedPlan,p=plan(k);let [dy,dm,dd]=k.split("-").map(Number),dw=["日","月","火","水","木","金","土"][new Date(dy,dm-1,dd).getDay()];detailDate.textContent=`${k.replaceAll("-","/")}（${dw}）`;renderDetailTimeline(k);let sl=getSlots(k),st=study(k),sm=getShiftMemo(k);autoInfo.innerHTML=`<div class="summary-row auto-juku-row"><span>塾</span><span>${sl.length?esc(slotRange(sl)):"なし"}${sl.length&&sm?`<br><small>${esc(sm)}</small>`:""}</span></div><div class="summary-row"><span>勉強会</span><span>${st.hours?esc(studyRange(k)||st.hours+"時間"):"なし"}</span></div>`;eventList.innerHTML=p.events.length?p.events.sort((a,b)=>(a.start||"99").localeCompare(b.start||"99")).map(e=>`<div class="event-item"><div class="event-text"><strong>${esc(e.title||"予定")}</strong><br>${esc(e.allDay?"終日":(e.start?`${e.start}-${e.end||"未定"}`:"時間未定"))}${e.memo?`<br><small>${esc(e.memo)}</small>`:""}</div><div class="event-actions"><button class="event-delete-inline" data-del="${esc(e.id)}">削除</button><button data-edit="${esc(e.id)}">変更</button></div></div>`).join(""):'<div class="summary-empty">登録済み予定なし</div>';eventList.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openEditor(b.dataset.edit));eventList.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deleteEventById(b.dataset.del));memoPreview.innerHTML="";open("planDetail")}
 function shiftPlanDetailDay(delta){
  if(!selectedPlan)return;
  const [y,m,d]=selectedPlan.split("-").map(Number);
@@ -1887,10 +1920,10 @@ function renderRates(){
    save(RATE_KEY,rates);renderRates();renderSalary()
  });
 }
-function exportData(){let blob=new Blob([JSON.stringify({version:5,shifts,rates,studies,plans},null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="calendar-backup.json";a.click();URL.revokeObjectURL(a.href)}
-async function importData(f){try{let j=JSON.parse(await f.text());if(j.shifts)shifts=j.shifts;if(j.rates)rates=j.rates;if(j.studies)studies=j.studies;if(j.plans)plans=j.plans;save(KEY,shifts);save(RATE_KEY,rates);save(STUDY_KEY,studies);save(PLAN_KEY,plans);renderPlan();renderSalary();alert("復元しました")}catch{alert("復元できませんでした")}}
+function exportData(){let blob=new Blob([JSON.stringify({version:6,shifts,rates,studies,plans,shiftMemos},null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="calendar-backup.json";a.click();URL.revokeObjectURL(a.href)}
+async function importData(f){try{let j=JSON.parse(await f.text());if(j.shifts)shifts=j.shifts;if(j.rates)rates=j.rates;if(j.studies)studies=j.studies;if(j.plans)plans=j.plans;shiftMemos=j.shiftMemos&&typeof j.shiftMemos==="object"?j.shiftMemos:{};save(KEY,shifts);save(RATE_KEY,rates);save(STUDY_KEY,studies);save(PLAN_KEY,plans);save(SHIFT_MEMO_KEY,shiftMemos);renderPlan();renderSalary();alert("復元しました")}catch{alert("復元できませんでした")}}
 
-const dayPayEl=document.getElementById("dayPay"),pickerYearEl=document.getElementById("pickerYear");
+const dayPayEl=document.getElementById("dayPay"),pickerYearEl=document.getElementById("pickerYear"),shiftMemoEl=document.getElementById("shiftMemoInput");
 SLOT_ORDER.forEach(s=>{let b=document.createElement("button");b.className="slot";b.dataset.slot=s;b.textContent=s;b.onclick=()=>{b.classList.toggle("active");if(selectedSalary)dayPayEl.textContent=yen(dayPay(selectedSalary))};slotGrid.appendChild(b)});
 planMonth.onclick=()=>openMonth("plan");salMonth.onclick=()=>openMonth("salary");
 planToday.onclick=()=>{const d=new Date();planView=new Date(d.getFullYear(),d.getMonth(),1);renderPlan()};
