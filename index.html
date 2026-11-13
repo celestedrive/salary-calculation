@@ -304,7 +304,7 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 .event-actions{display:flex!important;gap:6px!important}
 .event-delete-inline{background:#7f1d1d!important;color:#fff!important;border:0!important;border-radius:8px!important;padding:7px 9px!important;font-weight:800!important}
 
-/* Monthly salary: earned in displayed month (left) / paid this month (right). */
+/* Monthly salary: earned in displayed month (left) / paid during displayed month (right). */
 #salaryPanel .month-total{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
@@ -1738,7 +1738,7 @@ function renderSalary(){
  // Both paydays (15th: part-time job / 25th: study session) pay the prior month's work.
  const previous=new Date(y,m,0);
  const received=monthBreakdown(previous.getFullYear(),previous.getMonth());
- monthTotal.innerHTML=`<div class="monthly-column"><div class="total-label">月合計</div><div class="total-main">${yen(earned.total)}</div><div class="total-breakdown"><div>バイト ${yen(earned.juku)}</div><div>勉強会 ${yen(earned.study)}</div></div></div><div class="monthly-column"><div class="total-label">今月の総取得給与</div><div class="total-main">${yen(received.total)}</div><div class="total-breakdown"><div>バイト ${yen(received.juku)}</div><div>勉強会 ${yen(received.study)}</div></div></div>`;
+ monthTotal.innerHTML=`<div class="monthly-column"><div class="total-label">月合計</div><div class="total-main">${yen(earned.total)}</div><div class="total-breakdown"><div>バイト ${yen(earned.juku)}</div><div>勉強会 ${yen(earned.study)}</div></div></div><div class="monthly-column"><div class="total-label">${m+1}月の総取得給与</div><div class="total-main">${yen(received.total)}</div><div class="total-breakdown"><div>バイト ${yen(received.juku)}</div><div>勉強会 ${yen(received.study)}</div></div></div>`;
  if(selectedSalary)loadSalaryDay()
 }
 function renderSummary(){
