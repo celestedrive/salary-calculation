@@ -852,97 +852,98 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
   background:rgba(63,102,86,.20);
 }
 
-/* 給料日は金額のみ。日付、給与、当日の勤務内容は独立した行に収める */
-#salaryPanel .day.is-payday{
+/* 給与欄は全日統一の控えめな字組み。給料日も予定と日額を隠さない。 */
+#salaryPanel .day{
   display:flex;
   flex-direction:column;
   align-items:stretch;
   justify-content:flex-start;
   gap:1px;
-  padding:17px 2px 1px!important;
+  padding:16px 2px 1px!important;
   overflow:hidden;
+  text-align:left;
 }
-#salaryPanel .day.is-payday > .daynum{
+#salaryPanel .day > .daynum{
   top:3px;
   left:4px;
-  font-size:12px;
+  font-size:11px;
+  line-height:12px;
   z-index:2;
 }
-#salaryPanel .day.is-payday > .payday-amount{
-  position:static;
-  display:flex;
-  flex:0 0 12px;
-  align-items:center;
-  justify-content:center;
-  width:100%;
-  max-width:100%;
-  min-width:0;
-  height:12px;
-  margin:0;
-  padding:0;
-  border:0;
-  border-radius:2px;
-  background:transparent;
-  color:#86efac;
-  font-size:12px;
-  line-height:12px;
-  letter-spacing:-.25px;
-  white-space:nowrap;
-  overflow:hidden;
-  pointer-events:none;
-}
-#salaryPanel .day.is-payday .payday-number{
-  display:inline-block;
-  flex:0 0 auto;
-  width:max-content;
-  max-width:none;
-  font-size:12px;
-  font-weight:900;
-  line-height:12px;
-  white-space:nowrap;
-  transform-origin:center center;
-  font-variant-numeric:tabular-nums;
-}
-#salaryPanel .day.is-payday > .payday-work{
-  display:block;
-  flex:0 0 10px;
-  width:100%;
-  min-width:0;
-  margin:0;
-  padding:0;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-  color:#f1f5f9;
-  font-size:9px;
-  font-weight:800;
-  line-height:10px;
-}
-#salaryPanel .day.is-payday.is-payday-tight > .day-pay{
-  display:none!important;
-}
-#salaryPanel .day.is-payday.is-payday-ultra-tight > .payday-work{
-  position:absolute;
-  top:3px;
-  right:2px;
-  width:auto;
-  max-width:46%;
-  font-size:8px;
-  line-height:11px;
-  text-align:right;
-}
-#salaryPanel .day.is-payday > .day-pay{
+#salaryPanel .day > .entry,
+#salaryPanel .day > .payday-work{
   display:block;
   flex:0 0 9px;
   width:100%;
+  min-width:0;
   margin:0!important;
-  font-size:9px!important;
+  padding:0;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  color:#e2e8f0;
+  font-size:8px!important;
+  font-weight:700;
+  line-height:9px!important;
+}
+#salaryPanel .day > .day-pay{
+  display:block;
+  flex:0 0 9px;
+  width:100%;
+  min-width:0;
+  padding:0;
+  margin:0!important;
+  color:#cbd5e1;
+  font-size:8px!important;
+  font-weight:700;
   line-height:9px!important;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
 }
-/* 小さな画面でもカレンダーの日付行を圧縮しすぎない */
+#salaryPanel .day > .payday-amount{
+  position:static;
+  display:block;
+  flex:0 0 10px;
+  width:100%;
+  max-width:100%;
+  height:10px;
+  margin:0;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  color:#8edab0;
+  font-size:9px;
+  line-height:10px;
+  font-weight:800;
+  letter-spacing:0;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:clip;
+  pointer-events:none;
+}
+#salaryPanel .day .payday-number{
+  display:inline-block;
+  width:max-content;
+  max-width:none;
+  font-size:9px;
+  font-weight:800;
+  line-height:10px;
+  letter-spacing:-.1px;
+  transform-origin:left center;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+/* ６週ある月は、セルを潰さずカレンダー内部だけ縦スクロールさせる */
+#salaryPanel .grid{
+  grid-template-rows:repeat(var(--salary-week-count,6),minmax(46px,1fr))!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  scrollbar-width:none;
+  overscroll-behavior:contain;
+}
+#salaryPanel .grid::-webkit-scrollbar{display:none}
 @media(max-height:720px){
   #salaryPanel .salary-calendar{flex-basis:65%;}
 }
@@ -1644,7 +1645,9 @@ function summaryWeatherHtml(k){
 
 function renderGrid(grid,view,kind){
  let y=view.getFullYear(),m=view.getMonth(),first=new Date(y,m,1).getDay(),last=new Date(y,m+1,0).getDate(),today=new Date();grid.innerHTML="";
- for(let i=0;i<42;i++){
+ const cellCount=kind==="salary"?Math.ceil((first+last)/7)*7:42;
+ if(kind==="salary")grid.style.setProperty("--salary-week-count",String(cellCount/7));
+ for(let i=0;i<cellCount;i++){
    let d=i-first+1;
    if(d<1||d>last){let b=document.createElement("div");b.className="blank";grid.appendChild(b);continue}
    let k=keyOf(y,m,d),b=document.createElement("button");b.className="day "+dayClass(y,m,d);b.type="button";
@@ -1679,11 +1682,6 @@ function renderGrid(grid,view,kind){
  }
 ;applyTodayImage();if(kind==="salary")fitPaydayAmounts(grid)}
 function fitPaydayAmounts(grid){
- for(const cell of grid.querySelectorAll(".is-payday")){
-   cell.classList.remove("is-payday-tight","is-payday-ultra-tight");
-   if(cell.scrollHeight>cell.clientHeight+1)cell.classList.add("is-payday-tight");
-   if(cell.scrollHeight>cell.clientHeight+1)cell.classList.add("is-payday-ultra-tight");
- }
  for(const number of grid.querySelectorAll(".payday-number")){
    number.style.transform="";
    const holder=number.parentElement;
