@@ -852,78 +852,102 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
   background:rgba(63,102,86,.20);
 }
 
-/* 給料日は日付を固定し、ラベルと支給額をセル内の通常フローで配置 */
+/* 給料日は金額のみ。日付、給与、当日の勤務内容は独立した行に収める */
 #salaryPanel .day.is-payday{
   display:flex;
   flex-direction:column;
   align-items:stretch;
   justify-content:flex-start;
   gap:1px;
-  padding:19px 2px 1px!important;
+  padding:17px 2px 1px!important;
   overflow:hidden;
 }
 #salaryPanel .day.is-payday > .daynum{
-  z-index:4;
-}
-#salaryPanel .day.is-payday > .payday-badge{
-  position:static;
-  display:block;
-  flex:0 0 auto;
-  width:100%;
-  max-width:100%;
-  margin:0;
-  padding:1px 0;
-  border-radius:3px;
-  text-align:center;
-  font-size:clamp(5px,1.5vw,7px);
-  line-height:1.05;
-  white-space:nowrap;
-  pointer-events:none;
-  overflow:hidden;
+  top:3px;
+  left:4px;
+  font-size:12px;
   z-index:2;
-}
-#salaryPanel .day.is-payday > .payday-badge span{
-  display:inline;
 }
 #salaryPanel .day.is-payday > .payday-amount{
   position:static;
-  display:block;
-  flex:0 0 auto;
+  display:flex;
+  flex:0 0 12px;
+  align-items:center;
+  justify-content:center;
   width:100%;
   max-width:100%;
+  min-width:0;
+  height:12px;
   margin:0;
-  padding:1px 0;
-  text-align:center;
-  font-size:clamp(5px,1.35vw,6px);
-  line-height:1.05;
-  letter-spacing:-.3px;
-  pointer-events:none;
+  padding:0;
+  border:0;
+  border-radius:2px;
+  background:transparent;
+  color:#86efac;
+  font-size:12px;
+  line-height:12px;
+  letter-spacing:-.25px;
+  white-space:nowrap;
   overflow:hidden;
-  z-index:2;
+  pointer-events:none;
 }
-#salaryPanel .day.is-payday > .entry,
-#salaryPanel .day.is-payday > .day-pay{
+#salaryPanel .day.is-payday .payday-number{
+  display:inline-block;
   flex:0 0 auto;
+  width:max-content;
+  max-width:none;
+  font-size:12px;
+  font-weight:900;
+  line-height:12px;
+  white-space:nowrap;
+  transform-origin:center center;
+  font-variant-numeric:tabular-nums;
+}
+#salaryPanel .day.is-payday > .payday-work{
+  display:block;
+  flex:0 0 10px;
   width:100%;
   min-width:0;
-  margin:0!important;
+  margin:0;
+  padding:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:#f1f5f9;
+  font-size:9px;
+  font-weight:800;
+  line-height:10px;
 }
-/* 画面が低い場合も日付・給料日・金額を1マスに収める */
-@media(max-height:650px){
-  #salaryPanel .day.is-payday{
-    padding-top:14px!important;
-    gap:0;
-  }
-  #salaryPanel .day.is-payday > .daynum{
-    top:3px;
-    font-size:11px;
-  }
-  #salaryPanel .day.is-payday > .payday-badge,
-  #salaryPanel .day.is-payday > .payday-amount{
-    padding:0;
-    font-size:5px;
-    line-height:1.05;
-  }
+#salaryPanel .day.is-payday.is-payday-tight > .day-pay{
+  display:none!important;
+}
+#salaryPanel .day.is-payday.is-payday-ultra-tight > .payday-work{
+  position:absolute;
+  top:3px;
+  right:2px;
+  width:auto;
+  max-width:46%;
+  font-size:8px;
+  line-height:11px;
+  text-align:right;
+}
+#salaryPanel .day.is-payday > .day-pay{
+  display:block;
+  flex:0 0 9px;
+  width:100%;
+  margin:0!important;
+  font-size:9px!important;
+  line-height:9px!important;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+/* 小さな画面でもカレンダーの日付行を圧縮しすぎない */
+@media(max-height:720px){
+  #salaryPanel .salary-calendar{flex-basis:65%;}
+}
+@media(max-height:610px){
+  #salaryPanel .salary-calendar{flex-basis:70%;}
 }
 </style>
 <link rel="apple-touch-icon" href="icon.png">
@@ -1630,26 +1654,45 @@ function renderGrid(grid,view,kind){
    if(kind=="plan"){content=miniWeatherHtml(k)+items(k).map(x=>`<span class="entry${x.kind==="juku"?" entry-juku":x.kind==="study"?" entry-study":""}"><strong>${esc(x.name)}</strong><span class="entry-time">${esc(x.time)}</span></span>`).join("")}
    else {
      let sl=getSlots(k),st=study(k),pay=dayPay(k);
-     let paydayBadge="",paydayAmount="";
      if(d===15||d===25){
        b.classList.add("is-payday");
        const prev=new Date(y,m,0);
        const previousPay=monthBreakdown(prev.getFullYear(),prev.getMonth());
        const amount=d===15?previousPay.juku:previousPay.study;
        const type=d===15?"バイト":"勉強会";
-       paydayBadge=`<span class="payday-badge" aria-label="${type}給料日"><span>${type}</span><span>給料日</span></span>`;
-       paydayAmount=amount>0?`<span class="payday-amount">+${Math.round(amount).toLocaleString("ja-JP")}円</span>`:"";
+       const paid=amount>0?`+${Math.round(amount).toLocaleString("ja-JP")}`:"";
+       const work=[sl.join(""),st.hours?"勉":""].filter(Boolean).join("・");
+       const workDetail=[sl.length?`バイト ${sl.join("")}`:"",st.hours?"勉強会":""].filter(Boolean).join("・");
+       b.title=`${d}日 ${type}給料日${paid?` ${paid}円`:""}${workDetail?` / ${workDetail}`:""}${pay>0?` / 当日 ${yen(pay)}`:""}`;
+       b.setAttribute("aria-label",b.title);
+       content=(paid?`<span class="payday-amount"><span class="payday-number">${paid}</span></span>`:"")+
+         (work?`<span class="payday-work" title="${esc(workDetail)}">${esc(work)}</span>`:"")+
+         (pay>0?`<span class="day-pay">${yen(pay)}</span>`:"");
+     }else{
+       content=(sl.length?`<span class="entry"><strong>${esc(sl.join(""))}</strong></span>`:"")+
+         (st.hours?'<span class="entry"><strong>勉強会</strong></span>':"")+
+         (pay>0?`<span class="day-pay">${yen(pay)}</span>`:"");
      }
-     content=paydayBadge+
-       paydayAmount+
-       (sl.length?`<span class="entry"><strong>${esc(sl.join(""))}</strong></span>`:"")+
-       (st.hours?'<span class="entry"><strong>勉強会</strong></span>':"")+
-       (pay>0?`<span class="day-pay">${yen(pay)}</span>`:"");
    }
    b.innerHTML=`<span class="daynum">${d}</span>${content}`;
    b.onclick=()=>kind=="plan"?clickPlan(k):clickSalary(k);grid.appendChild(b)
  }
-;applyTodayImage()}
+;applyTodayImage();if(kind==="salary")fitPaydayAmounts(grid)}
+function fitPaydayAmounts(grid){
+ for(const cell of grid.querySelectorAll(".is-payday")){
+   cell.classList.remove("is-payday-tight","is-payday-ultra-tight");
+   if(cell.scrollHeight>cell.clientHeight+1)cell.classList.add("is-payday-tight");
+   if(cell.scrollHeight>cell.clientHeight+1)cell.classList.add("is-payday-ultra-tight");
+ }
+ for(const number of grid.querySelectorAll(".payday-number")){
+   number.style.transform="";
+   const holder=number.parentElement;
+   const available=holder.clientWidth;
+   const actual=number.getBoundingClientRect().width;
+   if(actual>available&&available>0)number.style.transform=`scaleX(${available/actual})`;
+ }
+}
+window.addEventListener("resize",()=>fitPaydayAmounts(salGrid));
 function renderPlan(){planMonth.textContent=`${planView.getFullYear()}年${planView.getMonth()+1}月`;renderGrid(planGrid,planView,"plan");renderSummary()}
 function monthBreakdown(y,m){let juku=0,studyPay=0,last=new Date(y,m+1,0).getDate();for(let d=1;d<=last;d++){let k=keyOf(y,m,d),r=rateFor(k),sl=getSlots(k),st=study(k);if(sl.length)juku+=sl.length*(Number(r.lesson)||0)+(Number(r.daily)||0)+(Number(r.transport)||0);if(st.hours)studyPay+=st.hours*1500+420}return {juku,study:studyPay,total:juku+studyPay}}
 function renderSalary(){
