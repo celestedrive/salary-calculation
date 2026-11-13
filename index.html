@@ -852,43 +852,78 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
   background:rgba(63,102,86,.20);
 }
 
-/* 給料日のラベルは日付の下に配置して重なりを防ぐ */
+/* 給料日は日付を固定し、ラベルと支給額をセル内の通常フローで配置 */
 #salaryPanel .day.is-payday{
-  padding-top:55px!important;
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  justify-content:flex-start;
+  gap:1px;
+  padding:19px 2px 1px!important;
+  overflow:hidden;
 }
 #salaryPanel .day.is-payday > .daynum{
   z-index:4;
 }
 #salaryPanel .day.is-payday > .payday-badge{
-  position:absolute;
-  top:20px;
-  left:2px;
-  right:2px;
+  position:static;
   display:block;
-  width:auto;
+  flex:0 0 auto;
+  width:100%;
+  max-width:100%;
+  margin:0;
   padding:1px 0;
   border-radius:3px;
   text-align:center;
-  font-size:7px;
+  font-size:clamp(5px,1.5vw,7px);
   line-height:1.05;
   white-space:nowrap;
   pointer-events:none;
+  overflow:hidden;
   z-index:2;
 }
 #salaryPanel .day.is-payday > .payday-badge span{
-  display:block;
+  display:inline;
 }
 #salaryPanel .day.is-payday > .payday-amount{
-  position:absolute;
-  top:42px;
-  left:2px;
-  right:2px;
-  width:auto;
-  max-width:none;
+  position:static;
+  display:block;
+  flex:0 0 auto;
+  width:100%;
+  max-width:100%;
+  margin:0;
+  padding:1px 0;
   text-align:center;
-  font-size:6px;
+  font-size:clamp(5px,1.35vw,6px);
+  line-height:1.05;
   letter-spacing:-.3px;
+  pointer-events:none;
+  overflow:hidden;
   z-index:2;
+}
+#salaryPanel .day.is-payday > .entry,
+#salaryPanel .day.is-payday > .day-pay{
+  flex:0 0 auto;
+  width:100%;
+  min-width:0;
+  margin:0!important;
+}
+/* 画面が低い場合も日付・給料日・金額を1マスに収める */
+@media(max-height:650px){
+  #salaryPanel .day.is-payday{
+    padding-top:14px!important;
+    gap:0;
+  }
+  #salaryPanel .day.is-payday > .daynum{
+    top:3px;
+    font-size:11px;
+  }
+  #salaryPanel .day.is-payday > .payday-badge,
+  #salaryPanel .day.is-payday > .payday-amount{
+    padding:0;
+    font-size:5px;
+    line-height:1.05;
+  }
 }
 </style>
 <link rel="apple-touch-icon" href="icon.png">
