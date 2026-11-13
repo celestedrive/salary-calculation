@@ -851,6 +851,45 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
   border-radius:5px;
   background:rgba(63,102,86,.20);
 }
+
+/* 給料日のラベルは日付の下に配置して重なりを防ぐ */
+#salaryPanel .day.is-payday{
+  padding-top:55px!important;
+}
+#salaryPanel .day.is-payday > .daynum{
+  z-index:4;
+}
+#salaryPanel .day.is-payday > .payday-badge{
+  position:absolute;
+  top:20px;
+  left:2px;
+  right:2px;
+  display:block;
+  width:auto;
+  padding:1px 0;
+  border-radius:3px;
+  text-align:center;
+  font-size:7px;
+  line-height:1.05;
+  white-space:nowrap;
+  pointer-events:none;
+  z-index:2;
+}
+#salaryPanel .day.is-payday > .payday-badge span{
+  display:block;
+}
+#salaryPanel .day.is-payday > .payday-amount{
+  position:absolute;
+  top:42px;
+  left:2px;
+  right:2px;
+  width:auto;
+  max-width:none;
+  text-align:center;
+  font-size:6px;
+  letter-spacing:-.3px;
+  z-index:2;
+}
 </style>
 <link rel="apple-touch-icon" href="icon.png">
 </head>
@@ -1558,11 +1597,12 @@ function renderGrid(grid,view,kind){
      let sl=getSlots(k),st=study(k),pay=dayPay(k);
      let paydayBadge="",paydayAmount="";
      if(d===15||d===25){
+       b.classList.add("is-payday");
        const prev=new Date(y,m,0);
        const previousPay=monthBreakdown(prev.getFullYear(),prev.getMonth());
        const amount=d===15?previousPay.juku:previousPay.study;
        const type=d===15?"バイト":"勉強会";
-       paydayBadge=`<span class="payday-badge">${type}給料日</span>`;
+       paydayBadge=`<span class="payday-badge" aria-label="${type}給料日"><span>${type}</span><span>給料日</span></span>`;
        paydayAmount=amount>0?`<span class="payday-amount">+${Math.round(amount).toLocaleString("ja-JP")}円</span>`:"";
      }
      content=paydayBadge+
