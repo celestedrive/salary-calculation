@@ -304,47 +304,69 @@ button,.day,.month,.slot{touch-action:manipulation!important;-webkit-tap-highlig
 .event-actions{display:flex!important;gap:6px!important}
 .event-delete-inline{background:#7f1d1d!important;color:#fff!important;border:0!important;border-radius:8px!important;padding:7px 9px!important;font-weight:800!important}
 
-/* Monthly salary: earned in displayed month (left) / paid during displayed month (right). */
+/* Monthly summary: each half uses one full-height total beside two half-height figures. */
 #salaryPanel .month-total{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
   padding:0!important;
+  min-width:0;
   text-align:left!important;
   align-items:stretch;
-  min-width:0;
 }
 #salaryPanel .monthly-column{
   min-width:0;
-  padding:7px 7px 8px;
+  padding:5px 6px 6px;
 }
 #salaryPanel .monthly-column + .monthly-column{
   border-left:1px solid #475569;
   background:rgba(15,23,42,.16);
 }
 #salaryPanel .total-label{
-  color:#cbd5e1;
-  font-size:11px;
+  font-size:10px;
   font-weight:800;
+  color:#cbd5e1;
   line-height:1.2;
   white-space:nowrap;
+  margin:0 0 3px;
+}
+#salaryPanel .total-figures{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  column-gap:3px;
+  align-items:stretch;
+  min-width:0;
 }
 #salaryPanel .total-main{
-  margin-top:3px;
-  font-size:clamp(14px,4.2vw,17px)!important;
+  display:flex;
+  align-items:center;
+  min-width:0;
+  margin:0!important;
+  font-size:clamp(11px,3.65vw,14px)!important;
   font-weight:900!important;
-  line-height:1.15;
+  line-height:1.2;
   font-variant-numeric:tabular-nums;
   white-space:nowrap;
 }
+#salaryPanel .total-main > span{display:block;min-width:0;white-space:nowrap}
 #salaryPanel .total-breakdown{
-  margin-top:4px;
-  font-size:10px!important;
+  display:grid;
+  grid-template-rows:1fr 1fr;
+  gap:0;
+  min-width:0;
+  margin:0!important;
+  font-size:clamp(7.5px,2.35vw,9px)!important;
   font-weight:700!important;
-  line-height:1.35;
   color:#cbd5e1!important;
+  line-height:1.15;
   font-variant-numeric:tabular-nums;
 }
-#salaryPanel .total-breakdown > div{white-space:nowrap}
+#salaryPanel .total-breakdown > div{
+  display:flex;
+  align-items:center;
+  min-width:0;
+  white-space:nowrap;
+}
+#salaryPanel .total-breakdown > div > span{display:block;min-width:0;white-space:nowrap}
 
 
 /* latest control sizing/layout fixes */
@@ -1730,6 +1752,20 @@ function fitPaydayAmounts(grid){
 window.addEventListener("resize",()=>fitPaydayAmounts(salGrid));
 function renderPlan(){planMonth.textContent=`${planView.getFullYear()}年${planView.getMonth()+1}月`;renderGrid(planGrid,planView,"plan");renderSummary()}
 function monthBreakdown(y,m){let juku=0,studyPay=0,last=new Date(y,m+1,0).getDate();for(let d=1;d<=last;d++){let k=keyOf(y,m,d),r=rateFor(k),sl=getSlots(k),st=study(k);if(sl.length)juku+=sl.length*(Number(r.lesson)||0)+(Number(r.daily)||0)+(Number(r.transport)||0);if(st.hours)studyPay+=st.hours*1500+420}return {juku,study:studyPay,total:juku+studyPay}}
+function fitMonthlyTotalText(){
+ // Fit unusually large amounts to their own column, without hiding or overlapping any numbers.
+ for(const node of monthTotal.querySelectorAll('.total-main > span,.total-breakdown > div > span')){
+  node.style.fontSize='';
+  let parent=node.parentElement;
+  const width=parent.clientWidth;
+  const measured=node.scrollWidth;
+  if(width>0&&measured>width){
+   const base=parseFloat(getComputedStyle(node).fontSize);
+   node.style.fontSize=Math.max(6,base*width/measured*.98)+'px';
+  }
+ }
+}
+window.addEventListener('resize',fitMonthlyTotalText);
 function renderSalary(){
  salMonth.textContent=`${salView.getFullYear()}年${salView.getMonth()+1}月`;
  renderGrid(salGrid,salView,"salary");
@@ -1738,7 +1774,8 @@ function renderSalary(){
  // Both paydays (15th: part-time job / 25th: study session) pay the prior month's work.
  const previous=new Date(y,m,0);
  const received=monthBreakdown(previous.getFullYear(),previous.getMonth());
- monthTotal.innerHTML=`<div class="monthly-column"><div class="total-label">月合計</div><div class="total-main">${yen(earned.total)}</div><div class="total-breakdown"><div>バイト ${yen(earned.juku)}</div><div>勉強会 ${yen(earned.study)}</div></div></div><div class="monthly-column"><div class="total-label">${m+1}月の総取得給与</div><div class="total-main">${yen(received.total)}</div><div class="total-breakdown"><div>バイト ${yen(received.juku)}</div><div>勉強会 ${yen(received.study)}</div></div></div>`;
+ monthTotal.innerHTML=`<div class="monthly-column"><div class="total-label">月合計</div><div class="total-figures"><div class="total-main"><span>${yen(earned.total)}</span></div><div class="total-breakdown"><div><span>バイト ${yen(earned.juku)}</span></div><div><span>勉強会 ${yen(earned.study)}</span></div></div></div></div><div class="monthly-column"><div class="total-label">${m+1}月の総取得給与</div><div class="total-figures"><div class="total-main"><span>${yen(received.total)}</span></div><div class="total-breakdown"><div><span>バイト ${yen(received.juku)}</span></div><div><span>勉強会 ${yen(received.study)}</span></div></div></div></div>`;
+ fitMonthlyTotalText();
  if(selectedSalary)loadSalaryDay()
 }
 function renderSummary(){
